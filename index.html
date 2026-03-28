@@ -1,0 +1,3384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Rainy Note — 유리창 감성 낙서 앱</title>
+
+<!-- ── SEO / SNS 메타 ── -->
+<meta name="description" content="유리창에 빗방울 낙서를 남기는 감성 모바일 웹앱. 비, 서리, 안개, 물방울 텍스처와 함께 그림을 그리고 저장하세요.">
+<meta name="keywords" content="rainy note, 유리창 낙서, 빗방울, 감성 앱, 드로잉">
+<meta name="author" content="Rainy Note">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0d1b2a">
+
+<!-- ── Open Graph (카카오, 페이스북) ── -->
+<meta property="og:type"        content="website">
+<meta property="og:title"       content="Rainy Note — 유리창 감성 낙서 앱">
+<meta property="og:description" content="유리창에 빗방울 낙서를 남기는 감성 모바일 웹앱">
+<meta property="og:image"       content="/icons/icon.svg">
+<meta property="og:url"         content="https://your-domain.com/">
+<meta property="og:locale"      content="ko_KR">
+
+<!-- ── Twitter Card ── -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="Rainy Note">
+<meta name="twitter:description" content="유리창에 빗방울 낙서를 남기는 감성 모바일 웹앱">
+<meta name="twitter:image"       content="/icons/icon.svg">
+
+<!-- ── PWA ── -->
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rainy Note">
+<meta name="application-name" content="Rainy Note">
+<meta name="msapplication-TileColor" content="#0d1b2a">
+
+<!-- ── 파비콘 / 아이콘 ── -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230d1b2a'/><text y='.9em' font-size='80' x='10'>💧</text></svg>">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<!-- PNG 아이콘 추가: icons/generate-icons.html 에서 생성 후 icons/ 폴더에 저장하세요 -->
+
+<!-- ── 외부 라이브러리 ── -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<!-- GIF 인코더 (animated GIF 영상 저장용) -->
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { width:100%; height:100%; overflow:hidden; font-family:'Inter','Noto Sans KR',sans-serif; background:#000; }
+
+#app { display:flex; flex-direction:column; width:100%; height:100%; max-width:430px; margin:0 auto; position:relative; overflow:hidden; }
+
+/* ── TOP BAR ── */
+#topbar {
+  position:absolute; top:0; left:0; right:0; z-index:100;
+  height:58px; background:rgba(8,18,32,0.92); backdrop-filter:blur(16px);
+  display:flex; align-items:center; padding:0 12px;
+  border-bottom:1px solid rgba(100,180,255,0.12);
+  gap:8px;
+}
+.back-btn {
+  width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; cursor:pointer; flex-shrink:0;
+}
+.back-btn:active { background:rgba(255,255,255,0.1); }
+.back-btn i { color:rgba(255,255,255,0.7); font-size:15px; }
+
+/* Logo area */
+.logo-area {
+  flex:1; display:flex; align-items:center; gap:8px;
+}
+.logo-drop {
+  font-size:22px; line-height:1; filter:drop-shadow(0 0 6px rgba(126,200,227,0.6));
+  animation: dropBob 3s ease-in-out infinite;
+}
+@keyframes dropBob {
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-3px);}
+}
+.logo-text {
+  font-size:16px; font-weight:700; color:#fff;
+  text-shadow:0 0 20px rgba(126,200,227,0.4);
+  letter-spacing:0.3px;
+}
+
+/* Top-right icon group */
+.topbar-icons { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.topbar-icon-btn {
+  width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; color:rgba(255,255,255,0.7); font-size:15px; transition:background 0.15s;
+}
+.topbar-icon-btn:active { background:rgba(255,255,255,0.1); }
+#pointBadge {
+  display:flex; align-items:center; gap:4px;
+  background:linear-gradient(135deg,#1e3a5f,#2d6a9f);
+  border-radius:20px; padding:6px 11px; cursor:pointer;
+  box-shadow:0 2px 10px rgba(45,106,159,0.45);
+}
+#pointBadge .drop-icon { font-size:12px; color:#7ec8e3; }
+#pointBadge .pt-val { font-size:13px; font-weight:700; color:#fff; }
+
+/* ── CANVAS LAYERS ── */
+#canvasWrap { position:absolute; inset:0; overflow:hidden; background:#0d1b2a; }
+#bgImage {
+  position:absolute; inset:0; z-index:0;
+  /* overflow:hidden 제거 — 축소 시 이미지가 잘리는 원인.
+     최종 클리핑은 부모 #canvasWrap { overflow:hidden }이 담당 */
+  background:radial-gradient(ellipse at 35% 45%,#1a2d45 0%,#0d1b2e 55%,#060d16 100%);
+  transition:filter 0.3s;
+}
+/* 업로드된 배경 사진 — commitBackground()에서 직접 left/top/width/height 지정 */
+#bgImage img#bgPhoto {
+  position:absolute; display:none;
+  /* 초기값: commitBackground() 호출 시 덮어씌워짐 */
+  top:0; left:0; width:100%; height:100%;
+  object-fit:fill;              /* commitBackground에서 직접 크기 설정 — fill로 박스에 꽉 채움, 잘림 없음 */
+  transform:none;
+  transform-origin:center center;
+  pointer-events:none; user-select:none;
+  background:transparent;
+}
+#weatherCanvas  { position:absolute; inset:0; z-index:2; }
+#particleCanvas { position:absolute; inset:0; z-index:3; pointer-events:none; }
+#textLayerCanvas{ position:absolute; inset:0; z-index:5; pointer-events:none; }
+#drawCanvas     { position:absolute; inset:0; z-index:6; touch-action:none; background:transparent; }
+
+/* Canvas point badge — removed duplicate; only topbar badge is used */
+
+/* Text node DOM overlay */
+.text-node {
+  position:absolute; z-index:15; cursor:move; user-select:none;
+  padding:6px 10px; border-radius:6px;
+  word-break:break-word; text-align:center; line-height:1.35;
+  transition:outline 0.15s;
+  pointer-events:none; /* 터치/마우스 이벤트는 drawCanvas에서 처리 */
+}
+.text-node.selected {
+  outline:2px dashed rgba(126,200,227,0.85);
+  background:rgba(126,200,227,0.06);
+}
+/* Delete badge on selected text */
+.text-node.selected::after {
+  content:'✕';
+  position:absolute; top:-10px; right:-10px;
+  width:20px; height:20px; border-radius:50%;
+  background:rgba(220,50,50,0.85); color:#fff;
+  font-size:10px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  line-height:20px; text-align:center;
+  box-shadow:0 2px 6px rgba(0,0,0,0.4);
+  cursor:pointer;
+}
+
+/* ── CONTROL PANEL ── */
+#controlPanel {
+  position:absolute; left:0; right:0; bottom:0; z-index:50;
+  background:linear-gradient(to bottom,#0d1824,#0a1018);
+  border-radius:20px 20px 0 0;
+  border-top:1px solid rgba(100,180,255,0.15);
+  transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
+  max-height:75vh; overflow-y:auto;
+}
+#controlPanel.collapsed { transform:translateY(calc(100% - 56px)); }
+.panel-handle-row { display:flex; align-items:center; justify-content:space-between; padding:10px 16px 6px; cursor:pointer; }
+.panel-handle { width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:4px; margin:0 auto 4px; }
+.panel-toggle-row { display:flex; align-items:center; gap:8px; padding:0 16px 10px; cursor:pointer; }
+.panel-toggle-row .label { font-size:11px; font-weight:700; letter-spacing:1.5px; color:rgba(255,255,255,0.5); flex:1; }
+.panel-toggle-row .caret { color:rgba(255,255,255,0.4); font-size:14px; transition:transform 0.3s; }
+#controlPanel:not(.collapsed) .panel-toggle-row .caret { transform:rotate(180deg); }
+.panel-inner { padding:0 16px 16px; }
+.sec-title { font-size:11px; font-weight:700; letter-spacing:1.2px; color:rgba(100,180,255,0.7); margin:14px 0 8px; text-transform:uppercase; }
+
+/* Texture cards */
+.texture-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.tex-card { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; cursor:pointer; transition:all 0.2s; gap:4px; }
+.tex-card.active { background:rgba(100,180,255,0.12); border-color:rgba(100,180,255,0.5); box-shadow:0 0 12px rgba(100,180,255,0.2); }
+.tex-card .tex-icon { font-size:18px; }
+.tex-card .tex-name { font-size:11px; font-weight:600; color:rgba(255,255,255,0.85); }
+.tex-card .tex-sub  { font-size:9px; color:rgba(255,255,255,0.4); }
+
+/* Message row */
+.msg-row { display:flex; gap:8px; align-items:stretch; margin-top:4px; }
+.msg-input { flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 14px; color:#fff; font-size:13px; outline:none; resize:none; height:44px; font-family:inherit; }
+.msg-input::placeholder { color:rgba(255,255,255,0.3); font-size:12px; }
+.style-btn { background:rgba(100,180,255,0.12); border:1px solid rgba(100,180,255,0.3); border-radius:12px; padding:0 14px; color:#7ec8e3; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px; }
+.apply-btn { background:rgba(100,180,255,0.15); border:1px solid rgba(100,180,255,0.4); border-radius:12px; padding:0 14px; color:#7ec8e3; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:4px; height:44px; }
+
+/* Delete selected text button */
+#delTextBtn {
+  display:none; width:100%; margin-top:8px;
+  background:rgba(220,50,50,0.15); border:1px solid rgba(220,50,50,0.35);
+  border-radius:12px; padding:10px; color:#ff8080; font-size:12px; font-weight:600;
+  cursor:pointer; align-items:center; justify-content:center; gap:6px;
+}
+#delTextBtn.visible { display:flex; }
+
+/* Sliders */
+.slider-row { display:flex; flex-direction:column; gap:12px; margin-top:4px; }
+.slider-item { display:flex; flex-direction:column; gap:6px; }
+.slider-hdr { display:flex; justify-content:space-between; align-items:center; }
+.slider-hdr span { font-size:12px; color:rgba(255,255,255,0.7); }
+.slider-hdr .val { font-size:12px; font-weight:600; color:#7ec8e3; }
+input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:rgba(255,255,255,0.12); border-radius:4px; outline:none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:linear-gradient(135deg,#7ec8e3,#4a90d9); box-shadow:0 2px 8px rgba(78,144,217,0.5); cursor:pointer; }
+
+/* ── BOTTOM NAV ── */
+#bottomNav { position:absolute; left:0; right:0; bottom:0; z-index:51; padding:10px 12px 16px; background:linear-gradient(to bottom,#0a1018,#060c12); border-top:1px solid rgba(100,180,255,0.08); }
+.nav-btns { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.nav-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:10px 4px; border-radius:14px; cursor:pointer; border:1px solid rgba(100,180,255,0.2); background:rgba(255,255,255,0.04); transition:all 0.18s; }
+.nav-btn:active { transform:scale(0.94); background:rgba(100,180,255,0.1); }
+.nav-btn i { font-size:18px; color:#7ec8e3; }
+.nav-btn span { font-size:10px; color:rgba(255,255,255,0.7); font-weight:500; }
+.nav-btn.disabled { opacity:0.35; cursor:not-allowed; pointer-events:none; }
+#saveBtn.zero-point { border-color:rgba(255,80,80,0.4); background:rgba(255,40,40,0.06); }
+#saveBtn.zero-point i { color:#ff6b6b; }
+#saveBtn.zero-point span { color:#ff9999; }
+
+/* ── STYLE POPUP ── */
+#stylePopup {
+  position:fixed; left:0; right:0; bottom:0; z-index:600; max-width:430px; margin:0 auto;
+  background:#0e1d2e; border:1px solid rgba(100,180,255,0.22);
+  border-radius:20px 20px 0 0; padding:20px 16px 32px;
+  transform:translateY(100%); transition:transform 0.3s ease;
+  box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+}
+#stylePopup.open { transform:translateY(0); }
+.popup-title { font-size:13px; font-weight:700; color:rgba(255,255,255,0.85); margin-bottom:14px; display:flex; justify-content:space-between; }
+.popup-close { color:rgba(255,255,255,0.4); cursor:pointer; font-size:18px; }
+.font-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.font-chip { padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.05); color:#fff; transition:all 0.18s; }
+.font-chip.active { background:rgba(100,180,255,0.2); border-color:rgba(100,180,255,0.5); color:#7ec8e3; }
+.size-row { display:flex; gap:6px; margin-bottom:14px; }
+.size-chip { flex:1; text-align:center; padding:7px 0; border-radius:10px; font-size:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:#fff; transition:all 0.18s; }
+.size-chip.active { background:rgba(100,180,255,0.2); border-color:rgba(100,180,255,0.5); color:#7ec8e3; }
+.color-label { font-size:11px; color:rgba(255,255,255,0.5); margin-bottom:8px; letter-spacing:1px; text-transform:uppercase; }
+/* Color swatches – 10 colors in 2 rows */
+.color-swatches { display:flex; gap:8px; flex-wrap:wrap; }
+.color-swatch { width:28px; height:28px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:all 0.18s; flex-shrink:0; }
+.color-swatch.active { border-color:#fff; transform:scale(1.18); }
+/* Black swatch needs a visible border */
+.color-swatch[data-color="#000000"] { border-color:rgba(255,255,255,0.25); }
+.color-swatch[data-color="#000000"].active { border-color:#7ec8e3; }
+
+/* ── MODALS ── */
+.modal-backdrop { display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); align-items:center; justify-content:center; }
+.modal-backdrop.open { display:flex; }
+.modal-box { background:#0e1d2e; border:1px solid rgba(100,180,255,0.25); border-radius:24px; padding:28px 24px; width:calc(100% - 48px); max-width:360px; box-shadow:0 0 40px rgba(0,0,0,0.6),0 0 20px rgba(45,106,159,0.2); text-align:center; position:relative; }
+.modal-drop-icon { font-size:36px; margin-bottom:10px; }
+.modal-title { font-size:20px; font-weight:700; color:#fff; margin-bottom:8px; }
+.modal-sub { font-size:13px; color:rgba(255,255,255,0.55); margin-bottom:20px; line-height:1.6; }
+.modal-info-chips { display:flex; gap:10px; justify-content:center; margin-bottom:20px; }
+.info-chip { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:20px; padding:7px 14px; font-size:12px; color:rgba(255,255,255,0.8); }
+.info-chip strong { color:#7ec8e3; }
+.modal-divider { border:none; border-top:1px solid rgba(255,255,255,0.08); margin:0 0 18px; }
+.modal-status-card { background:rgba(0,0,0,0.25); border-radius:14px; padding:14px; margin-bottom:18px; text-align:left; }
+.status-title { font-size:13px; font-weight:700; color:#fff; margin-bottom:4px; }
+.status-sub   { font-size:12px; color:rgba(255,255,255,0.45); }
+.status-success { display:flex; align-items:center; gap:8px; }
+.status-success i { color:#4caf50; font-size:18px; }
+.status-success span { font-size:13px; color:#4caf50; font-weight:600; }
+.ad-progress-wrap { margin:8px 0 4px; }
+.ad-progress-bar { width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden; }
+.ad-progress-fill { height:100%; background:linear-gradient(90deg,#4a90d9,#7ec8e3); border-radius:6px; transition:width 0.1s linear; }
+.ad-time { font-size:12px; color:rgba(255,255,255,0.4); margin-top:6px; text-align:center; }
+.modal-btns { display:flex; gap:10px; }
+.modal-btn { flex:1; padding:13px; border-radius:14px; font-size:14px; font-weight:600; cursor:pointer; border:none; transition:all 0.18s; }
+.modal-btn.cancel  { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.7); }
+.modal-btn.primary { background:linear-gradient(135deg,#2d6a9f,#4a90d9); color:#fff; }
+.modal-btn.success { background:linear-gradient(135deg,#2e7d32,#4caf50); color:#fff; }
+.modal-btn.watching{ background:rgba(100,180,255,0.1); color:rgba(255,255,255,0.35); cursor:not-allowed; }
+.modal-btn:active:not(.watching) { transform:scale(0.97); }
+
+.ad-prompt-banner {
+  background:linear-gradient(135deg,rgba(45,106,159,0.25),rgba(74,144,217,0.15));
+  border:1px solid rgba(100,180,255,0.3); border-radius:16px;
+  padding:18px 16px; margin-bottom:20px; text-align:center;
+}
+.ad-prompt-banner .banner-icon { font-size:40px; margin-bottom:8px; display:block; }
+.ad-prompt-banner h3 { font-size:16px; font-weight:700; color:#fff; margin-bottom:6px; }
+.ad-prompt-banner p  { font-size:12px; color:rgba(255,255,255,0.55); line-height:1.6; margin-bottom:12px; }
+.ad-prompt-banner .earn-chips { display:flex; gap:8px; justify-content:center; }
+.earn-chip { background:rgba(100,180,255,0.15); border:1px solid rgba(100,180,255,0.3); border-radius:20px; padding:5px 12px; font-size:11px; color:#7ec8e3; font-weight:600; }
+
+/* ── PHOTO SHEET ── */
+#photoBackdrop { display:none; position:fixed; inset:0; z-index:399; background:rgba(0,0,0,0.55); backdrop-filter:blur(3px); }
+#photoBackdrop.open { display:block; }
+#styleBackdrop { display:none; position:fixed; inset:0; z-index:595; background:rgba(0,0,0,0.45); }
+#styleBackdrop.open { display:block; }
+#fileGallery { display:none; }
+#photoSheet {
+  position:fixed; left:50%; bottom:0; z-index:400; width:100%; max-width:430px;
+  transform:translateX(-50%) translateY(100%);
+  background:#0e1d2e; border-radius:24px 24px 0 0;
+  border-top:1px solid rgba(100,180,255,0.2); padding:12px 16px 32px;
+  transition:transform 0.3s ease; box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+}
+#photoSheet.open { transform:translateX(-50%) translateY(0); }
+.sheet-handle { width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:4px; margin:0 auto 16px; }
+.sheet-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.sheet-header h3 { font-size:15px; font-weight:700; color:#fff; }
+.sheet-close { width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; cursor:pointer; color:rgba(255,255,255,0.6); }
+.sheet-option { display:flex; align-items:center; gap:14px; padding:14px; border-radius:14px; cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); margin-bottom:10px; transition:all 0.18s; }
+.sheet-option:active { background:rgba(100,180,255,0.1); border-color:rgba(100,180,255,0.3); }
+.sheet-opt-icon { width:44px; height:44px; border-radius:12px; background:rgba(100,180,255,0.1); border:1px solid rgba(100,180,255,0.2); display:flex; align-items:center; justify-content:center; font-size:20px; color:#7ec8e3; flex-shrink:0; }
+.sheet-opt-text h4 { font-size:14px; font-weight:600; color:#fff; margin-bottom:3px; }
+.sheet-opt-text p  { font-size:12px; color:rgba(255,255,255,0.45); }
+
+/* ── IN-APP CAMERA ── */
+#cameraBg { display:none; position:fixed; inset:0; z-index:699; background:#000; }
+#cameraBg.open { display:block; }
+#cameraScreen {
+  display:none; position:fixed; inset:0; z-index:700;
+  background:#000; flex-direction:column; align-items:center; justify-content:center;
+  max-width:430px; left:50%; transform:translateX(-50%);
+}
+#cameraScreen.open { display:flex; }
+#camVideo { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; background:#000; }
+#cameraScreen.front #camVideo { transform:scaleX(-1); }
+#camOverlay { position:absolute; inset:0; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; }
+#camTopBar { display:flex; justify-content:space-between; align-items:center; padding-top:calc(env(safe-area-inset-top,0px) + 14px); padding-left:16px; padding-right:16px; padding-bottom:14px; pointer-events:all; background:linear-gradient(to bottom,rgba(0,0,0,0.6),transparent); }
+.cam-top-btn { width:42px; height:42px; border-radius:50%; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; font-size:16px; backdrop-filter:blur(4px); transition:all 0.18s; }
+.cam-top-btn:active { background:rgba(255,255,255,0.2); transform:scale(0.93); }
+#camTitle { font-size:15px; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.6); }
+#camViewfinder,#camVF2 { position:absolute; inset:0; pointer-events:none; }
+#camViewfinder::before,#camViewfinder::after,#camVF2::before,#camVF2::after { content:''; position:absolute; width:26px; height:26px; border-color:rgba(255,255,255,0.75); border-style:solid; }
+#camViewfinder::before { top:18%; left:10%; border-width:2.5px 0 0 2.5px; border-radius:3px 0 0 0; }
+#camViewfinder::after  { top:18%; right:10%; border-width:2.5px 2.5px 0 0; border-radius:0 3px 0 0; }
+#camVF2::before { bottom:28%; left:10%; border-width:0 0 2.5px 2.5px; border-radius:0 0 0 3px; }
+#camVF2::after  { bottom:28%; right:10%; border-width:0 2.5px 2.5px 0; border-radius:0 0 3px 0; }
+#camBottomBar { display:flex; justify-content:space-around; align-items:center; padding:24px 20px calc(env(safe-area-inset-bottom,20px) + 20px); pointer-events:all; background:linear-gradient(to top,rgba(0,0,0,0.75),transparent); }
+#shutterBtn { width:74px; height:74px; border-radius:50%; background:rgba(255,255,255,0.92); border:4px solid rgba(255,255,255,0.5); box-shadow:0 0 0 3px rgba(255,255,255,0.25),0 4px 20px rgba(0,0,0,0.5); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
+#shutterBtn:active { transform:scale(0.88); background:rgba(200,200,200,0.9); }
+#shutterBtn::after { content:''; width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,0.95); display:block; }
+.cam-side-btn { width:50px; height:50px; border-radius:50%; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.25); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; color:#fff; font-size:17px; gap:3px; backdrop-filter:blur(4px); transition:all 0.18s; }
+.cam-side-btn:active { background:rgba(255,255,255,0.2); transform:scale(0.92); }
+.cam-side-btn span { font-size:9px; color:rgba(255,255,255,0.8); font-weight:600; }
+#camFlash { position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity 0.05s; }
+#camFlash.flash { opacity:1; }
+#camPreview { display:none; position:fixed; inset:0; z-index:710; background:#000; flex-direction:column; max-width:430px; left:50%; transform:translateX(-50%); }
+#camPreview.open { display:flex; }
+#previewImg { flex:1; width:100%; object-fit:cover; }
+#previewBar { display:flex; gap:12px; padding:16px 20px calc(env(safe-area-inset-bottom,20px) + 20px); background:rgba(0,0,0,0.88); }
+.preview-btn { flex:1; padding:14px; border-radius:16px; border:none; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.18s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.preview-btn:active { transform:scale(0.96); }
+.preview-btn.retake { background:rgba(255,255,255,0.12); color:#fff; }
+.preview-btn.use    { background:linear-gradient(135deg,#2d6a9f,#4a90d9); color:#fff; }
+
+/* ── GALLERY VIEWER ── */
+#galleryModal { display:none; position:fixed; inset:0; z-index:800; background:#000; flex-direction:column; max-width:430px; left:50%; transform:translateX(-50%); }
+#galleryModal.open { display:flex; }
+#galleryTopBar { display:flex; align-items:center; padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); gap:12px; }
+#galleryTopBar h3 { flex:1; font-size:16px; font-weight:700; color:#fff; }
+.gal-top-btn { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#7ec8e3; font-size:15px; background:rgba(255,255,255,0.07); border:1px solid rgba(100,180,255,0.2); }
+#galleryGrid { flex:1; overflow-y:auto; padding:12px; display:grid; grid-template-columns:repeat(3,1fr); gap:3px; }
+.gal-item { aspect-ratio:1; border-radius:4px; overflow:hidden; cursor:pointer; position:relative; }
+.gal-item img { width:100%; height:100%; object-fit:cover; }
+.gal-item .gal-del { position:absolute; top:4px; right:4px; width:22px; height:22px; border-radius:50%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; cursor:pointer; }
+#galleryEmpty { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; color:rgba(255,255,255,0.35); gap:10px; }
+#galleryEmpty i { font-size:48px; opacity:0.3; }
+#galleryEmpty p { font-size:14px; }
+
+/* ── BG ADJUST MODAL ── */
+#bgAdjustModal {
+  position:absolute; inset:0; z-index:200;
+  display:none; flex-direction:column;
+  background:#000;
+}
+#bgAdjustModal.open { display:flex; }
+#bgAdjustTopBar {
+  position:absolute; top:0; left:0; right:0; z-index:10;
+  height:54px; background:rgba(6,13,22,0.88); backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(100,180,255,0.12);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 14px; gap:8px; flex-shrink:0;
+}
+#bgAdjustTopBar .adj-title {
+  font-size:15px; font-weight:600; color:#e8f4ff; flex:1; text-align:center;
+}
+.adj-top-btn {
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  display:flex; align-items:center; justify-content:center;
+  color:#e8f4ff; font-size:14px; cursor:pointer; flex-shrink:0;
+}
+.adj-top-btn:active { background:rgba(255,255,255,0.18); }
+/* 이미지 뷰포트 */
+#bgAdjustViewport {
+  flex:1; overflow:hidden; position:relative;
+  touch-action:none; cursor:grab; background:#111;
+  margin-top:54px; margin-bottom:112px;
+}
+#bgAdjustViewport:active { cursor:grabbing; }
+#bgAdjustImg {
+  /* left/top으로 위치 직접 제어 — transform 미사용 */
+  position:absolute; transform:none;
+  user-select:none; pointer-events:none;
+  will-change:left, top, width, height;
+}
+/* 격자 가이드 오버레이 */
+#bgAdjustGrid {
+  position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(126,200,227,0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(126,200,227,0.12) 1px, transparent 1px);
+  background-size:33.33% 33.33%;
+  opacity:0;
+  transition:opacity 0.3s;
+}
+#bgAdjustGrid.show { opacity:1; }
+/* 중앙 크로스헤어 */
+#bgAdjustCross {
+  position:absolute; inset:0; pointer-events:none;
+  display:flex; align-items:center; justify-content:center;
+}
+#bgAdjustCross::before, #bgAdjustCross::after {
+  content:''; position:absolute; background:rgba(126,200,227,0.35);
+}
+#bgAdjustCross::before { width:1px; height:40%; }
+#bgAdjustCross::after  { width:40%; height:1px; }
+/* 하단 컨트롤 바 */
+#bgAdjustBottomBar {
+  position:absolute; bottom:0; left:0; right:0;
+  background:rgba(6,13,22,0.92); backdrop-filter:blur(16px);
+  border-top:1px solid rgba(100,180,255,0.12);
+  padding:12px 16px 20px; display:flex; flex-direction:column; gap:10px;
+}
+.adj-slider-row {
+  display:flex; align-items:center; gap:10px;
+}
+.adj-slider-label {
+  font-size:11px; color:rgba(160,210,240,0.75); width:44px; flex-shrink:0; text-align:right;
+}
+.adj-slider-val {
+  font-size:11px; color:#7ec8e3; width:40px; flex-shrink:0; text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+.adj-slider {
+  flex:1; -webkit-appearance:none; appearance:none;
+  height:4px; border-radius:2px; outline:none;
+  background:linear-gradient(90deg,#2a6fa8 var(--pct,50%),rgba(255,255,255,0.12) var(--pct,50%));
+  cursor:pointer;
+}
+.adj-slider::-webkit-slider-thumb {
+  -webkit-appearance:none; width:18px; height:18px;
+  border-radius:50%; background:#7ec8e3;
+  border:2px solid #fff; box-shadow:0 1px 6px rgba(0,0,0,0.4);
+}
+.adj-btn-row {
+  display:flex; gap:8px; margin-top:2px;
+}
+.adj-btn {
+  flex:1; padding:11px 0; border-radius:10px; border:none;
+  font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.adj-btn.cancel {
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12); color:#c0d8f0;
+}
+.adj-btn.confirm {
+  background:linear-gradient(135deg,#1a6fa8,#2a9fd6); color:#fff;
+  box-shadow:0 3px 12px rgba(26,111,168,0.35);
+}
+.adj-btn:active { filter:brightness(0.88); }
+/* 줌 리셋 버튼 */
+#adjResetBtn {
+  position:absolute; right:12px; top:50%;
+  transform:translateY(-50%);
+  width:34px; height:34px; border-radius:10px;
+  background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.14);
+  color:#c0d8f0; font-size:13px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  z-index:11;
+}
+
+/* ── CROP / SAVE MODAL ── */
+#saveModal .modal-box {
+  max-width:400px; width:calc(100% - 32px);
+  padding:16px 14px 18px;
+  max-height:92vh; overflow-y:auto;
+}
+
+/* ── 저장 타입 탭 (이미지 / 영상) ── */
+.save-type-tabs {
+  display:flex; gap:6px; margin-bottom:12px;
+  background:rgba(0,0,0,0.25); border-radius:12px; padding:4px;
+}
+.save-type-tab {
+  flex:1; padding:9px 6px; border-radius:9px; text-align:center;
+  font-size:12px; font-weight:700; cursor:pointer;
+  border:none; background:transparent; color:rgba(255,255,255,0.45);
+  transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:5px;
+}
+.save-type-tab.active {
+  background:linear-gradient(135deg,#1a6fa8,#2a9fd6);
+  color:#fff; box-shadow:0 2px 10px rgba(26,111,168,0.4);
+}
+.save-type-tab i { font-size:13px; }
+
+/* ── 영상 설정 패널 ── */
+#videoSettingsPanel {
+  background:rgba(0,0,0,0.2); border:1px solid rgba(100,180,255,0.12);
+  border-radius:12px; padding:12px 14px; margin-bottom:10px; display:none;
+}
+#videoSettingsPanel.show { display:block; }
+.vid-setting-row {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px; gap:8px;
+}
+.vid-setting-row:last-child { margin-bottom:0; }
+.vid-setting-label { font-size:11px; color:rgba(160,210,240,0.8); flex-shrink:0; }
+.vid-dur-chips { display:flex; gap:5px; }
+.vid-dur-chip {
+  padding:5px 10px; border-radius:16px; font-size:11px; font-weight:600;
+  cursor:pointer; border:1px solid rgba(100,180,255,0.25);
+  background:rgba(100,180,255,0.06); color:rgba(255,255,255,0.6);
+  transition:all 0.18s; white-space:nowrap;
+}
+.vid-dur-chip.active {
+  background:rgba(100,180,255,0.2); border-color:#7ec8e3; color:#7ec8e3;
+}
+
+/* 영상 녹화 진행 표시 */
+#videoRecordBar {
+  display:none; margin-bottom:10px;
+  background:rgba(0,0,0,0.2); border-radius:10px; padding:10px 12px;
+  border:1px solid rgba(255,80,80,0.25);
+}
+#videoRecordBar.show { display:block; }
+.vrec-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
+.vrec-dot {
+  width:8px; height:8px; border-radius:50%; background:#ff4444;
+  animation:vrec-blink 1s infinite; flex-shrink:0;
+}
+@keyframes vrec-blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+.vrec-label { font-size:12px; color:rgba(255,180,180,0.9); font-weight:600; flex:1; margin-left:8px; }
+.vrec-time  { font-size:12px; color:#ff8888; font-weight:700; font-variant-numeric:tabular-nums; }
+.vrec-progress { width:100%; height:4px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; }
+.vrec-fill { height:100%; background:linear-gradient(90deg,#ff4444,#ff8888); border-radius:4px; transition:width 0.1s linear; }
+
+#cropContainer {
+  position:relative; width:100%; overflow:hidden;
+  border-radius:10px; border:1px solid rgba(100,180,255,0.2);
+  background:#000; margin:0 auto 10px auto; touch-action:none;
+  cursor:crosshair; display:block;
+  /* height는 JS에서 이미지 비율에 맞게 직접 설정 → 싱크 완벽 보장 */
+}
+/* 이미지를 컨테이너에 꽉 채움 — object-fit:none, 좌표 1:1 대응 */
+#cropSourceImg { display:block; width:100%; height:100%; object-fit:fill; pointer-events:none; user-select:none; }
+#cropOverlay {
+  position:absolute; inset:0; pointer-events:none;
+}
+.crop-mask { position:absolute; background:rgba(0,0,0,0.55); }
+#cropBox {
+  position:absolute; border:2px solid #7ec8e3;
+  box-shadow:0 0 0 9999px rgba(0,0,0,0.55);
+  cursor:move; box-sizing:border-box;
+}
+.crop-handle {
+  position:absolute; width:18px; height:18px;
+  background:#7ec8e3; border-radius:3px; z-index:10;
+}
+.crop-handle.tl { top:-2px; left:-2px; cursor:nwse-resize; }
+.crop-handle.tr { top:-2px; right:-2px; cursor:nesw-resize; }
+.crop-handle.bl { bottom:-2px; left:-2px; cursor:nesw-resize; }
+.crop-handle.br { bottom:-2px; right:-2px; cursor:nwse-resize; }
+#cropBox::before, #cropBox::after {
+  content:''; position:absolute; background:rgba(255,255,255,0.35);
+}
+#cropBox::before { left:33.3%; width:1px; top:0; bottom:0; box-shadow: 16px 0 rgba(255,255,255,0.35); }
+#cropBox::after  { top:33.3%; height:1px; left:0; right:0; box-shadow: 0 16px rgba(255,255,255,0.35); }
+
+/* 비율 선택 칩 */
+.ratio-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; width:100%; }
+.ratio-chip {
+  padding:5px 11px; border-radius:20px; font-size:11px; font-weight:600;
+  cursor:pointer; border:1px solid rgba(100,180,255,0.3);
+  background:rgba(100,180,255,0.07); color:rgba(255,255,255,0.7);
+  transition:all 0.18s; white-space:nowrap;
+}
+.ratio-chip.active { background:rgba(100,180,255,0.22); border-color:#7ec8e3; color:#7ec8e3; }
+.ratio-chip:active { transform:scale(0.93); }
+
+/* 크롭 정보 */
+#cropInfo { font-size:11px; color:rgba(255,255,255,0.4); text-align:center; margin-bottom:10px; }
+
+/* ── TOAST ── */
+#toast { position:fixed; bottom:130px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(14,29,46,0.95); border:1px solid rgba(100,180,255,0.25); color:#fff; padding:10px 20px; border-radius:20px; font-size:13px; opacity:0; transition:all 0.3s; z-index:999; white-space:nowrap; pointer-events:none; max-width:85vw; text-align:center; }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── PWA 설치 배너 ── */
+#pwaInstallBanner {
+  display:none; position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:430px; z-index:1000;
+  background:linear-gradient(to top,#0a1018,#0d1824);
+  border-top:1px solid rgba(100,180,255,0.25);
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
+  box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+  animation: slideUp 0.4s ease;
+}
+#pwaInstallBanner.show { display:flex; align-items:center; gap:12px; }
+@keyframes slideUp { from{transform:translateX(-50%) translateY(100%);} to{transform:translateX(-50%) translateY(0);} }
+.pwa-banner-icon { font-size:32px; flex-shrink:0; filter:drop-shadow(0 0 8px rgba(126,200,227,0.5)); }
+.pwa-banner-text { flex:1; }
+.pwa-banner-text p { font-size:13px; font-weight:700; color:#fff; margin-bottom:2px; }
+.pwa-banner-text span { font-size:11px; color:rgba(255,255,255,0.5); }
+.pwa-install-btn {
+  padding:9px 16px; border-radius:12px; border:none;
+  background:linear-gradient(135deg,#2d6a9f,#4a90d9); color:#fff;
+  font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;
+}
+.pwa-dismiss-btn {
+  width:28px; height:28px; border-radius:50%; border:1px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.5);
+  font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+/* ── safe-area 패딩 (노치 대응) ── */
+#topbar { padding-top: max(0px, env(safe-area-inset-top, 0px)); height: calc(58px + env(safe-area-inset-top, 0px)); }
+#bottomNav { padding-bottom: max(16px, calc(10px + env(safe-area-inset-bottom, 0px))); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Canvas layers -->
+  <div id="canvasWrap">
+    <div id="bgImage"><img id="bgPhoto" src="" alt=""></div>
+    <canvas id="weatherCanvas"></canvas>
+    <canvas id="particleCanvas"></canvas>
+    <canvas id="textLayerCanvas"></canvas>
+    <canvas id="drawCanvas"></canvas>
+  </div>
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="back-btn" onclick="handleBackBtn()" title="컨트롤 패널 열기/닫기"><i class="fas fa-chevron-left"></i></div>
+    <div class="logo-area">
+      <span class="logo-drop">💧</span>
+      <span class="logo-text">Rainy Note</span>
+    </div>
+    <div class="topbar-icons">
+      <div class="topbar-icon-btn" onclick="openGalleryModal()" title="저장된 이미지">
+        <i class="fas fa-magnifying-glass"></i>
+      </div>
+      <a class="topbar-icon-btn" href="download.html" title="VS Code용 ZIP 다운로드" style="text-decoration:none;color:inherit;">
+        <i class="fas fa-download"></i>
+      </a>
+      <div id="pointBadge" onclick="showAdModal()">
+        <i class="fas fa-droplet drop-icon"></i>
+        <span class="pt-val" id="topPtVal">5P</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROL PANEL -->
+  <div id="controlPanel" class="collapsed">
+    <div class="panel-handle-row" onclick="togglePanel()"><div class="panel-handle"></div></div>
+    <div class="panel-toggle-row" onclick="togglePanel()">
+      <i class="fas fa-sliders" style="color:rgba(100,180,255,0.6);font-size:13px;"></i>
+      <span class="label">CONTROLS</span>
+      <i class="fas fa-chevron-up caret"></i>
+    </div>
+    <div class="panel-inner">
+      <div class="sec-title">Window Texture</div>
+      <div class="texture-grid">
+        <div class="tex-card active" onclick="setTexture('rainy',this)"><span class="tex-icon">🌧️</span><span class="tex-name">Rainy</span><span class="tex-sub">Streaks</span></div>
+        <div class="tex-card" onclick="setTexture('frosty',this)"><span class="tex-icon">❄️</span><span class="tex-name">Frosty</span><span class="tex-sub">Ice</span></div>
+        <div class="tex-card" onclick="setTexture('foggy',this)"><span class="tex-icon">🌫️</span><span class="tex-name">Foggy</span><span class="tex-sub">Mist</span></div>
+        <div class="tex-card" onclick="setTexture('droplets',this)"><span class="tex-icon">💧</span><span class="tex-name">Droplets</span><span class="tex-sub">Beads</span></div>
+      </div>
+      <div class="sec-title">Message</div>
+      <div class="msg-row">
+        <textarea class="msg-input" id="msgInput" placeholder="유리창에 메시지를 써보세요..."></textarea>
+        <button class="style-btn" onclick="toggleStylePopup()"><i class="fas fa-palette"></i> Style</button>
+        <button class="apply-btn" onclick="applyText()"><i class="fas fa-check"></i></button>
+      </div>
+      <button id="delTextBtn" onclick="deleteSelectedNode()">
+        <i class="fas fa-trash-can"></i> 선택한 텍스트 삭제
+      </button>
+      <div class="sec-title">Adjust</div>
+      <div class="slider-row">
+        <div class="slider-item">
+          <div class="slider-hdr"><span>Brush Size</span><span class="val" id="brushVal">8px</span></div>
+          <input type="range" id="brushSlider" min="1" max="15" value="8" oninput="updateBrush(this.value)">
+        </div>
+        <div class="slider-item">
+          <div class="slider-hdr"><span>Density</span><span class="val" id="densityVal">60%</span></div>
+          <input type="range" id="densitySlider" min="0" max="100" value="60" oninput="updateDensity(this.value)">
+        </div>
+        <div class="slider-item">
+          <div class="slider-hdr"><span>Background Blur</span><span class="val" id="blurVal">0px</span></div>
+          <input type="range" id="blurSlider" min="0" max="20" value="0" oninput="updateBgBlur(this.value)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div id="bottomNav">
+    <div class="nav-btns">
+      <div class="nav-btn" onclick="openPhotoSheet()"><i class="fas fa-camera"></i><span>Photo</span></div>
+      <div class="nav-btn" onclick="undoStroke()"><i class="fas fa-rotate-left" style="font-size:16px"></i><span>Clea</span></div>
+      <div class="nav-btn" onclick="resetGlass()"><i class="fas fa-arrows-rotate"></i><span>Reset</span></div>
+      <div class="nav-btn" id="saveBtn" onclick="saveImage()"><i class="fas fa-download"></i><span>Save</span></div>
+    </div>
+  </div>
+
+  <!-- STYLE POPUP -->
+  <div id="stylePopup">
+    <div class="popup-title"><span>Text Style</span><span class="popup-close" onclick="closeStylePopup()">✕</span></div>
+    <div class="font-chips">
+      <div class="font-chip active" data-font="sans-serif" onclick="setFont(this)">Sans</div>
+      <div class="font-chip" data-font="serif" onclick="setFont(this)">Serif</div>
+      <div class="font-chip" data-font="monospace" onclick="setFont(this)">Mono</div>
+      <div class="font-chip" data-font="cursive" onclick="setFont(this)">Cursive</div>
+      <div class="font-chip" data-font="'Comic Sans MS',cursive" onclick="setFont(this)">Rounded</div>
+    </div>
+    <div class="slider-item" style="margin-bottom:14px;">
+      <div class="slider-hdr"><span style="font-size:12px;color:rgba(255,255,255,0.7);">Size</span><span class="val" id="textSizeVal">24px</span></div>
+      <input type="range" id="textSizeSlider" min="12" max="64" value="24" oninput="updateTextSize(this.value)">
+    </div>
+    <div class="size-row">
+      <div class="size-chip" onclick="setTextSizePreset(14)">14</div>
+      <div class="size-chip" onclick="setTextSizePreset(20)">20</div>
+      <div class="size-chip active" onclick="setTextSizePreset(24)">24</div>
+      <div class="size-chip" onclick="setTextSizePreset(36)">36</div>
+      <div class="size-chip" onclick="setTextSizePreset(48)">48</div>
+      <div class="size-chip" onclick="setTextSizePreset(64)">64</div>
+    </div>
+    <div class="color-label" style="margin-top:14px;">Color — 밝은 계열</div>
+    <div class="color-swatches" style="margin-bottom:10px;">
+      <!-- 밝은 계열 10가지 -->
+      <div class="color-swatch active" style="background:#ffffff" data-color="#ffffff" onclick="setTextColor(this)" title="흰색"></div>
+      <div class="color-swatch" style="background:#aee4f5" data-color="#aee4f5" onclick="setTextColor(this)" title="파스텔 블루"></div>
+      <div class="color-swatch" style="background:#ffe4a0" data-color="#ffe4a0" onclick="setTextColor(this)" title="파스텔 옐로우"></div>
+      <div class="color-swatch" style="background:#ffb3c8" data-color="#ffb3c8" onclick="setTextColor(this)" title="파스텔 핑크"></div>
+      <div class="color-swatch" style="background:#b5f0d0" data-color="#b5f0d0" onclick="setTextColor(this)" title="파스텔 민트"></div>
+      <div class="color-swatch" style="background:#e8d5ff" data-color="#e8d5ff" onclick="setTextColor(this)" title="라벤더"></div>
+      <div class="color-swatch" style="background:#ffd6b0" data-color="#ffd6b0" onclick="setTextColor(this)" title="피치"></div>
+      <div class="color-swatch" style="background:#c8f5ff" data-color="#c8f5ff" onclick="setTextColor(this)" title="아이스 블루"></div>
+      <div class="color-swatch" style="background:#fffacd" data-color="#fffacd" onclick="setTextColor(this)" title="레몬"></div>
+      <div class="color-swatch" style="background:#ffc8e8" data-color="#ffc8e8" onclick="setTextColor(this)" title="로즈 핑크"></div>
+    </div>
+    <div class="color-label">Color — 어두운 계열</div>
+    <div class="color-swatches">
+      <!-- 어두운 계열 10가지 -->
+      <div class="color-swatch" style="background:#000000" data-color="#000000" onclick="setTextColor(this)" title="검정"></div>
+      <div class="color-swatch" style="background:#5c1fa8" data-color="#5c1fa8" onclick="setTextColor(this)" title="진보라"></div>
+      <div class="color-swatch" style="background:#c0152a" data-color="#c0152a" onclick="setTextColor(this)" title="진빨강"></div>
+      <div class="color-swatch" style="background:#0a3fa8" data-color="#0a3fa8" onclick="setTextColor(this)" title="진파랑"></div>
+      <div class="color-swatch" style="background:#0a6632" data-color="#0a6632" onclick="setTextColor(this)" title="진녹색"></div>
+      <div class="color-swatch" style="background:#7a3800" data-color="#7a3800" onclick="setTextColor(this)" title="진갈색"></div>
+      <div class="color-swatch" style="background:#1a4a3a" data-color="#1a4a3a" onclick="setTextColor(this)" title="다크 틸"></div>
+      <div class="color-swatch" style="background:#3d1a6e" data-color="#3d1a6e" onclick="setTextColor(this)" title="다크 인디고"></div>
+      <div class="color-swatch" style="background:#6b1a1a" data-color="#6b1a1a" onclick="setTextColor(this)" title="다크 버건디"></div>
+      <div class="color-swatch" style="background:#1a3a5c" data-color="#1a3a5c" onclick="setTextColor(this)" title="딥 네이비"></div>
+    </div>
+  </div>
+  <div id="styleBackdrop" onclick="closeStylePopup()"></div>
+
+  <!-- PHOTO BACKDROP & SHEET -->
+  <div id="photoBackdrop" onclick="closePhotoSheet()"></div>
+  <div id="photoSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><h3>사진 소스 선택</h3><div class="sheet-close" onclick="closePhotoSheet()">✕</div></div>
+    <div class="sheet-option" onclick="triggerCamera()">
+      <div class="sheet-opt-icon"><i class="fas fa-camera"></i></div>
+      <div class="sheet-opt-text"><h4>카메라로 촬영</h4><p>실시간 카메라로 촬영하여 유리창 배경으로 사용</p></div>
+    </div>
+    <div class="sheet-option" onclick="triggerGallery()">
+      <div class="sheet-opt-icon"><i class="fas fa-images"></i></div>
+      <div class="sheet-opt-text"><h4>갤러리에서 선택</h4><p>기기에서 사진을 선택하여 배경으로 사용</p></div>
+    </div>
+  </div>
+
+  <!-- Hidden inputs -->
+  <input type="file" id="fileGallery" accept="image/*" onchange="handlePhotoUpload(event)">
+  <canvas id="snapCanvas" style="display:none;"></canvas>
+
+  <!-- BG ADJUST MODAL -->
+  <div id="bgAdjustModal">
+    <!-- 상단 바 -->
+    <div id="bgAdjustTopBar">
+      <div class="adj-top-btn" onclick="closeBgAdjust(false)" title="취소">✕</div>
+      <span class="adj-title">배경 위치 · 크기 조절</span>
+      <div class="adj-top-btn" id="adjGridBtn" onclick="toggleAdjGrid()" title="격자 보기">⊞</div>
+    </div>
+    <!-- 이미지 뷰포트 (드래그·핀치) -->
+    <div id="bgAdjustViewport">
+      <img id="bgAdjustImg" src="" alt="bg" draggable="false">
+      <div id="bgAdjustGrid"></div>
+      <div id="bgAdjustCross"></div>
+    </div>
+    <!-- 줌 리셋 -->
+    <button id="adjResetBtn" onclick="adjReset()" title="원본 크기로">⟳</button>
+    <!-- 하단 컨트롤 -->
+    <div id="bgAdjustBottomBar">
+      <div class="adj-slider-row">
+        <span class="adj-slider-label">크기</span>
+        <input type="range" class="adj-slider" id="adjScaleSlider"
+               min="5" max="300" value="100"
+               oninput="onAdjScaleSlider(this.value)">
+        <span class="adj-slider-val" id="adjScaleVal">100%</span>
+      </div>
+      <div class="adj-btn-row">
+        <button class="adj-btn cancel" onclick="closeBgAdjust(false)">
+          <span>✕</span> 취소
+        </button>
+        <button class="adj-btn confirm" onclick="closeBgAdjust(true)">
+          <span>✓</span> 적용
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IN-APP CAMERA -->
+  <div id="cameraBg"></div>
+  <div id="cameraScreen">
+    <video id="camVideo" autoplay playsinline muted></video>
+    <div id="camFlash"></div>
+    <div id="camViewfinder"></div>
+    <div id="camVF2"></div>
+    <div id="camOverlay">
+      <div id="camTopBar">
+        <div class="cam-top-btn" onclick="closeCamera()"><i class="fas fa-xmark"></i></div>
+        <div id="camTitle">카메라</div>
+        <div class="cam-top-btn" onclick="switchCamera()"><i class="fas fa-camera-rotate"></i></div>
+      </div>
+      <div id="camBottomBar">
+        <div class="cam-side-btn" onclick="openGalleryFromCamera()"><i class="fas fa-images"></i><span>Gallery</span></div>
+        <div id="shutterBtn" onclick="capturePhoto()"></div>
+        <div class="cam-side-btn" onclick="toggleFlash()"><i class="fas fa-bolt" id="flashIcon"></i><span id="flashLabel">Flash</span></div>
+      </div>
+    </div>
+  </div>
+  <div id="camPreview">
+    <img id="previewImg" src="" alt="preview">
+    <div id="previewBar">
+      <button class="preview-btn retake" onclick="retakePhoto()"><i class="fas fa-rotate-left"></i> Retake</button>
+      <button class="preview-btn use" onclick="usePhoto()"><i class="fas fa-check"></i> Use Photo</button>
+    </div>
+  </div>
+
+  <!-- GALLERY MODAL -->
+  <div id="galleryModal">
+    <div id="galleryTopBar">
+      <div class="gal-top-btn" onclick="closeGalleryModal()" title="닫기"><i class="fas fa-chevron-left"></i></div>
+      <h3>💧 Rainy Note 저장소</h3>
+      <div class="gal-top-btn" onclick="refreshGallery()" title="새로고침"><i class="fas fa-rotate-right"></i></div>
+    </div>
+    <div id="galleryGrid"></div>
+    <div id="galleryEmpty" style="display:none;">
+      <i class="fas fa-images"></i>
+      <p>저장된 이미지가 없습니다.</p>
+    </div>
+  </div>
+
+  <!-- AD MODAL 1: Zero-point prompt -->
+  <div class="modal-backdrop" id="adModal1">
+    <div class="modal-box">
+      <div class="ad-prompt-banner">
+        <span class="banner-icon">🌧️</span>
+        <h3>빗방울이 모두 떨어졌어요</h3>
+        <p>광고를 시청하면 <strong style="color:#7ec8e3;">+3 빗방울</strong>을 받을 수 있어요.<br>하루 최대 3번까지 충전 가능해요.</p>
+        <div class="earn-chips">
+          <div class="earn-chip">💧 잔여: <span id="balanceTxt">0P</span></div>
+          <div class="earn-chip">📺 남은 횟수: <span id="adsLeftChip">3</span>/3</div>
+        </div>
+      </div>
+      <hr class="modal-divider">
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeAdModal1()">닫기</button>
+        <button class="modal-btn primary" id="watchAdBtn" onclick="startWatchingAd()">
+          <i class="fas fa-play" style="font-size:12px;margin-right:4px;"></i> 광고 보기 (+3P)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AD MODAL 2: Watching -->
+  <div class="modal-backdrop" id="adModal2">
+    <div class="modal-box">
+      <div class="modal-drop-icon">🌧️</div>
+      <div class="modal-title">잠깐만요, 비가 지나갑니다...</div>
+      <div class="modal-sub">광고가 끝나면 빗방울을 받을 수 있어요!</div>
+      <div class="modal-status-card">
+        <div class="status-title">Rainy Note Premium</div>
+        <div class="status-sub">Sponsored · 광고 시청 중</div>
+        <div class="ad-progress-wrap">
+          <div class="ad-progress-bar"><div class="ad-progress-fill" id="adProgressFill" style="width:0%"></div></div>
+          <div class="ad-time" id="adTimeTxt">15초 남음</div>
+        </div>
+      </div>
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="cancelAd()">취소</button>
+        <button class="modal-btn watching"><i class="fas fa-circle-notch fa-spin" style="font-size:12px;margin-right:4px;"></i> 시청 중...</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AD MODAL 3: Complete -->
+  <div class="modal-backdrop" id="adModal3">
+    <div class="modal-box">
+      <div class="modal-drop-icon">💧</div>
+      <div class="modal-title">유리창이 맑아졌어요!</div>
+      <div class="modal-sub">빗방울 3개를 획득했어요.<br>이제 작품을 마음껏 저장하세요 ✨</div>
+      <hr class="modal-divider">
+      <div class="modal-status-card">
+        <div class="status-success">
+          <i class="fas fa-circle-check"></i>
+          <span>광고 시청 완료 · +3P 준비됨</span>
+        </div>
+      </div>
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeAdModal3()">나중에</button>
+        <button class="modal-btn success" onclick="claimPoints()">
+          <i class="fas fa-droplet" style="font-size:12px;margin-right:4px;"></i> +3P 받기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE PREVIEW MODAL (크롭 트리밍 + 이미지/영상 선택) -->
+  <div class="modal-backdrop" id="saveModal">
+    <div class="modal-box">
+      <!-- 헤더 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.85);">✂️ 트리밍 &amp; 저장</span>
+        <span style="cursor:pointer;color:rgba(255,255,255,0.4);font-size:16px;" onclick="closeSaveModal()">✕</span>
+      </div>
+
+      <!-- 저장 타입 탭 -->
+      <div class="save-type-tabs">
+        <button class="save-type-tab active" id="tabImage" onclick="setSaveType('image')">
+          <i class="fas fa-image"></i> 이미지
+        </button>
+        <button class="save-type-tab" id="tabVideo" onclick="setSaveType('video')">
+          <i class="fas fa-film"></i> 영상 (GIF/MP4)
+        </button>
+      </div>
+
+      <!-- ── 이미지 저장 패널 ── -->
+      <div id="imageSavePanel" style="width:100%;display:flex;flex-direction:column;align-items:center;box-sizing:border-box;">
+        <!-- 비율 선택 -->
+        <div class="ratio-chips">
+          <div class="ratio-chip active" data-ratio="free"   onclick="setCropRatio('free',this)">자유</div>
+          <div class="ratio-chip"        data-ratio="1:1"    onclick="setCropRatio('1:1',this)">1:1</div>
+          <div class="ratio-chip"        data-ratio="4:3"    onclick="setCropRatio('4:3',this)">4:3</div>
+          <div class="ratio-chip"        data-ratio="3:4"    onclick="setCropRatio('3:4',this)">3:4</div>
+          <div class="ratio-chip"        data-ratio="16:9"   onclick="setCropRatio('16:9',this)">16:9</div>
+          <div class="ratio-chip"        data-ratio="9:16"   onclick="setCropRatio('9:16',this)">9:16</div>
+          <div class="ratio-chip"        data-ratio="full"   onclick="setCropRatio('full',this)">전체</div>
+        </div>
+        <!-- 크롭 영역 -->
+        <div id="cropContainer">
+          <img id="cropSourceImg" src="" alt="preview">
+          <div id="cropBox">
+            <div class="crop-handle tl" data-handle="tl"></div>
+            <div class="crop-handle tr" data-handle="tr"></div>
+            <div class="crop-handle bl" data-handle="bl"></div>
+            <div class="crop-handle br" data-handle="br"></div>
+          </div>
+        </div>
+        <!-- 크롭 정보 -->
+        <div id="cropInfo">드래그로 영역 이동 · 모서리 핸들로 크기 조절</div>
+      </div>
+
+      <!-- ── 영상 저장 패널 ── -->
+      <div id="videoSavePanel" style="display:none;width:100%;flex-direction:column;align-items:center;box-sizing:border-box;">
+        <!-- 트리밍 비율 (영상도 동일) -->
+        <div class="ratio-chips" id="videoRatioChips">
+          <div class="ratio-chip active" data-ratio="free"   onclick="setCropRatio('free',this)">자유</div>
+          <div class="ratio-chip"        data-ratio="1:1"    onclick="setCropRatio('1:1',this)">1:1</div>
+          <div class="ratio-chip"        data-ratio="4:3"    onclick="setCropRatio('4:3',this)">4:3</div>
+          <div class="ratio-chip"        data-ratio="3:4"    onclick="setCropRatio('3:4',this)">3:4</div>
+          <div class="ratio-chip"        data-ratio="16:9"   onclick="setCropRatio('16:9',this)">16:9</div>
+          <div class="ratio-chip"        data-ratio="9:16"   onclick="setCropRatio('9:16',this)">9:16</div>
+          <div class="ratio-chip"        data-ratio="full"   onclick="setCropRatio('full',this)">전체</div>
+        </div>
+        <!-- 크롭 프리뷰 (영상 탭도 동일 cropContainer 공유) -->
+        <div id="cropContainerVideo" style="position:relative;width:100%;overflow:hidden;border-radius:10px;border:1px solid rgba(100,180,255,0.2);background:#000;margin:0 auto 10px auto;display:block;">
+          <img id="cropSourceImgVideo" src="" alt="preview" style="display:block;width:100%;height:100%;object-fit:fill;pointer-events:none;user-select:none;">
+          <div id="cropBoxVideo" style="position:absolute;border:2px solid #7ec8e3;box-shadow:0 0 0 9999px rgba(0,0,0,0.55);cursor:move;box-sizing:border-box;">
+            <div class="crop-handle tl" data-handle="tl"></div>
+            <div class="crop-handle tr" data-handle="tr"></div>
+            <div class="crop-handle bl" data-handle="bl"></div>
+            <div class="crop-handle br" data-handle="br"></div>
+          </div>
+        </div>
+        <!-- 영상 설정 -->
+        <div id="videoSettingsPanel" class="show">
+          <div class="vid-setting-row">
+            <span class="vid-setting-label">⏱ 녹화 시간</span>
+            <div class="vid-dur-chips">
+              <div class="vid-dur-chip" data-dur="3"  onclick="setVideoDur(3,this)">3초</div>
+              <div class="vid-dur-chip active" data-dur="5"  onclick="setVideoDur(5,this)">5초</div>
+              <div class="vid-dur-chip" data-dur="10" onclick="setVideoDur(10,this)">10초</div>
+              <div class="vid-dur-chip" data-dur="15" onclick="setVideoDur(15,this)">15초</div>
+            </div>
+          </div>
+          <div class="vid-setting-row">
+            <span class="vid-setting-label">🎞 포맷</span>
+            <div class="vid-dur-chips">
+              <div class="vid-dur-chip active" data-fmt="webm" onclick="setVideoFmt('webm',this)">WebM</div>
+              <div class="vid-dur-chip" data-fmt="gif"  onclick="setVideoFmt('gif',this)">GIF</div>
+            </div>
+          </div>
+          <div class="vid-setting-row" style="margin-bottom:0;">
+            <span class="vid-setting-label" style="font-size:10px;color:rgba(255,255,255,0.3);">💡 GIF는 파일 크기가 큽니다. WebM은 크롬/파이어폭스 권장.</span>
+          </div>
+        </div>
+        <!-- 녹화 진행 바 -->
+        <div id="videoRecordBar">
+          <div class="vrec-row">
+            <div class="vrec-dot"></div>
+            <span class="vrec-label">녹화 중...</span>
+            <span class="vrec-time" id="vrecTime">0.0s</span>
+          </div>
+          <div class="vrec-progress"><div class="vrec-fill" id="vrecFill" style="width:0%"></div></div>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;margin-bottom:8px;" id="videoInfo">
+          트리밍 영역 기준으로 실시간 화면을 녹화합니다
+        </div>
+      </div>
+
+      <!-- 포인트 안내 -->
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:12px;">
+        💧 저장하기 클릭 시 <strong style="color:#7ec8e3;">1P</strong> 차감 (잔여: <span id="saveModalPts">0P</span>)
+      </div>
+
+      <!-- 버튼 -->
+      <div class="modal-btns">
+        <button class="modal-btn cancel" id="saveCancelBtn" onclick="closeSaveModal()">취소</button>
+        <button class="modal-btn primary" id="confirmSaveBtn" onclick="confirmSave()">
+          <i class="fas fa-image" id="confirmSaveIcon" style="font-size:12px;margin-right:5px;"></i>
+          <span id="confirmSaveTxt">이미지 저장</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 숨김 캔버스: 저장용 -->
+  <canvas id="savePreviewCanvas" style="display:none;"></canvas>
+
+  <div id="toast"></div>
+</div><!-- /app -->
+
+<!-- PWA 설치 배너 (앱 컨테이너 밖) -->
+<div id="pwaInstallBanner">
+  <span class="pwa-banner-icon">💧</span>
+  <div class="pwa-banner-text">
+    <p>홈 화면에 추가하기</p>
+    <span>Rainy Note를 앱처럼 사용하세요</span>
+  </div>
+  <button class="pwa-install-btn" onclick="pwaInstall()">설치</button>
+  <button class="pwa-dismiss-btn" onclick="pwaDismiss()">✕</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  GLOBALS
+// ═══════════════════════════════════════════════════════════
+const weatherCanvas  = document.getElementById('weatherCanvas');
+const drawCanvas     = document.getElementById('drawCanvas');
+const particleCanvas = document.getElementById('particleCanvas');
+const textLayerCanvas= document.getElementById('textLayerCanvas');
+const bgImage        = document.getElementById('bgImage');
+
+const wCtx = weatherCanvas.getContext('2d');
+const dCtx = drawCanvas.getContext('2d');
+const pCtx = particleCanvas.getContext('2d');
+const tCtx = textLayerCanvas.getContext('2d');
+
+// Droplets 전용 오프스크린 캔버스 (trail 효과용)
+// 배경이 보이도록: 오프스크린에서만 검정 fillRect → pCtx에 drawImage로 복사
+const _beadCanvas = document.createElement('canvas');
+const _beadCtx    = _beadCanvas.getContext('2d');
+
+let W=0, H=0;
+let currentTexture='rainy';
+let brushSize=8, density=0.6, bgBlur=0;
+let isDrawing=false, lastX=0, lastY=0;
+
+// ── TEXT SYSTEM (단일 노드만) ──
+let textStyle = { font:'sans-serif', size:24, color:'#ffffff' };
+let currentTextNode = null;   // 현재 유일한 텍스트 노드
+let isDraggingText = false;
+let textDragOX=0, textDragOY=0;
+let _textPlacing = false; // 텍스트 배치 중 플래그
+
+// ── UNDO STACK (weatherCanvas ImageData 기반) ──
+// 최대 20단계 보존
+const UNDO_MAX = 20;
+let undoStack = [];
+
+// ── POINTS ──
+let points    = parseInt(localStorage.getItem('rn_points')    ?? '5');
+let adsToday  = parseInt(localStorage.getItem('rn_ads_today') ?? '0');
+let adsDate   =          localStorage.getItem('rn_ads_date')  ?? '';
+const MAX_ADS_DAY = 3;
+const AD_DURATION = 15;
+let adTimer=null, adElapsed=0;
+
+// ── PARTICLES ──
+let particles=[];
+
+// ── BACKGROUND ──
+let bgDataUrl=null;
+// 배경 위치·크기 상태 (bgImage에 적용될 값)
+let bgTransform = { scale:1, x:0, y:0 };
+// commitBackground()에서 계산된 배경 배치 정보 (buildFullCanvas/drawFrame 공유)
+let _bgCommit = null;
+
+// ── GALLERY ──
+const GALLERY_KEY = 'rn_gallery_v1';
+function loadGallery() { try { return JSON.parse(localStorage.getItem(GALLERY_KEY)||'[]'); } catch(e){return[];} }
+function saveGallery(arr) { try { localStorage.setItem(GALLERY_KEY, JSON.stringify(arr)); } catch(e){ showToast('저장 공간이 부족합니다.'); } }
+
+// ── STATS (관리자 대시보드용) ──
+// 누적 통계는 rn_stats_v1 에 저장
+// 구조: { totalAdViews, totalSaves, dailyLog: [{date, adViews, saves, revenue}] }
+const STATS_KEY = 'rn_stats_v1';
+const AD_REVENUE_PER_VIEW = 50; // 광고 1회당 예상 수익(원)
+
+function loadStats(){
+  try{ return JSON.parse(localStorage.getItem(STATS_KEY)||'null') || {totalAdViews:0,totalSaves:0,dailyLog:[]}; }
+  catch(e){ return {totalAdViews:0,totalSaves:0,dailyLog:[]}; }
+}
+function saveStats(s){ try{ localStorage.setItem(STATS_KEY,JSON.stringify(s)); }catch(e){} }
+
+function statsRecordAd(){
+  const s=loadStats();
+  const today=new Date().toLocaleDateString('ko-KR');
+  let day=s.dailyLog.find(d=>d.date===today);
+  if(!day){ day={date:today,adViews:0,saves:0,revenue:0}; s.dailyLog.push(day); }
+  day.adViews++; day.revenue+=AD_REVENUE_PER_VIEW;
+  s.totalAdViews++;
+  // 최대 90일 보관
+  if(s.dailyLog.length>90) s.dailyLog.shift();
+  saveStats(s);
+}
+function statsRecordSave(){
+  const s=loadStats();
+  const today=new Date().toLocaleDateString('ko-KR');
+  let day=s.dailyLog.find(d=>d.date===today);
+  if(!day){ day={date:today,adViews:0,saves:0,revenue:0}; s.dailyLog.push(day); }
+  day.saves++;
+  s.totalSaves++;
+  if(s.dailyLog.length>90) s.dailyLog.shift();
+  saveStats(s);
+}
+
+// ─── Pseudo-random seeded ───
+function pseudo(n){ return ((Math.sin(n)*43758.5453123)%1+1)%1; }
+
+// ═══════════════════════════════════════════════════════════
+//  AD SDK PLACEHOLDER
+// ═══════════════════════════════════════════════════════════
+const AdManager = {
+  loadAd() { return new Promise(resolve => setTimeout(resolve, 300)); },
+  showAd(onComplete, onFail) {
+    adElapsed=0;
+    document.getElementById('adProgressFill').style.width='0%';
+    document.getElementById('adTimeTxt').textContent=`${AD_DURATION}초 남음`;
+    adTimer = setInterval(()=>{
+      adElapsed++;
+      const pct=(adElapsed/AD_DURATION)*100;
+      document.getElementById('adProgressFill').style.width=pct+'%';
+      document.getElementById('adTimeTxt').textContent=`${AD_DURATION-adElapsed}초 남음`;
+      if(adElapsed>=AD_DURATION){ clearInterval(adTimer); onComplete(); }
+    },1000);
+  },
+  cancelAd() { clearInterval(adTimer); adElapsed=0; }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+function init() {
+  resize();
+  window.addEventListener('resize', resize);
+  drawCanvas.addEventListener('touchstart', onTouchStart, {passive:false});
+  drawCanvas.addEventListener('touchmove',  onTouchMove,  {passive:false});
+  drawCanvas.addEventListener('touchend',   onTouchEnd);
+  drawCanvas.addEventListener('mousedown',  onMouseDown);
+  drawCanvas.addEventListener('mousemove',  onMouseMove);
+  drawCanvas.addEventListener('mouseup',    onMouseUp);
+  checkDailyReset();
+  updatePointDisplay();
+  buildWeather();
+  renderParticles();
+  repositionUI();
+}
+
+function resize() {
+  const app=document.getElementById('app');
+  W=app.clientWidth; H=app.clientHeight;
+  [weatherCanvas,drawCanvas,particleCanvas,textLayerCanvas].forEach(c=>{ c.width=W; c.height=H; });
+  // Droplets 오프스크린 캔버스도 크기 동기화
+  _beadCanvas.width=W; _beadCanvas.height=H;
+  // particleCanvas z-index 동기화 (Droplets: 성애 아래, 나머지: 성애 위)
+  particleCanvas.style.zIndex = (currentTexture === 'droplets') ? '1' : '3';
+  // 리사이즈 시 배경 이미지 위치/크기 재계산 (contain + userScale 재적용)
+  if(bgDataUrl && adj.natW > 0) commitBackground();
+  // 텍스트 배치 중에는 buildWeather 스킵
+  if(!_textPlacing) buildWeather();
+  initParticles(); redrawTextLayer();
+}
+
+function repositionUI() {
+  const nav=document.getElementById('bottomNav');
+  const panel=document.getElementById('controlPanel');
+  const navH=nav.offsetHeight||80;
+  panel.style.bottom=navH+'px';
+}
+function togglePanel() {
+  const panel = document.getElementById('controlPanel');
+  panel.classList.toggle('collapsed');
+  const btn = document.querySelector('.back-btn i');
+  if(btn) btn.className = panel.classList.contains('collapsed') ? 'fas fa-chevron-left' : 'fas fa-chevron-down';
+  setTimeout(repositionUI,350);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  POINT SYSTEM
+// ═══════════════════════════════════════════════════════════
+function savePoints() {
+  localStorage.setItem('rn_points',   points);
+  localStorage.setItem('rn_ads_today',adsToday);
+  localStorage.setItem('rn_ads_date', adsDate);
+}
+function checkDailyReset() {
+  const today=new Date().toDateString();
+  if(adsDate!==today){ adsToday=0; adsDate=today; savePoints(); }
+}
+function updatePointDisplay() {
+  document.getElementById('topPtVal').textContent    = points+'P';
+  const saveBtn=document.getElementById('saveBtn');
+  if(points<=0){
+    saveBtn.classList.add('zero-point');
+    saveBtn.title='빗방울이 없습니다. 광고를 시청해 충전하세요.';
+  } else {
+    saveBtn.classList.remove('zero-point');
+    saveBtn.title='';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AD MODAL FLOW
+// ═══════════════════════════════════════════════════════════
+function showAdModal() {
+  checkDailyReset();
+  document.getElementById('balanceTxt').textContent  = points+'P';
+  document.getElementById('adsLeftChip').textContent = MAX_ADS_DAY-adsToday;
+  const btn=document.getElementById('watchAdBtn');
+  if(adsToday>=MAX_ADS_DAY){
+    btn.disabled=true; btn.style.opacity='0.38';
+    btn.innerHTML='<i class="fas fa-ban" style="font-size:12px;margin-right:4px;"></i> 오늘 광고 소진됨';
+  } else {
+    btn.disabled=false; btn.style.opacity='1';
+    btn.innerHTML='<i class="fas fa-play" style="font-size:12px;margin-right:4px;"></i> 광고 보기 (+3P)';
+  }
+  document.getElementById('adModal1').classList.add('open');
+}
+function closeAdModal1() { document.getElementById('adModal1').classList.remove('open'); }
+function cancelAd() {
+  AdManager.cancelAd();
+  document.getElementById('adModal2').classList.remove('open');
+  showToast('광고가 취소되었습니다.');
+}
+function closeAdModal3() { document.getElementById('adModal3').classList.remove('open'); }
+
+async function startWatchingAd() {
+  if(adsToday>=MAX_ADS_DAY){ showToast('오늘 광고를 모두 시청하셨습니다.'); return; }
+  closeAdModal1();
+  document.getElementById('adModal2').classList.add('open');
+  try {
+    await AdManager.loadAd();
+    AdManager.showAd(
+      ()=>{
+        document.getElementById('adModal2').classList.remove('open');
+        document.getElementById('adModal3').classList.add('open');
+      },
+      ()=>{
+        document.getElementById('adModal2').classList.remove('open');
+        showToast('광고 로드에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    );
+  } catch(e) {
+    document.getElementById('adModal2').classList.remove('open');
+    showToast('광고를 불러올 수 없습니다.');
+  }
+}
+function claimPoints() {
+  points+=3; adsToday++;
+  savePoints(); updatePointDisplay();
+  statsRecordAd(); // ← 광고 수익 통계 기록
+  document.getElementById('adModal3').classList.remove('open');
+  showToast('🎉 +3P 획득! 잔여 빗방울: '+points+'P');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PHOTO / CAMERA
+// ═══════════════════════════════════════════════════════════
+function openPhotoSheet() {
+  document.getElementById('photoSheet').classList.add('open');
+  document.getElementById('photoBackdrop').classList.add('open');
+}
+function closePhotoSheet() {
+  document.getElementById('photoSheet').classList.remove('open');
+  document.getElementById('photoBackdrop').classList.remove('open');
+}
+function triggerGallery() { closePhotoSheet(); document.getElementById('fileGallery').click(); }
+function handlePhotoUpload(e) {
+  const file=e.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>applyBackground(ev.target.result);
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+// ─── 배경 적용 (transform 값 반영) ───────────────────────────────
+function applyBackground(dataUrl) {
+  bgDataUrl = dataUrl;
+  // 새 사진이면 조절 모달 열기
+  bgTransform = { scale:1, x:0, y:0 };
+  openBgAdjust(dataUrl);
+}
+
+function commitBackground() {
+  // ══ adj 값으로 화면(W×H) 위 이미지 위치/크기를 정밀 계산 ══
+  //
+  // 모달 뷰포트 좌표계 → 화면 좌표계 변환:
+  //   adj.tx / adj.ty  : 이미지 좌상단의 뷰포트 내 절대 위치(px)
+  //   adj.scale        : 이미지 절대 픽셀 배율 (이미지 px = natW * adj.scale)
+  //   adj.vpW / adj.vpH: 모달 뷰포트 크기 (closeBgAdjust에서 모달 열린 채로 저장)
+  //
+  // 핵심 수식:
+  //   모달에서 이미지 중심 → 뷰포트 중심 대비 상대 비율 계산
+  //   → 화면 크기에 곱해서 화면 좌표로 변환
+
+  const natW = adj.natW || 1;
+  const natH = adj.natH || 1;
+  const vpW  = adj.vpW  || W;
+  const vpH  = adj.vpH  || H;
+
+  // ① 모달 contain 기준 배율
+  const baseS = (vpW > 0 && vpH > 0) ? Math.min(vpW / natW, vpH / natH) : 1;
+
+  // ② 사용자 배율 (contain = 1.0)
+  const userScale = baseS > 0 ? (adj.scale / baseS) : 1;
+
+  // ③ 화면 contain 크기
+  const screenBase = Math.min(W / natW, H / natH);
+  const dispW = natW * screenBase * userScale;
+  const dispH = natH * screenBase * userScale;
+
+  // ④ 드래그 오프셋: 모달에서 이미지 중심이 뷰포트 중심에서 벗어난 비율
+  //    adj.tx = 이미지 좌상단 x (절대 px, position:absolute 기준)
+  //    이미지 중심 x = adj.tx + natW*adj.scale/2
+  //    비율 = (중심x - vpW/2) / vpW  ← 뷰포트 폭 대비 비율
+  //    화면 오프셋 = 비율 × W
+  const imgCx = adj.tx + natW * adj.scale / 2;   // 뷰포트 내 이미지 중심 x
+  const imgCy = adj.ty + natH * adj.scale / 2;   // 뷰포트 내 이미지 중심 y
+  const offX  = ((imgCx - vpW / 2) / vpW) * W;   // 화면 오프셋 x
+  const offY  = ((imgCy - vpH / 2) / vpH) * H;   // 화면 오프셋 y
+
+  // ⑤ 화면 내 이미지 left/top
+  const imgLeft = (W - dispW) / 2 + offX;
+  const imgTop  = (H - dispH) / 2 + offY;
+
+  // ⑥ 저장 (buildFullCanvas·drawFrame 공유)
+  _bgCommit = { natW, natH, dispW, dispH, imgLeft, imgTop };
+
+  const photo = document.getElementById('bgPhoto');
+  photo.src    = bgDataUrl;
+  photo.style.display         = 'block';
+  photo.style.position        = 'absolute';
+  // object-fit:fill — 지정한 width/height에 이미지를 완전히 맞춤 (잘림 없음)
+  photo.style.objectFit       = 'fill';
+  photo.style.objectPosition  = 'center center';
+  photo.style.width           = dispW   + 'px';
+  photo.style.height          = dispH   + 'px';
+  photo.style.left            = imgLeft + 'px';
+  photo.style.top             = imgTop  + 'px';
+  photo.style.maxWidth        = 'none';
+  photo.style.maxHeight       = 'none';
+  photo.style.transformOrigin = 'center center';
+  photo.style.transform       = 'none';
+
+  bgImage.style.background      = '#000';
+  bgImage.style.backgroundImage = 'none';
+  applyBgBlur();
+}
+
+function applyBgBlur() {
+  const photo = document.getElementById('bgPhoto');
+  const f = bgBlur>0 ? `blur(${bgBlur}px)` : 'none';
+  if(photo) photo.style.filter = f;
+}
+
+// ─── BG ADJUST MODAL ─────────────────────────────────────────────
+let adj = {
+  startX:0, startY:0,         // 드래그 시작 화면 좌표
+  imgX:0,   imgY:0,           // 드래그 시작 시 이미지 위치
+  scale:1,                    // 현재 배율
+  minScale:0.05, maxScale:5,  // 5%~500% 자유 스케일
+  isDragging:false,
+  // 핀치
+  lastDist:0,
+  lastScale:1,
+  // 뷰포트 크기
+  vpW:0, vpH:0,
+  // 이미지 원본 크기
+  natW:0, natH:0,
+  // 현재 이미지 표시 위치 (transform)
+  tx:0, ty:0,
+};
+
+function openBgAdjust(dataUrl) {
+  const modal = document.getElementById('bgAdjustModal');
+  const img   = document.getElementById('bgAdjustImg');
+  modal.classList.add('open');
+
+  img.onload = () => {
+    // ★ adj 전체 초기화 후 새 이미지 기준으로 재설정
+    //   → Reset 후 다음 이미지를 올릴 때 이전 adj 값이 남지 않도록
+    const vp   = document.getElementById('bgAdjustViewport');
+    const vpW  = vp.clientWidth  || W;
+    const vpH  = vp.clientHeight || H;
+    const natW = img.naturalWidth;
+    const natH = img.naturalHeight;
+    const s0   = Math.min(vpW / natW, vpH / natH);  // contain 초기 배율
+
+    // adj를 완전히 새 값으로 교체 (이전 이미지 잔재 제거)
+    adj.natW      = natW;
+    adj.natH      = natH;
+    adj.vpW       = vpW;
+    adj.vpH       = vpH;
+    adj.scale     = s0;
+    adj.tx        = (vpW - natW * s0) / 2;
+    adj.ty        = (vpH - natH * s0) / 2;
+    adj.isDragging = false;
+    adj.lastDist  = 0;
+    adj.lastScale = s0;
+    applyAdjTransform();
+    updateAdjSlider();
+  };
+  img.src = dataUrl;
+
+  // 이벤트 바인딩
+  bindAdjEvents();
+}
+
+function closeBgAdjust(confirm) {
+  if (confirm && bgDataUrl) {
+    // ★ 모달이 열려 있는 동안 vpW/vpH를 읽어 저장 후 commitBackground 호출
+    const vp = document.getElementById('bgAdjustViewport');
+    if (vp.clientWidth  > 0) adj.vpW = vp.clientWidth;
+    if (vp.clientHeight > 0) adj.vpH = vp.clientHeight;
+    commitBackground();
+    buildWeather();
+    showToast('배경 사진이 적용되었습니다!');
+  }
+  // commit 완료 후 모달 닫기
+  document.getElementById('bgAdjustModal').classList.remove('open');
+  unbindAdjEvents();
+}
+
+function applyAdjTransform() {
+  const img = document.getElementById('bgAdjustImg');
+  const w = adj.natW * adj.scale;
+  const h = adj.natH * adj.scale;
+  img.style.width  = w + 'px';
+  img.style.height = h + 'px';
+  img.style.left   = adj.tx + 'px';
+  img.style.top    = adj.ty + 'px';
+  img.style.transform = 'none';
+}
+
+function updateAdjSlider() {
+  const vp     = document.getElementById('bgAdjustViewport');
+  // contain 기준 base (이미지가 뷰포트 안에 꽉 차는 최대 스케일)
+  const base   = Math.min(vp.clientWidth / adj.natW, vp.clientHeight / adj.natH);
+  const pct    = Math.round((adj.scale / base) * 100);
+  const slider = document.getElementById('adjScaleSlider');
+  const val    = document.getElementById('adjScaleVal');
+  slider.value = Math.min(300, Math.max(5, pct));
+  val.textContent = Math.round(adj.scale * 100) + '%';
+  const p = ((slider.value - slider.min) / (slider.max - slider.min) * 100).toFixed(1);
+  slider.style.setProperty('--pct', p + '%');
+}
+
+function onAdjScaleSlider(v) {
+  const vp   = document.getElementById('bgAdjustViewport');
+  const base = Math.min(vp.clientWidth / adj.natW, vp.clientHeight / adj.natH);  // contain 기준
+  const newScale = base * (v / 100);
+  // 중앙 기준으로 스케일 조절
+  const cx = vp.clientWidth  / 2;
+  const cy = vp.clientHeight / 2;
+  const ratio = newScale / adj.scale;
+  adj.tx = cx - (cx - adj.tx) * ratio;
+  adj.ty = cy - (cy - adj.ty) * ratio;
+  adj.scale = newScale;
+  applyAdjTransform();
+  document.getElementById('adjScaleVal').textContent = Math.round(adj.scale * 100) + '%';
+  const slider = document.getElementById('adjScaleSlider');
+  const p = ((v - slider.min) / (slider.max - slider.min) * 100).toFixed(1);
+  slider.style.setProperty('--pct', p + '%');
+}
+
+function adjReset() {
+  const vp = document.getElementById('bgAdjustViewport');
+  adj.vpW  = vp.clientWidth;
+  adj.vpH  = vp.clientHeight;
+  const scaleW = adj.vpW / adj.natW;
+  const scaleH = adj.vpH / adj.natH;
+  adj.scale = Math.min(scaleW, scaleH);  // contain: 전체 이미지가 보이도록 리셋
+  adj.tx = (adj.vpW  - adj.natW  * adj.scale) / 2;
+  adj.ty = (adj.vpH  - adj.natH * adj.scale) / 2;
+  applyAdjTransform();
+  updateAdjSlider();
+}
+
+function toggleAdjGrid() {
+  const g   = document.getElementById('bgAdjustGrid');
+  const btn = document.getElementById('adjGridBtn');
+  const on  = g.classList.toggle('show');
+  btn.style.color = on ? '#7ec8e3' : '';
+}
+
+// ── 드래그 (Touch & Mouse) ──────────────────────────────────────
+let _adjHandlers = null;
+
+function bindAdjEvents() {
+  const vp = document.getElementById('bgAdjustViewport');
+  const onTD = (e) => {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      adj.isDragging = true;
+      adj.startX = e.touches[0].clientX;
+      adj.startY = e.touches[0].clientY;
+      adj.imgX   = adj.tx;
+      adj.imgY   = adj.ty;
+    } else if (e.touches.length === 2) {
+      adj.isDragging = false;
+      adj.lastDist  = getTouchDist(e);
+      adj.lastScale = adj.scale;
+      adj.imgX = adj.tx;
+      adj.imgY = adj.ty;
+    }
+  };
+  const onTM = (e) => {
+    e.preventDefault();
+    if (e.touches.length === 1 && adj.isDragging) {
+      adj.tx = adj.imgX + (e.touches[0].clientX - adj.startX);
+      adj.ty = adj.imgY + (e.touches[0].clientY - adj.startY);
+      applyAdjTransform();
+    } else if (e.touches.length === 2) {
+      const dist  = getTouchDist(e);
+      const ratio = dist / adj.lastDist;
+      const newScale = Math.min(adj.maxScale, Math.max(adj.minScale, adj.lastScale * ratio));
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const vp   = document.getElementById('bgAdjustViewport');
+      const rect = vp.getBoundingClientRect();
+      const cx   = midX - rect.left;
+      const cy   = midY - rect.top;
+      const r2   = newScale / adj.scale;
+      adj.tx = cx - (cx - adj.tx) * r2;
+      adj.ty = cy - (cy - adj.ty) * r2;
+      adj.scale = newScale;
+      applyAdjTransform();
+      updateAdjSlider();
+    }
+  };
+  const onTE = () => { adj.isDragging = false; };
+
+  // 마우스
+  const onMD = (e) => {
+    adj.isDragging = true;
+    adj.startX = e.clientX; adj.startY = e.clientY;
+    adj.imgX   = adj.tx;    adj.imgY   = adj.ty;
+  };
+  const onMM = (e) => {
+    if (!adj.isDragging) return;
+    adj.tx = adj.imgX + (e.clientX - adj.startX);
+    adj.ty = adj.imgY + (e.clientY - adj.startY);
+    applyAdjTransform();
+  };
+  const onMU = () => { adj.isDragging = false; };
+  const onWH = (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const vp    = document.getElementById('bgAdjustViewport');
+    const rect  = vp.getBoundingClientRect();
+    const cx    = e.clientX - rect.left;
+    const cy    = e.clientY - rect.top;
+    const newScale = Math.min(adj.maxScale, Math.max(adj.minScale, adj.scale * delta));
+    const r2 = newScale / adj.scale;
+    adj.tx = cx - (cx - adj.tx) * r2;
+    adj.ty = cy - (cy - adj.ty) * r2;
+    adj.scale = newScale;
+    applyAdjTransform();
+    updateAdjSlider();
+  };
+
+  vp.addEventListener('touchstart',  onTD, { passive:false });
+  vp.addEventListener('touchmove',   onTM, { passive:false });
+  vp.addEventListener('touchend',    onTE);
+  vp.addEventListener('mousedown',   onMD);
+  vp.addEventListener('mousemove',   onMM);
+  vp.addEventListener('mouseup',     onMU);
+  vp.addEventListener('mouseleave',  onMU);
+  vp.addEventListener('wheel',       onWH, { passive:false });
+
+  _adjHandlers = { vp, onTD, onTM, onTE, onMD, onMM, onMU, onWH };
+}
+
+function unbindAdjEvents() {
+  if (!_adjHandlers) return;
+  const { vp, onTD, onTM, onTE, onMD, onMM, onMU, onWH } = _adjHandlers;
+  vp.removeEventListener('touchstart', onTD);
+  vp.removeEventListener('touchmove',  onTM);
+  vp.removeEventListener('touchend',   onTE);
+  vp.removeEventListener('mousedown',  onMD);
+  vp.removeEventListener('mousemove',  onMM);
+  vp.removeEventListener('mouseup',    onMU);
+  vp.removeEventListener('mouseleave', onMU);
+  vp.removeEventListener('wheel',      onWH);
+  _adjHandlers = null;
+}
+
+function getTouchDist(e) {
+  const dx = e.touches[0].clientX - e.touches[1].clientX;
+  const dy = e.touches[0].clientY - e.touches[1].clientY;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+// Camera
+let camStream=null, camFacingMode='environment', flashOn=false, capturedDataUrl=null;
+async function triggerCamera() {
+  closePhotoSheet();
+  if(!navigator.mediaDevices?.getUserMedia){ fallbackCamera(); return; }
+  try { await startCamera(camFacingMode); }
+  catch(err){
+    if(err.name==='NotAllowedError'||err.name==='PermissionDeniedError')
+      showToast('카메라 권한이 필요합니다. 브라우저 설정에서 허용해 주세요.');
+    else fallbackCamera();
+  }
+}
+async function startCamera(facingMode) {
+  stopCameraStream();
+  camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode,width:{ideal:1920},height:{ideal:1080}},audio:false});
+  const video=document.getElementById('camVideo');
+  video.srcObject=camStream;
+  await new Promise(r=>{video.onloadedmetadata=()=>{video.play();r();}});
+  const cs=document.getElementById('cameraScreen');
+  facingMode==='user'?cs.classList.add('front'):cs.classList.remove('front');
+  document.getElementById('cameraBg').classList.add('open');
+  cs.classList.add('open');
+  if(navigator.wakeLock) try{await navigator.wakeLock.request('screen');}catch(e){}
+}
+function stopCameraStream() {
+  camStream?.getTracks().forEach(t=>t.stop()); camStream=null;
+  document.getElementById('camVideo').srcObject=null;
+}
+function closeCamera() {
+  stopCameraStream();
+  const cs=document.getElementById('cameraScreen');
+  cs.classList.remove('open','front');
+  document.getElementById('cameraBg').classList.remove('open');
+  document.getElementById('camPreview').classList.remove('open');
+  flashOn=false;
+  document.getElementById('flashIcon').style.color='#fff';
+  document.getElementById('flashLabel').textContent='Flash';
+}
+async function switchCamera() {
+  const prev=camFacingMode;
+  camFacingMode=camFacingMode==='environment'?'user':'environment';
+  try { await startCamera(camFacingMode); }
+  catch(e){ camFacingMode=prev; showToast('카메라 전환에 실패했습니다.'); }
+}
+function toggleFlash() {
+  flashOn=!flashOn;
+  document.getElementById('flashIcon').style.color=flashOn?'#ffe066':'#fff';
+  document.getElementById('flashLabel').textContent=flashOn?'On':'Flash';
+  const track=camStream?.getVideoTracks()[0];
+  if(track?.getCapabilities?.()?.torch) track.applyConstraints({advanced:[{torch:flashOn}]}).catch(()=>{});
+}
+function capturePhoto() {
+  const video=document.getElementById('camVideo');
+  if(!video.videoWidth){showToast('카메라가 준비 중입니다...');return;}
+  const fd=document.getElementById('camFlash');
+  fd.classList.add('flash'); setTimeout(()=>fd.classList.remove('flash'),120);
+  const snap=document.getElementById('snapCanvas');
+  snap.width=video.videoWidth; snap.height=video.videoHeight;
+  const sc=snap.getContext('2d');
+  if(camFacingMode==='user'){sc.translate(snap.width,0);sc.scale(-1,1);}
+  sc.drawImage(video,0,0);
+  capturedDataUrl=snap.toDataURL('image/jpeg',0.92);
+  document.getElementById('previewImg').src=capturedDataUrl;
+  document.getElementById('camPreview').classList.add('open');
+}
+function retakePhoto(){ capturedDataUrl=null; document.getElementById('camPreview').classList.remove('open'); }
+function usePhoto(){ if(!capturedDataUrl)return; document.getElementById('camPreview').classList.remove('open'); closeCamera(); applyBackground(capturedDataUrl); capturedDataUrl=null; }
+function openGalleryFromCamera(){ closeCamera(); document.getElementById('fileGallery').click(); }
+function fallbackCamera() {
+  const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.capture='environment';
+  i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>applyBackground(ev.target.result);r.readAsDataURL(f);};
+  i.click();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SLIDERS
+// ═══════════════════════════════════════════════════════════
+function updateBrush(v)   { brushSize=parseInt(v); document.getElementById('brushVal').textContent=v+'px'; }
+function updateDensity(v) {
+  density=v/100;
+  document.getElementById('densityVal').textContent=v+'%';
+
+  if(currentTexture==='rainy'){
+    // Density Bar → 빗줄기 개수 실시간 조절 (20~250개)
+    const targetN = Math.floor(20 + density * 230);
+    if(particles.length < targetN){
+      while(particles.length < targetN) particles.push(mkParticle(true));
+    } else if(particles.length > targetN){
+      particles.splice(targetN);
+    }
+  } else if(currentTexture==='droplets'){
+    // Density Bar → 물방울 개수 실시간 조절 (20~100개, Slow Glass Drops)
+    const targetN = Math.floor(20 + density * 80);
+    if(particles.length < targetN){
+      while(particles.length < targetN) particles.push(mkParticle(true));
+    } else if(particles.length > targetN){
+      particles.splice(targetN);
+    }
+  } else if(currentTexture==='frosty'){
+    // Frosty: 눈송이 개수 실시간 조절 (20~200개)
+    const targetN = Math.floor(20 + density * 180);
+    if(particles.length < targetN){
+      while(particles.length < targetN) particles.push(mkParticle(true));
+    } else if(particles.length > targetN){
+      particles.splice(targetN);
+    }
+  } else {
+    initParticles();
+  }
+}
+function updateBgBlur(v)  { bgBlur=parseInt(v);  document.getElementById('blurVal').textContent=v+'px'; applyBgBlur(); }
+
+// ═══════════════════════════════════════════════════════════
+//  TEXTURE
+// ═══════════════════════════════════════════════════════════
+function setTexture(name,el) {
+  currentTexture=name;
+  document.querySelectorAll('.tex-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  wCtx.clearRect(0,0,W,H);
+  // Droplets: bead를 성애 레이어(weatherCanvas) 아래에 두어 닦으면 bead+배경 드러남
+  // 나머지 모드: 파티클(비·눈)이 성애 레이어 위에 보여야 함
+  particleCanvas.style.zIndex = (name === 'droplets') ? '1' : '3';
+  buildWeather(); initParticles();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  WEATHER CANVAS (fog / frost overlay)
+// ═══════════════════════════════════════════════════════════
+function buildWeather() {
+  wCtx.clearRect(0,0,W,H);
+  if(!bgDataUrl){
+    // 배경 사진 없음 → CSS 그라데이션 tint 표시, bgPhoto 숨김
+    const tints={
+      rainy:'radial-gradient(ellipse at 35% 45%,#1a2d45 0%,#0d1b2e 55%,#060d16 100%)',
+      frosty:'radial-gradient(ellipse at 50% 20%,#0e1e38 0%,#081425 50%,#030a14 100%)',
+      foggy:'radial-gradient(ellipse at 50% 50%,#1e2d3d 0%,#101d2a 50%,#080f17 100%)',
+      droplets:'radial-gradient(ellipse at 40% 45%,#162538 0%,#0c1924 55%,#050d16 100%)',
+    };
+    bgImage.style.background=tints[currentTexture]||tints.rainy;
+    bgImage.style.backgroundImage='';
+    const ph=document.getElementById('bgPhoto');
+    if(ph){ ph.style.display='none'; ph.src=''; }
+  } else {
+    // 배경 사진 있음 → 검정 배경 + bgPhoto 항상 표시
+    bgImage.style.background      = '#000';
+    bgImage.style.backgroundImage = 'none';
+    const ph = document.getElementById('bgPhoto');
+    if(ph){
+      // src 재설정 (비어있거나 텍스처 전환으로 초기화된 경우 복원)
+      if(!ph.src || ph.src === window.location.href) ph.src = bgDataUrl;
+      ph.style.display = 'block';  // 항상 표시 (조건 없음)
+    }
+  }
+  if(currentTexture==='rainy')         drawRainyGlass();
+  else if(currentTexture==='frosty')   drawFrostyGlass();
+  else if(currentTexture==='foggy')    drawFoggyGlass();
+  else if(currentTexture==='droplets') drawDropletsGlass();
+}
+
+// ── Rainy: realistic rain-wet glass ──
+function drawRainyGlass() {
+  // ── 서리(성에) 레이어: 닦으면 배경이 드러남 ──
+
+  // 1) 기본 반불투명 성에 베이스 (흰빛 뿌연 유리)
+  const base = wCtx.createLinearGradient(0, 0, W * 0.3, H);
+  base.addColorStop(0,   'rgba(210, 228, 245, 0.92)');
+  base.addColorStop(0.4, 'rgba(200, 220, 240, 0.89)');
+  base.addColorStop(0.7, 'rgba(192, 214, 238, 0.91)');
+  base.addColorStop(1,   'rgba(185, 208, 235, 0.93)');
+  wCtx.fillStyle = base;
+  wCtx.fillRect(0, 0, W, H);
+
+  // 2) 불규칙 서리 얼룩 — 반투명 패치로 성에 질감
+  const s = 999;
+  for (let i = 0; i < 80; i++) {
+    const fx = pseudo(s + i * 13) * W;
+    const fy = pseudo(s + i * 17) * H;
+    const fr = 18 + pseudo(s + i * 7) * 55;
+    const fa = 0.06 + pseudo(s + i * 23) * 0.10;
+    const fg = wCtx.createRadialGradient(fx, fy, 0, fx, fy, fr);
+    fg.addColorStop(0, `rgba(240, 250, 255, ${fa})`);
+    fg.addColorStop(0.5, `rgba(220, 238, 252, ${fa * 0.6})`);
+    fg.addColorStop(1, 'rgba(200, 225, 248, 0)');
+    wCtx.fillStyle = fg;
+    wCtx.fillRect(fx - fr, fy - fr, fr * 2, fr * 2);
+  }
+
+  // 3) 가장자리 더 두꺼운 서리 (테두리 성에)
+  const edge = wCtx.createRadialGradient(W * 0.5, H * 0.5, H * 0.28, W * 0.5, H * 0.5, H * 0.72);
+  edge.addColorStop(0,   'rgba(210, 230, 248, 0)');
+  edge.addColorStop(0.6, 'rgba(215, 232, 250, 0.12)');
+  edge.addColorStop(1,   'rgba(220, 238, 255, 0.38)');
+  wCtx.fillStyle = edge;
+  wCtx.fillRect(0, 0, W, H);
+}
+
+// ── Frosty: 성에(서리) 레이어 — Rainy와 동일 구조, 닦으면 배경 보임 ──
+function drawFrostyGlass() {
+  // 1) 성에 베이스 — 약간 푸른빛 차가운 성에
+  const base = wCtx.createLinearGradient(0, 0, W * 0.25, H);
+  base.addColorStop(0,   'rgba(195, 222, 245, 0.93)');
+  base.addColorStop(0.4, 'rgba(182, 212, 240, 0.90)');
+  base.addColorStop(0.7, 'rgba(170, 204, 236, 0.92)');
+  base.addColorStop(1,   'rgba(158, 196, 232, 0.94)');
+  wCtx.fillStyle = base;
+  wCtx.fillRect(0, 0, W, H);
+
+  // 2) 불규칙 성에 얼룩 패치
+  const s = 314;
+  for (let i = 0; i < 90; i++) {
+    const fx = pseudo(s + i * 13) * W;
+    const fy = pseudo(s + i * 17) * H;
+    const fr = 16 + pseudo(s + i * 7) * 60;
+    const fa = 0.05 + pseudo(s + i * 23) * 0.12;
+    const fg = wCtx.createRadialGradient(fx, fy, 0, fx, fy, fr);
+    fg.addColorStop(0, `rgba(235, 248, 255, ${fa})`);
+    fg.addColorStop(0.5, `rgba(210, 235, 252, ${fa * 0.55})`);
+    fg.addColorStop(1, 'rgba(190, 220, 248, 0)');
+    wCtx.fillStyle = fg;
+    wCtx.fillRect(fx - fr, fy - fr, fr * 2, fr * 2);
+  }
+
+  // 3) 가장자리 두꺼운 성에
+  const edge = wCtx.createRadialGradient(W*0.5, H*0.5, H*0.25, W*0.5, H*0.5, H*0.75);
+  edge.addColorStop(0,   'rgba(200, 228, 250, 0)');
+  edge.addColorStop(0.55,'rgba(205, 230, 250, 0.14)');
+  edge.addColorStop(1,   'rgba(215, 238, 255, 0.42)');
+  wCtx.fillStyle = edge;
+  wCtx.fillRect(0, 0, W, H);
+}
+
+function drawFrostCrystal(ctx,cx,cy,r,rnd,alpha){
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rnd*Math.PI*2);
+  const a=Math.min(0.95,0.28+alpha*.62);
+  ctx.strokeStyle=`rgba(255,255,255,${a})`; ctx.lineWidth=0.45+rnd*.75; ctx.lineCap='round';
+  for(let s2=0;s2<6;s2++){
+    ctx.save(); ctx.rotate((s2/6)*Math.PI*2);
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-r); ctx.stroke();
+    [.3,.5,.7,.88].forEach((t,lvl)=>{
+      const by=-r*t;
+      const bl=r*(.18+rnd*.2)*(1-t*.55);
+      ctx.lineWidth=(0.35+rnd*.6)*(1-t*.35);
+      ctx.strokeStyle=`rgba(255,255,255,${a*(1-lvl*.12)})`;
+      ctx.beginPath(); ctx.moveTo(0,by); ctx.lineTo( bl,by-bl*.55); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,by); ctx.lineTo(-bl,by-bl*.55); ctx.stroke();
+      if(lvl<2 && r>8){
+        const sbl=bl*.45;
+        [[bl,by-bl*.55],[-bl,by-bl*.55]].forEach(([bx,bby])=>{
+          const dx=bx>0?1:-1;
+          ctx.lineWidth=0.3; ctx.strokeStyle=`rgba(240,252,255,${a*.55})`;
+          ctx.beginPath(); ctx.moveTo(bx,bby); ctx.lineTo(bx+dx*sbl,bby-sbl*.5); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(bx,bby); ctx.lineTo(bx+dx*sbl,bby+sbl*.3); ctx.stroke();
+        });
+      }
+    });
+    ctx.restore();
+  }
+  // Center hexagon
+  if(r>4){
+    ctx.beginPath();
+    for(let i=0;i<6;i++){const ha=(i/6)*Math.PI*2-Math.PI/6; i===0?ctx.moveTo(Math.cos(ha)*r*.11,Math.sin(ha)*r*.11):ctx.lineTo(Math.cos(ha)*r*.11,Math.sin(ha)*r*.11);}
+    ctx.closePath(); ctx.fillStyle=`rgba(255,255,255,${a*.85})`; ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ── Droplets: 투명 유리소 빗방울 — 최대 ~12px, 표면장력 구형, 하이라이트 2단계 ──
+function drawDropletsGlass() {
+  // ── 성에(서리) 레이어 — Rainy/Frosty와 동일, 닦으면 배경 보임 ──
+  // 1) 성에 베이스 — 약간 따뜻한 흰빛 (물방울 맺힌 유리창)
+  const base = wCtx.createLinearGradient(0, 0, W * 0.3, H);
+  base.addColorStop(0,   'rgba(205, 225, 242, 0.91)');
+  base.addColorStop(0.4, 'rgba(195, 218, 238, 0.88)');
+  base.addColorStop(0.7, 'rgba(185, 210, 234, 0.90)');
+  base.addColorStop(1,   'rgba(175, 204, 230, 0.92)');
+  wCtx.fillStyle = base;
+  wCtx.fillRect(0, 0, W, H);
+
+  // 2) 불규칙 성에 얼룩 패치 (물기 배인 느낌)
+  const s = 628;
+  for (let i = 0; i < 85; i++) {
+    const fx = pseudo(s + i * 11) * W;
+    const fy = pseudo(s + i * 19) * H;
+    const fr = 14 + pseudo(s + i * 7) * 52;
+    const fa = 0.05 + pseudo(s + i * 29) * 0.11;
+    const fg2 = wCtx.createRadialGradient(fx, fy, 0, fx, fy, fr);
+    fg2.addColorStop(0, `rgba(230, 246, 255, ${fa})`);
+    fg2.addColorStop(0.5, `rgba(210, 232, 250, ${fa * 0.55})`);
+    fg2.addColorStop(1, 'rgba(190, 218, 245, 0)');
+    wCtx.fillStyle = fg2;
+    wCtx.fillRect(fx - fr, fy - fr, fr * 2, fr * 2);
+  }
+
+  // 3) 가장자리 두꺼운 성에
+  const edge = wCtx.createRadialGradient(W*0.5, H*0.5, H*0.26, W*0.5, H*0.5, H*0.74);
+  edge.addColorStop(0,   'rgba(200, 225, 245, 0)');
+  edge.addColorStop(0.55,'rgba(205, 228, 248, 0.13)');
+  edge.addColorStop(1,   'rgba(215, 235, 255, 0.40)');
+  wCtx.fillStyle = edge;
+  wCtx.fillRect(0, 0, W, H);
+
+  // (static droplets on glass — weatherCanvas용, 파티클과 별개)
+
+}
+// ── Foggy glass ──
+function drawFoggyGlass() {
+  const g=wCtx.createRadialGradient(W*.5,H*.45,0,W*.5,H*.5,W*.9);
+  g.addColorStop(0,'rgba(175,198,215,0.50)');
+  g.addColorStop(.5,'rgba(148,173,198,0.62)');
+  g.addColorStop(1,'rgba(115,150,182,0.76)');
+  wCtx.fillStyle=g; wCtx.fillRect(0,0,W,H);
+  for(let i=0;i<9;i++){
+    const fy=(i/9)*H+Math.sin(i*.8)*H*.04;
+    const fg=wCtx.createRadialGradient(W*.5,fy,0,W*.5,fy,W*(.5+Math.sin(i)*.15));
+    fg.addColorStop(0,`rgba(215,228,238,${.07+Math.sin(i)*.03})`);
+    fg.addColorStop(1,'rgba(215,228,238,0)');
+    wCtx.fillStyle=fg; wCtx.fillRect(0,fy-H*.2,W,H*.4);
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  PARTICLES
+// ═══════════════════════════════════════════════════════════
+function initParticles(){
+  particles=[];
+  let n;
+  if(currentTexture==='rainy')         n=Math.floor(20 + density*230); // 20~250개
+  else if(currentTexture==='droplets') n=Math.floor(20 + density*80);  // 20~100개 물방울 (Slow Glass)
+  else if(currentTexture==='frosty')   n=Math.floor(20 + density*180); // 20~200개 눈송이
+  else                                  n=Math.floor(density*70);
+  for(let i=0;i<n;i++) particles.push(mkParticle(true));
+}
+function mkParticle(rand){
+  if(currentTexture==='rainy')    return mkRain(rand);
+  if(currentTexture==='frosty')   return mkSnow(rand);
+  if(currentTexture==='foggy')    return mkFog(rand);
+  if(currentTexture==='droplets') return mkBead(rand);
+}
+
+function mkRain(rand){
+  // 제공된 RainDrop 로직을 plain object로 구현
+  return {
+    x:       Math.random() * W,
+    y:       rand ? Math.random() * H : -(Math.random() * H), // 화면 위에서 시작
+    length:  Math.random() * 20 + 10,   // 빗줄기 길이 10~30
+    speed:   Math.random() * 15 + 15,   // 낙하 속도 15~30 (빠르게)
+    opacity: Math.random() * 0.45 + 0.3, // 투명도 0.3~0.75 (배경 위에서도 잘 보이게)
+    weight:  Math.random() * 1 + 0.5,   // 두께 0.5~1.5
+    type: 'rain'
+  };
+}
+function mkSnow(rand){
+  // 제공된 SnowFlake 클래스 로직을 plain object로 구현
+  const size  = Math.random() * 3 + 1;           // 1~4px
+  const speed = Math.random() * 1 + 0.5;         // 0.5~1.5 (낙하 속도)
+  const swing = Math.random() * 0.02;            // 흔들림 주기
+  return {
+    x: Math.random() * W,
+    y: rand ? Math.random() * H : -(size * 2),
+    size,
+    speed,
+    velX: (Math.random() - 0.5) * 1,
+    opacity: Math.random() * 0.8 + 0.2,
+    swing,
+    swingAngle: Math.random() * Math.PI * 2,
+    type: 'snow'
+  };
+}
+function mkFog(rand){
+  return{ x:Math.random()*W, y:rand?Math.random()*H:H+30,
+    vx:-.12+Math.random()*.24, vy:-.08-Math.random()*.18,
+    r:40+Math.random()*90, alpha:.025+Math.random()*.06, pulse:Math.random()*Math.PI*2, type:'fog' };
+}
+// Bead: Slow Glass Drops 기반 — 3~8px, 느리게 맺히고 흘러내리는 유리창 물방울
+function mkBead(rand){
+  const r = Math.random() * 5 + 3;            // 3~8px (Slow Glass Drops)
+  return {
+    x:                Math.random() * W,
+    y:                rand ? Math.random() * H : -20,
+    r:                r,
+    targetR:          r,
+    velocity:         0,
+    terminalVelocity: Math.random() * 0.5 + 0.3,  // 최대 속도 0.3~0.8 (매우 느림)
+    isSliding:        false,
+    slideDelay:       Math.random() * 500 + 200,   // 200~700프레임 대기
+    type: 'bead'
+  };
+}
+
+// Droplets 스폰레이트 로직 상태
+let _beadSpawnAcc = 0;
+
+let lastTime=0;
+function renderParticles(ts=0){
+  lastTime=ts;
+  if(currentTexture==='droplets'){
+    // ── Droplets: pCtx에서 직접 처리 ──
+    // trail: destination-out으로 기존 bead를 서서히 지워 잔상 효과
+    // → pCtx는 투명 배경이므로 bgImage·weatherCanvas가 항상 보임
+    pCtx.globalCompositeOperation = 'destination-out';
+    pCtx.fillStyle = 'rgba(0, 0, 0, 0.18)';  // trail 잔상 강도
+    pCtx.fillRect(0, 0, W, H);
+    pCtx.globalCompositeOperation = 'source-over';
+
+    // 스폰레이트: density에 비례한 빈도로 새 방울 생성
+    _beadSpawnAcc += 0.03 * density;
+    const maxBeads = Math.floor(20 + density * 80);
+    while(_beadSpawnAcc >= 1 && particles.length < maxBeads){
+      particles.push(mkBead(false));
+      _beadSpawnAcc -= 1;
+    }
+    if(_beadSpawnAcc >= 1) _beadSpawnAcc = 0;
+
+    // 파티클 업데이트 + pCtx에 직접 그리기 (배경 보임)
+    for(let i=particles.length-1;i>=0;i--){
+      const p=particles[i];
+      updateP(p);
+      drawBead(p);
+      if(p.y > H + 20 || p.targetR < 1){
+        particles.splice(i,1);
+      }
+    }
+
+  } else {
+    _beadSpawnAcc = 0;
+    // 오프스크린 초기화
+    _beadCtx.clearRect(0, 0, W, H);
+    pCtx.clearRect(0, 0, W, H);
+    pCtx.globalCompositeOperation = 'source-over';
+
+    // 일반 파티클 처리
+    for(let i=0;i<particles.length;i++){
+      const p=particles[i];
+      updateP(p); drawP(p);
+      const offscreen = p.type==='snow'
+        ? (p.y > H + 10)
+        : (p.y>H+60||p.y<-60||p.x<-60||p.x>W+60);
+      if(offscreen) particles[i]=mkParticle(false);
+    }
+  }
+  requestAnimationFrame(renderParticles);
+}
+
+function updateP(p){
+  if(p.type==='rain'){ p.y += p.speed; if(p.y > H){ p.y = -(Math.random()*50); p.x = Math.random()*W; } }
+  else if(p.type==='snow'){
+    p.y += p.speed;
+    p.swingAngle += p.swing;
+    p.x += Math.sin(p.swingAngle); // 사인 곡선 좌우 흔들림
+  }
+  else if(p.type==='fog'){ p.x+=p.vx; p.y+=p.vy; p.pulse+=.018; }
+  else if(p.type==='bead'){
+    // Slow Glass Drops 로직
+    p.r += (p.targetR - p.r) * 0.1;       // 크기 보간
+    p.slideDelay--;
+    if(p.slideDelay <= 0 || p.r > 7) p.isSliding = true;  // 7px 이상이면 흐름
+    if(p.isSliding){
+      p.velocity += 0.01;                  // 매우 낮은 가속도
+      if(p.velocity > p.terminalVelocity) p.velocity = p.terminalVelocity;
+      p.y += p.velocity;
+      p.targetR -= 0.002;                  // 흐르면서 아주 조금씩 작아짐
+    }
+    // 리셋
+    if(p.y > H + 20 || p.targetR < 1){
+      const nr = Math.random() * 5 + 3;   // 3~8px 재생성
+      p.x = Math.random() * W;  p.y = -20;
+      p.r = nr;  p.targetR = nr;
+      p.velocity = 0;  p.isSliding = false;
+      p.slideDelay = Math.random() * 500 + 200;
+      p.terminalVelocity = Math.random() * 0.5 + 0.3;
+    }
+    // 병합: 살짝 겹칠 때 (거리 < (r1+r2)*0.8)
+    for(let j = 0; j < particles.length; j++){
+      const o = particles[j];
+      if(o === p || o.type !== 'bead') continue;
+      const dx = p.x - o.x, dy = p.y - o.y;
+      if(Math.sqrt(dx*dx + dy*dy) < (p.r + o.r) * 0.8){
+        if(p.r >= o.r){
+          p.targetR = Math.sqrt(p.r*p.r + o.r*o.r);  // 부피 보존
+          p.isSliding = true;
+          p.velocity += 0.2;               // 합쳐지면 속도 증가
+          // 작은 방울 리셋
+          const nr = Math.random() * 5 + 3;
+          o.x = Math.random()*W;  o.y = -20;
+          o.r = nr;  o.targetR = nr;
+          o.velocity = 0;  o.isSliding = false;
+          o.slideDelay = Math.random()*500+200;
+          o.terminalVelocity = Math.random()*0.5+0.3;
+        }
+      }
+    }
+  }
+}
+
+function drawP(p){
+  pCtx.save();
+  if(p.type==='rain')        drawRainDrop(p);
+  else if(p.type==='snow')   drawSnowflake(p);
+  else if(p.type==='fog'){
+    const r2=p.r*(.88+.12*Math.sin(p.pulse));
+    const g=pCtx.createRadialGradient(p.x,p.y,0,p.x,p.y,r2);
+    g.addColorStop(0,`rgba(212,226,240,${p.alpha})`);
+    g.addColorStop(1,'rgba(212,226,240,0)');
+    pCtx.fillStyle=g; pCtx.beginPath(); pCtx.arc(p.x,p.y,r2,0,Math.PI*2); pCtx.fill();
+  }
+  else if(p.type==='bead') drawBead(p);
+  pCtx.restore();
+}
+
+// ── Rain drop: tilted streak + teardrop head + specular glint ──
+function drawRainDrop(p){
+  // 제공된 RainDrop.draw() 로직
+  pCtx.beginPath();
+  pCtx.strokeStyle = `rgba(174, 194, 224, ${p.opacity})`;
+  pCtx.lineWidth = p.weight;
+  pCtx.lineCap = 'round';
+  pCtx.moveTo(p.x, p.y);
+  pCtx.lineTo(p.x, p.y + p.length);
+  pCtx.stroke();
+
+  // 바닥 튀기기 (splash) — y가 바닥 근처일 때
+  if(p.y + p.length >= H - 4){
+    pCtx.beginPath();
+    pCtx.arc(p.x, H - 2, p.length / 4, 0, Math.PI, true);
+    pCtx.strokeStyle = `rgba(255, 255, 255, ${p.opacity * 0.5})`;
+    pCtx.lineWidth = p.weight * 0.7;
+    pCtx.stroke();
+  }
+}
+
+// ── Snowflake: soft circle + glow (제공된 SnowFlake 로직) ──
+function drawSnowflake(p){
+  // 원형 눈송이
+  pCtx.beginPath();
+  pCtx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
+  pCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+  pCtx.fill();
+
+  // Glow 효과
+  pCtx.shadowBlur = 6;
+  pCtx.shadowColor = 'rgba(200, 230, 255, 0.9)';
+
+  // 크기가 2px 이상이면 내부 하이라이트 추가
+  if(p.size >= 2){
+    pCtx.beginPath();
+    pCtx.fillStyle = `rgba(255,255,255,${p.opacity * 0.6})`;
+    pCtx.arc(p.x - p.size*0.28, p.y - p.size*0.28, p.size * 0.32, 0, Math.PI*2);
+    pCtx.fill();
+  }
+  pCtx.shadowBlur = 0;
+}
+
+// ─── 아래 두 함수는 하위호환을 위해 유지 (호출되지 않음) ───
+function drawSnowDot(p){
+  drawSnowflake(p);
+}
+
+function drawSnowHex(p){
+  // 중형 6각형 + 내부 결정 패턴 (legacy)
+  pCtx.save();
+  pCtx.translate(p.x, p.y);
+  pCtx.lineCap = 'round';
+
+  // 외곽 글로우
+  const glowG = pCtx.createRadialGradient(0, 0, 0, 0, 0, p.size * 1.6);
+  glowG.addColorStop(0, 'rgba(200,230,255,0.12)');
+  glowG.addColorStop(1, 'rgba(200,230,255,0)');
+  pCtx.fillStyle = glowG;
+  pCtx.beginPath(); pCtx.arc(0, 0, p.size * 1.6, 0, Math.PI*2); pCtx.fill();
+
+  for(let s=0; s<6; s++){
+    pCtx.save();
+    pCtx.rotate((s / 6) * Math.PI * 2);
+    const lw = 0.8 + p.size * 0.08;
+    pCtx.lineWidth = lw;
+    pCtx.strokeStyle = `rgba(240,252,255,${p.opacity})`;
+    pCtx.beginPath(); pCtx.moveTo(0, 0); pCtx.lineTo(0, -p.size); pCtx.stroke();
+
+    [0.35, 0.6, 0.82].forEach((t, lvl) => {
+      const by = -p.size * t;
+      const bl = p.size * (0.22 + lvl * 0.05) * (1 - t * 0.25);
+      const lw2 = (0.8 + p.size * 0.08) * (0.7 - lvl * 0.15);
+      pCtx.lineWidth = Math.max(0.3, lw2);
+      pCtx.strokeStyle = `rgba(225,245,255,${p.opacity * (1 - lvl * 0.18)})`;
+      pCtx.beginPath(); pCtx.moveTo(0, by); pCtx.lineTo(bl, by - bl * 0.55); pCtx.stroke();
+      pCtx.beginPath(); pCtx.moveTo(0, by); pCtx.lineTo(-bl, by - bl * 0.55); pCtx.stroke();
+    });
+    pCtx.restore();
+  }
+
+  // 중앙 코어
+  const coreG2 = pCtx.createRadialGradient(-p.size*0.12, -p.size*0.12, 0, 0, 0, p.size*0.32);
+  coreG2.addColorStop(0, 'rgba(255,255,255,0.95)');
+  coreG2.addColorStop(0.5, 'rgba(230,248,255,0.75)');
+  coreG2.addColorStop(1, 'rgba(200,235,255,0.3)');
+  pCtx.beginPath(); pCtx.arc(0, 0, p.size * 0.32, 0, Math.PI*2);
+  pCtx.fillStyle = coreG2; pCtx.fill();
+
+  pCtx.restore();
+}
+
+function drawSnowDendrite(p){
+  // legacy — 현재 mkSnow에서는 사용 안 함
+  drawSnowflake(p);
+}
+
+// ── Bead: Slow Glass Drops.draw() 기반 — 3~8px 유리창 투명 물방울
+function drawBead(p){
+  pCtx.save();
+  pCtx.translate(p.x, p.y);
+  const r = p.r;
+
+  // 본체: 3단 라디알 그라데이션 (입체감)
+  const g = pCtx.createRadialGradient(-r*0.3, -r*0.3, 0, 0, 0, r);
+  g.addColorStop(0,   'rgba(255, 255, 255, 0.45)');  // 중심 하이라이트
+  g.addColorStop(0.6, 'rgba(120, 130, 150, 0.15)');  // 내부 투명도
+  g.addColorStop(1,   'rgba(255, 255, 255, 0.25)');  // 외곽 반사선
+  pCtx.beginPath();
+  pCtx.arc(0, 0, r, 0, Math.PI * 2);
+  pCtx.fillStyle = g;
+  pCtx.fill();
+
+  // 상단 강한 빛 반사 포인트 (유리 질감 핵심)
+  pCtx.beginPath();
+  pCtx.arc(-r*0.4, -r*0.4, r*0.2, 0, Math.PI*2);
+  pCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+  pCtx.fill();
+
+  pCtx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UNDO STACK
+// ═══════════════════════════════════════════════════════════
+function pushUndo(){
+  // 현재 weatherCanvas 픽셀 상태를 저장
+  const snap=wCtx.getImageData(0,0,W,H);
+  undoStack.push(snap);
+  if(undoStack.length>UNDO_MAX) undoStack.shift();
+}
+
+function undoStroke(){
+  if(undoStack.length===0){ showToast('더 이상 되돌릴 수 없습니다.'); return; }
+  const snap=undoStack.pop();
+  wCtx.putImageData(snap,0,0);
+  showToast('이전 단계로 복구됐어요!');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ERASE (touch on glass)
+// ═══════════════════════════════════════════════════════════
+function getPos(e){
+  const rect=drawCanvas.getBoundingClientRect();
+  const t=e.touches?e.touches[0]:e;
+  return{x:t.clientX-rect.left, y:t.clientY-rect.top};
+}
+
+// 텍스트 노드 히트 테스트
+function hitTextNode(px,py){
+  if(!currentTextNode) return false;
+  const el=document.getElementById('tn-text');
+  if(!el) return false;
+  const r=el.getBoundingClientRect();
+  const ar=document.getElementById('app').getBoundingClientRect();
+  const x=r.left-ar.left, y=r.top-ar.top;
+  return px>=x-8 && px<=x+r.width+8 && py>=y-8 && py<=y+r.height+8;
+}
+
+// ── 진동 헬퍼 ──
+let _vibeLastX=0, _vibeLastY=0, _vibeTick=0;
+function vibeStart(){
+  // 터치 시작: 짧은 탁 느낌 (유리에 손가락 닿는 느낌)
+  if(navigator.vibrate) navigator.vibrate(8);
+  _vibeLastX=0; _vibeLastY=0; _vibeTick=0;
+}
+function vibeMove(x,y){
+  // 이동 중: 거리 누적 후 일정 픽셀마다 짧게 진동 (유리 긁히는 질감)
+  const dx=x-_vibeLastX, dy=y-_vibeLastY;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  _vibeTick+=dist;
+  if(_vibeTick>=18){
+    if(navigator.vibrate) navigator.vibrate(3);
+    _vibeTick=0;
+  }
+  _vibeLastX=x; _vibeLastY=y;
+}
+function vibeEnd(){
+  // 터치 끝: 살짝 진동 (손가락 떼는 느낌)
+  if(navigator.vibrate) navigator.vibrate([2,10,2]);
+}
+
+function onTouchStart(e){
+  e.preventDefault();
+  const pos=getPos(e);
+  if(hitTextNode(pos.x,pos.y)){
+    isDraggingText=true;
+    const el=document.getElementById('tn-text');
+    if(el){
+      const r=el.getBoundingClientRect();
+      const ar=document.getElementById('app').getBoundingClientRect();
+      textDragOX=pos.x-(r.left-ar.left);
+      textDragOY=pos.y-(r.top-ar.top);
+    }
+    return;
+  }
+  // 유리 닦기 시작 전 undo 스냅샷
+  pushUndo();
+  isDrawing=true; lastX=pos.x; lastY=pos.y;
+  vibeStart();
+  erase(pos.x,pos.y,pos.x,pos.y);
+}
+function onTouchMove(e){
+  e.preventDefault();
+  const pos=getPos(e);
+  if(isDraggingText){ moveTextEl(pos.x-textDragOX, pos.y-textDragOY); return; }
+  if(!isDrawing) return;
+  erase(lastX,lastY,pos.x,pos.y);
+  vibeMove(pos.x, pos.y);
+  lastX=pos.x; lastY=pos.y;
+}
+function onTouchEnd(){ 
+  if(isDrawing) vibeEnd();
+  isDrawing=false; isDraggingText=false; 
+}
+
+function onMouseDown(e){
+  const pos=getPos(e);
+  if(hitTextNode(pos.x,pos.y)){
+    isDraggingText=true;
+    const el=document.getElementById('tn-text');
+    if(el){
+      const r=el.getBoundingClientRect();
+      const ar=document.getElementById('app').getBoundingClientRect();
+      textDragOX=pos.x-(r.left-ar.left);
+      textDragOY=pos.y-(r.top-ar.top);
+    }
+    return;
+  }
+  pushUndo();
+  isDrawing=true; lastX=pos.x; lastY=pos.y;
+  erase(pos.x,pos.y,pos.x,pos.y);
+}
+function onMouseMove(e){
+  const pos=getPos(e);
+  if(isDraggingText){ moveTextEl(pos.x-textDragOX, pos.y-textDragOY); return; }
+  if(!isDrawing) return;
+  erase(lastX,lastY,pos.x,pos.y); lastX=pos.x; lastY=pos.y;
+}
+function onMouseUp(){ isDrawing=false; isDraggingText=false; }
+
+function erase(x0,y0,x1,y1){
+  wCtx.save(); wCtx.globalCompositeOperation='destination-out';
+  const dx=x1-x0, dy=y1-y0, dist=Math.sqrt(dx*dx+dy*dy)||1;
+  const r=brushSize*2.5, steps=Math.max(1,Math.ceil(dist/(r*.5)));
+  for(let i=0;i<=steps;i++){
+    const t=steps===1?0:i/steps, cx=x0+dx*t, cy=y0+dy*t;
+    const g=wCtx.createRadialGradient(cx,cy,r*.1,cx,cy,r);
+    g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(.6,'rgba(0,0,0,0.95)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    wCtx.fillStyle=g; wCtx.beginPath(); wCtx.arc(cx,cy,r,0,Math.PI*2); wCtx.fill();
+  }
+  wCtx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RESET (전체 초기화)
+// ═══════════════════════════════════════════════════════════
+function resetGlass(){
+  // ── 배경 사진 완전 초기화 ──
+  bgDataUrl = null;
+  _bgCommit  = null;
+  bgBlur     = 0;
+  // adj 전체 초기화 (vpW/vpH 포함) — 다음 이미지에 이전 값이 남지 않도록
+  adj.scale=1; adj.tx=0; adj.ty=0;
+  adj.natW=0; adj.natH=0;
+  adj.vpW=0;  adj.vpH=0;
+  adj.isDragging=false; adj.lastDist=0; adj.lastScale=1;
+  const photo = document.getElementById('bgPhoto');
+  if(photo){ photo.src=''; photo.style.display='none'; photo.removeAttribute('style'); }
+  bgImage.style.background    = '';
+  bgImage.style.backgroundImage = '';
+  // 블러 슬라이더 UI 초기화
+  const blurSlider = document.getElementById('blurSlider');
+  const blurVal    = document.getElementById('blurVal');
+  if(blurSlider) blurSlider.value = 0;
+  if(blurVal)    blurVal.textContent = '0px';
+
+  // ── 텍스트 노드 제거 ──
+  const tnEl = document.getElementById('tn-text');
+  if(tnEl) tnEl.remove();
+  currentTextNode = null;
+  // textLayerCanvas도 클리어
+  if(tCtx) tCtx.clearRect(0,0,W,H);
+
+  // ── 유리창·파티클 초기화 ──
+  undoStack=[];
+  buildWeather();
+  initParticles();
+  showToast('유리창과 배경이 초기화되었습니다!');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TEXT NODE — 단일 텍스트, 중앙 배치 후 드래그 이동
+// ═══════════════════════════════════════════════════════════
+
+function applyText(){
+  const msg=document.getElementById('msgInput').value.trim();
+  if(!msg){ showToast('메시지를 입력해 주세요.'); return; }
+
+  // 기존 텍스트 DOM 제거
+  const old=document.getElementById('tn-text');
+  if(old) old.remove();
+
+  // 새 노드 데이터
+  currentTextNode={
+    text:msg,
+    x:0, y:0,
+    font:textStyle.font,
+    size:textStyle.size,
+    color:textStyle.color
+  };
+
+  // DOM 요소 생성 — 앱 컨테이너에 추가
+  const app=document.getElementById('app');
+  const el=document.createElement('div');
+  el.id='tn-text';
+  el.className='text-node';
+  el.textContent=msg;
+  el.style.fontFamily=textStyle.font;
+  el.style.fontSize=textStyle.size+'px';
+  el.style.color=textStyle.color;
+  el.style.textShadow='0 2px 14px rgba(0,0,0,0.8),0 0 30px rgba(0,0,0,0.55)';
+  el.style.maxWidth=(W*0.9)+'px';
+  el.style.visibility='hidden';
+  el.style.left='0px';
+  el.style.top='0px';
+  app.appendChild(el);
+
+  // 입력창 초기화 (배치 전에 처리)
+  document.getElementById('msgInput').value='';
+
+  // 배치 플래그 설정 — resize 중에 buildWeather 스킵
+  _textPlacing = true;
+
+  // 3프레임 후 실제 크기 측정 → 정중앙 배치
+  // (패널 애니메이션/레이아웃 완료 후 측정)
+  function placeCentered(){
+    const appRect=app.getBoundingClientRect();
+    const appW=appRect.width||W;
+    const appH=appRect.height||H;
+    const tw=el.offsetWidth||Math.min(msg.length*textStyle.size*0.6, appW*0.85);
+    const th=el.offsetHeight||textStyle.size*1.5;
+    const cx=Math.round((appW-tw)/2);
+    const cy=Math.round((appH-th)/2);
+    currentTextNode.x=cx;
+    currentTextNode.y=cy;
+    el.style.left=cx+'px';
+    el.style.top=cy+'px';
+    el.style.visibility='visible';
+    _textPlacing = false;
+    showToast('✍️ 드래그로 텍스트를 이동하세요!');
+  }
+
+  // rAF 3단계 — 레이아웃이 완전히 안정된 후 배치
+  requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(placeCentered)));
+}
+
+// 텍스트 DOM 요소를 직접 위치 이동
+function moveTextEl(nx,ny){
+  const el=document.getElementById('tn-text');
+  if(!el||!currentTextNode) return;
+  const tw=el.offsetWidth||80, th=el.offsetHeight||30;
+  const cx=Math.max(0,Math.min(W-tw,nx));
+  const cy=Math.max(0,Math.min(H-th,ny));
+  el.style.left=cx+'px';
+  el.style.top=cy+'px';
+  currentTextNode.x=cx;
+  currentTextNode.y=cy;
+}
+
+// 텍스트 삭제 버튼
+function deleteSelectedNode(){
+  const el=document.getElementById('tn-text');
+  if(el) el.remove();
+  currentTextNode=null;
+  const delBtn=document.getElementById('delTextBtn');
+  if(delBtn) delBtn.classList.remove('visible');
+  showToast('텍스트가 삭제되었습니다.');
+}
+
+// 저장용: textLayerCanvas에 텍스트 렌더링
+function redrawTextLayer(){
+  tCtx.clearRect(0,0,W,H);
+  if(!currentTextNode) return;
+  const el=document.getElementById('tn-text');
+  if(!el) return;
+  const r=el.getBoundingClientRect();
+  const ar=document.getElementById('app').getBoundingClientRect();
+  const tx=r.left-ar.left+r.width/2;
+  const ty=r.top-ar.top+r.height/2;
+  tCtx.save();
+  tCtx.font=`${currentTextNode.size}px ${currentTextNode.font}`;
+  tCtx.fillStyle=currentTextNode.color;
+  tCtx.shadowColor='rgba(0,0,0,0.75)'; tCtx.shadowBlur=14;
+  tCtx.textAlign='center'; tCtx.textBaseline='middle';
+  tCtx.fillText(currentTextNode.text,tx,ty);
+  tCtx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STYLE POPUP
+// ═══════════════════════════════════════════════════════════
+function toggleStylePopup(){
+  const sp=document.getElementById('stylePopup'),sb=document.getElementById('styleBackdrop');
+  const open=sp.classList.toggle('open');
+  open?sb.classList.add('open'):sb.classList.remove('open');
+}
+function closeStylePopup(){
+  document.getElementById('stylePopup').classList.remove('open');
+  document.getElementById('styleBackdrop').classList.remove('open');
+}
+function setFont(el){ textStyle.font=el.dataset.font; document.querySelectorAll('.font-chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); }
+function updateTextSize(v){ textStyle.size=parseInt(v); document.getElementById('textSizeVal').textContent=v+'px'; document.querySelectorAll('.size-chip').forEach(c=>c.classList.remove('active')); }
+function setTextSizePreset(v){ textStyle.size=v; document.getElementById('textSizeSlider').value=v; document.getElementById('textSizeVal').textContent=v+'px'; document.querySelectorAll('.size-chip').forEach(c=>c.classList.toggle('active',parseInt(c.textContent)===v)); }
+function setTextColor(el){ textStyle.color=el.dataset.color; document.querySelectorAll('.color-swatch').forEach(c=>c.classList.remove('active')); el.classList.add('active'); }
+
+// ═══════════════════════════════════════════════════════════
+//  BACK BUTTON — 컨트롤 패널 토글
+// ═══════════════════════════════════════════════════════════
+function handleBackBtn(){
+  const panel = document.getElementById('controlPanel');
+  const btn   = document.querySelector('.back-btn i');
+  const isCollapsed = panel.classList.contains('collapsed');
+  if(isCollapsed){
+    panel.classList.remove('collapsed');
+    if(btn){ btn.className='fas fa-chevron-down'; }
+    showToast('⚙️ 컨트롤 패널 열림');
+  } else {
+    panel.classList.add('collapsed');
+    if(btn){ btn.className='fas fa-chevron-left'; }
+  }
+  setTimeout(repositionUI, 350);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SAVE — 크롭 트리밍 + 이미지/영상 저장
+// ═══════════════════════════════════════════════════════════
+let _fullSaveCanvas = null;  // 2× 고해상도 전체 합성 스냅샷
+let _cropRatio  = 'free';    // 이미지 탭 선택 비율
+let _cropRatioV = 'free';    // 영상 탭 선택 비율
+let _crop  = { x:0, y:0, w:0, h:0 };   // 이미지 탭 크롭 (컨테이너 px)
+let _cropV = { x:0, y:0, w:0, h:0 };   // 영상 탭 크롭  (컨테이너 px) — 독립 객체
+let _cropDrag = null;
+let _saveType  = 'image';    // 'image' | 'video'
+let _videoDur  = 5;          // 녹화 시간(초)
+let _videoFmt  = 'webm';     // 'webm' | 'gif'
+let _recorder  = null;
+let _recTimer  = null;
+let _recStart  = 0;
+let _gifFrames = [];         // GIF 모드용 프레임 배열
+let _gifTimer  = null;
+
+// ── 저장 타입 탭 전환 ──
+function setSaveType(type){
+  _saveType = type;
+  document.getElementById('tabImage').classList.toggle('active', type==='image');
+  document.getElementById('tabVideo').classList.toggle('active', type==='video');
+  document.getElementById('imageSavePanel').style.display = type==='image' ? 'flex' : 'none';
+  document.getElementById('videoSavePanel').style.display = type==='video' ? 'flex' : 'none';
+  // 버튼 텍스트/아이콘 변경
+  document.getElementById('confirmSaveIcon').className = type==='image'
+    ? 'fas fa-image' : 'fas fa-circle';
+  document.getElementById('confirmSaveTxt').textContent = type==='image'
+    ? '이미지 저장' : '녹화 시작';
+  // 영상 탭일 때 크롭 프리뷰 동기화
+  if(type==='video' && _fullSaveCanvas){
+    // 영상 컨테이너 높이 선점 (이미지 로드 전에 비율 맞춤)
+    _fitContainerToCanvas(document.getElementById('cropContainerVideo'), Math.round(window.innerHeight*0.33));
+
+    const src = _fullSaveCanvas.toDataURL('image/jpeg', 0.7);
+    const vi  = document.getElementById('cropSourceImgVideo');
+    vi.onload = () => { requestAnimationFrame(()=>requestAnimationFrame(()=>initCropBoxVideo())); };
+    vi.src = src;
+  }
+}
+function setVideoDur(dur, el){
+  _videoDur = dur;
+  document.querySelectorAll('.vid-dur-chip[data-dur]').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+function setVideoFmt(fmt, el){
+  _videoFmt = fmt;
+  document.querySelectorAll('.vid-dur-chip[data-fmt]').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('videoInfo').textContent = fmt==='gif'
+    ? '⚠️ GIF는 파일이 크고 색감이 제한됩니다. WebM 권장.'
+    : '트리밍 영역 기준으로 실시간 화면을 녹화합니다';
+}
+
+// ── 전체 합성 캔버스 빌드 (저장용 스냅샷) ──
+// 배경 이미지를 실제 화면에 보이는 그대로 재현:
+//   1) CSS object-fit:contain  → 이미지를 W×H 박스 안에 비율 유지하며 중앙 배치
+//   2) transform:scale(userScale) translate(offX, offY) → 사용자 확대/축소·드래그 반영
+function buildFullCanvas(cb){
+  redrawTextLayer();
+  const SCALE=2;
+  const OW=W*SCALE, OH=H*SCALE;
+  const out=document.createElement('canvas');
+  out.width=OW; out.height=OH;
+  const oct=out.getContext('2d');
+  oct.imageSmoothingEnabled=true; oct.imageSmoothingQuality='high';
+
+  const compose=()=>{
+    oct.drawImage(weatherCanvas,  0,0,W,H, 0,0,OW,OH);
+    oct.drawImage(particleCanvas, 0,0,W,H, 0,0,OW,OH);
+    oct.drawImage(textLayerCanvas,0,0,W,H, 0,0,OW,OH);
+    const imgData=oct.getImageData(0,0,OW,OH);
+    const d=imgData.data;
+    for(let j=0;j<d.length;j+=4){
+      d[j]  =Math.min(255,d[j]  *1.04+2);
+      d[j+1]=Math.min(255,d[j+1]*1.04+2);
+      d[j+2]=Math.min(255,d[j+2]*1.06+3);
+    }
+    oct.putImageData(imgData,0,0);
+    cb(out);
+  };
+
+  if(bgDataUrl){
+    const img=new Image();
+    img.onload=()=>{
+      // ── commitBackground()에서 계산·저장한 _bgCommit 값을 그대로 Canvas에 재현 ──
+      // _bgCommit = { natW, natH, dispW, dispH, imgLeft, imgTop }
+      //   dispW/dispH : 화면에 실제로 표시되는 이미지 크기 (contain + userScale 적용)
+      //   imgLeft/imgTop : 화면 기준 이미지 좌상단 위치 (중앙 배치 + 드래그 오프셋)
+      // → 저장 캔버스는 SCALE(2×) 배율이므로 모든 값에 SCALE을 곱해서 그림
+
+      // _bgCommit이 없으면 adj에서 재계산 (commitBackground 호출 전 저장 시 fallback)
+      let bc = _bgCommit;
+      if(!bc){
+        const natW = adj.natW || img.naturalWidth;
+        const natH = adj.natH || img.naturalHeight;
+        const vpW  = adj.vpW || W;
+        const vpH  = adj.vpH || H;
+        const baseS = Math.min(vpW / natW, vpH / natH);
+        const userScale = baseS > 0 ? adj.scale / baseS : 1;
+        const screenBase = Math.min(W / natW, H / natH);
+        const dispW = natW * screenBase * userScale;
+        const dispH = natH * screenBase * userScale;
+        const imgCxInVp = adj.tx + natW * adj.scale / 2;
+        const imgCyInVp = adj.ty + natH * adj.scale / 2;
+        const rx = vpW > 0 ? W / vpW : 1;
+        const ry = vpH > 0 ? H / vpH : 1;
+        const offX = (imgCxInVp - vpW / 2) * rx;
+        const offY = (imgCyInVp - vpH / 2) * ry;
+        bc = { natW, natH, dispW, dispH,
+               imgLeft: (W - dispW) / 2 + offX,
+               imgTop:  (H - dispH) / 2 + offY };
+      }
+
+      // ① 검정 배경
+      oct.fillStyle = '#000';
+      oct.fillRect(0, 0, OW, OH);
+
+      // ② 이미지 그리기 — SCALE(2×) 배율 보정
+      oct.drawImage(img,
+        bc.imgLeft * SCALE, bc.imgTop * SCALE,
+        bc.dispW   * SCALE, bc.dispH  * SCALE
+      );
+
+      compose();
+    };
+    img.src=bgDataUrl;
+  } else {
+    const bgG=oct.createRadialGradient(OW*.35,OH*.45,0,OW*.5,OH*.52,OW*.9);
+    bgG.addColorStop(0,'#1a2d45'); bgG.addColorStop(.55,'#0d1b2e'); bgG.addColorStop(1,'#060d16');
+    oct.fillStyle=bgG; oct.fillRect(0,0,OW,OH);
+    compose();
+  }
+}
+
+// ── Save 버튼 클릭 ──
+function saveImage(){
+  if(points<=0){ showAdModal(); return; }
+  buildFullCanvas(outCanvas=>{
+    _fullSaveCanvas = outCanvas;
+    document.getElementById('saveModalPts').textContent = points+'P';
+    document.getElementById('saveModal').classList.add('open');
+    // 탭 초기화 (이미지 탭으로) — 모달 열린 뒤 호출해야 offsetWidth 정확
+    setSaveType('image');
+    initCropEvents();
+    initCropEventsVideo();
+
+    // 이미지 컨테이너 높이 선점 (이미지 로드 전에 비율 맞춤)
+    _fitContainerToCanvas(document.getElementById('cropContainer'), Math.round(window.innerHeight*0.50));
+
+    const img = document.getElementById('cropSourceImg');
+    img.onload = ()=>{
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{ initCropBox(); }));
+    };
+    img.src = outCanvas.toDataURL('image/jpeg', 0.85);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  크롭 박스 — 이미지/영상 완전 분리 (_crop / _cropV)
+//  핵심 원칙:
+//   ① 컨테이너 height = 이미지 비율로 JS에서 직접 설정 → 좌표 1:1 싱크
+//   ② cropSourceImg: object-fit:fill, width/height=100% → 픽셀 완전 일치
+//   ③ _crop (이미지), _cropV (영상) 각자 독립 관리
+// ══════════════════════════════════════════════════════════════
+
+// ── 컨테이너를 이미지 비율로 맞추는 공통 함수 ──
+// 비율을 유지하면서 maxH 이내로 제한 (width도 비율에 맞게 축소)
+function _fitContainerToCanvas(container, maxH){
+  if(!_fullSaveCanvas) return {cw:0, ch:0};
+  const ratio = _fullSaveCanvas.height / _fullSaveCanvas.width;
+  // 부모 요소의 실제 사용 가능 너비를 기준으로 계산
+  const parent = container.parentElement;
+  let parentW = parent ? parent.offsetWidth : 0;
+  if(!parentW) parentW = container.offsetWidth || window.innerWidth || 300;
+  // 패딩/마진 제외 (약 24px 여유)
+  let cw = Math.max(parentW - 24, 100);
+  let ch = Math.round(cw * ratio);
+  if(ch > maxH){
+    ch = maxH;
+    cw = Math.round(ch / ratio);  // 비율 유지하며 너비도 축소
+  }
+  container.style.width  = cw + 'px';
+  container.style.height = ch + 'px';
+  // 중앙 정렬 (margin:auto + display:block)
+  container.style.marginLeft  = 'auto';
+  container.style.marginRight = 'auto';
+  return {cw, ch};
+}
+
+// ── 이미지 탭: 크롭 박스 초기화 ──
+function initCropBox(){
+  if(!_fullSaveCanvas) return;
+  const container = document.getElementById('cropContainer');
+  const maxH = Math.round(window.innerHeight * 0.50);
+  const {cw, ch} = _fitContainerToCanvas(container, maxH);
+  if(!cw || !ch) return;
+  _crop = {x:0, y:0, w:cw, h:ch};
+  _cropRatio = 'free';
+  document.querySelectorAll('#imageSavePanel .ratio-chip').forEach(c=>c.classList.remove('active'));
+  const fc = document.querySelector('#imageSavePanel .ratio-chip[data-ratio="free"]');
+  if(fc) fc.classList.add('active');
+  applyCropBox();
+}
+
+// ── 영상 탭: 크롭 박스 초기화 ──
+function initCropBoxVideo(){
+  if(!_fullSaveCanvas) return;
+  const container = document.getElementById('cropContainerVideo');
+  const maxH = Math.round(window.innerHeight * 0.33);
+  const {cw, ch} = _fitContainerToCanvas(container, maxH);
+  if(!cw || !ch) return;
+  _cropV = {x:0, y:0, w:cw, h:ch};
+  _cropRatioV = 'free';
+  document.querySelectorAll('#videoSavePanel .ratio-chip').forEach(c=>c.classList.remove('active'));
+  const fc = document.querySelector('#videoSavePanel .ratio-chip[data-ratio="free"]');
+  if(fc) fc.classList.add('active');
+  applyCropBoxVideo();
+}
+
+// ── 이미지: 크롭 박스 DOM 갱신 ──
+function applyCropBox(){
+  const container = document.getElementById('cropContainer');
+  const cw = container.offsetWidth, ch = container.offsetHeight;
+  if(!cw || !ch) return;
+  _crop.w = Math.max(30, Math.min(_crop.w, cw));
+  _crop.h = Math.max(30, Math.min(_crop.h, ch));
+  _crop.x = Math.max(0,  Math.min(_crop.x, cw - _crop.w));
+  _crop.y = Math.max(0,  Math.min(_crop.y, ch - _crop.h));
+  const box = document.getElementById('cropBox');
+  box.style.left=_crop.x+'px'; box.style.top=_crop.y+'px';
+  box.style.width=_crop.w+'px'; box.style.height=_crop.h+'px';
+  if(_fullSaveCanvas){
+    // 실제 저장 픽셀 = _crop × (fullSaveCanvas / container)
+    const px=Math.round(_crop.w * _fullSaveCanvas.width  / cw);
+    const py=Math.round(_crop.h * _fullSaveCanvas.height / ch);
+    document.getElementById('cropInfo').textContent=`저장 크기: ${px}×${py}px · 드래그로 이동 · 모서리로 크기 조절`;
+  }
+}
+
+// ── 영상: 크롭 박스 DOM 갱신 ──
+function applyCropBoxVideo(){
+  const container = document.getElementById('cropContainerVideo');
+  const cw = container.offsetWidth, ch = container.offsetHeight;
+  if(!cw || !ch) return;
+  _cropV.w = Math.max(30, Math.min(_cropV.w, cw));
+  _cropV.h = Math.max(30, Math.min(_cropV.h, ch));
+  _cropV.x = Math.max(0,  Math.min(_cropV.x, cw - _cropV.w));
+  _cropV.y = Math.max(0,  Math.min(_cropV.y, ch - _cropV.h));
+  const box = document.getElementById('cropBoxVideo');
+  box.style.left=_cropV.x+'px'; box.style.top=_cropV.y+'px';
+  box.style.width=_cropV.w+'px'; box.style.height=_cropV.h+'px';
+  if(_fullSaveCanvas){
+    // 실제 녹화 픽셀 = _cropV × (fullSaveCanvas / container)
+    const px=Math.round(_cropV.w * _fullSaveCanvas.width  / cw);
+    const py=Math.round(_cropV.h * _fullSaveCanvas.height / ch);
+    document.getElementById('videoInfo').textContent=`녹화 크기: ${px}×${py}px · 드래그로 트리밍 영역 이동`;
+  }
+}
+
+// ── 비율 선택 (이미지/영상 각자 독립 적용) ──
+function setCropRatio(ratio, el){
+  const isVideo = _saveType==='video';
+  if(isVideo) _cropRatioV = ratio; else _cropRatio = ratio;
+
+  const panel = isVideo ? document.getElementById('videoSavePanel') : document.getElementById('imageSavePanel');
+  panel.querySelectorAll('.ratio-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+
+  const containerId = isVideo ? 'cropContainerVideo' : 'cropContainer';
+  const container = document.getElementById(containerId);
+  const cw = container.offsetWidth, ch = container.offsetHeight;
+  const cropObj = isVideo ? _cropV : _crop;
+
+  if(ratio==='full'){
+    cropObj.x=0; cropObj.y=0; cropObj.w=cw; cropObj.h=ch;
+  } else if(ratio!=='free'){
+    const parts=ratio.split(':');
+    let rw=parseInt(parts[0]), rh=parseInt(parts[1]);
+    let nw=cropObj.w, nh=Math.round(nw*rh/rw);
+    if(nh>ch){ nh=ch; nw=Math.round(nh*rw/rh); }
+    if(nw>cw){ nw=cw; nh=Math.round(nw*rh/rw); }
+    cropObj.w=nw; cropObj.h=nh;
+    cropObj.x=Math.round((cw-nw)/2); cropObj.y=Math.round((ch-nh)/2);
+  }
+  isVideo ? applyCropBoxVideo() : applyCropBox();
+}
+
+// ── 드래그 핸들러 (이미지/영상 각자 독립 cropObj 참조) ──
+function _makeCropDragHandler(containerId, getCropObj, setCropObj, applyFn, getRatioFn){
+  const container = document.getElementById(containerId);
+  function getPos(e){
+    const rect=container.getBoundingClientRect();
+    const t=e.touches?e.touches[0]:e;
+    return{x:t.clientX-rect.left, y:t.clientY-rect.top};
+  }
+  function startDrag(e){
+    e.preventDefault(); e.stopPropagation();
+    const handle=e.target.closest('.crop-handle');
+    const pos=getPos(e);
+    const c=getCropObj();
+    if(handle){
+      _cropDrag={mode:handle.dataset.handle,sx:pos.x,sy:pos.y,ox:c.x,oy:c.y,ow:c.w,oh:c.h};
+    } else {
+      if(pos.x>=c.x&&pos.x<=c.x+c.w&&pos.y>=c.y&&pos.y<=c.y+c.h)
+        _cropDrag={mode:'move',sx:pos.x,sy:pos.y,ox:c.x,oy:c.y,ow:c.w,oh:c.h};
+    }
+  }
+  function moveDrag(e){
+    if(!_cropDrag)return;
+    e.preventDefault();
+    const pos=getPos(e);
+    const dx=pos.x-_cropDrag.sx, dy=pos.y-_cropDrag.sy;
+    const cw=container.offsetWidth, ch=container.offsetHeight, MIN=30;
+    const ratio=getRatioFn();
+    const hasRatio=ratio!=='free'&&ratio!=='full';
+    let rw=1,rh=1;
+    if(hasRatio){const p=ratio.split(':');rw=parseInt(p[0]);rh=parseInt(p[1]);}
+    const c=getCropObj();
+    if(_cropDrag.mode==='move'){
+      c.x=Math.max(0,Math.min(cw-c.w,_cropDrag.ox+dx));
+      c.y=Math.max(0,Math.min(ch-c.h,_cropDrag.oy+dy));
+    } else {
+      let nx=_cropDrag.ox,ny=_cropDrag.oy,nw=_cropDrag.ow,nh=_cropDrag.oh;
+      if(_cropDrag.mode==='tl'){nw=Math.max(MIN,_cropDrag.ow-dx);nh=hasRatio?Math.round(nw*rh/rw):Math.max(MIN,_cropDrag.oh-dy);if(hasRatio)nw=Math.round(nh*rw/rh);nx=_cropDrag.ox+_cropDrag.ow-nw;ny=_cropDrag.oy+_cropDrag.oh-nh;}
+      else if(_cropDrag.mode==='tr'){nw=Math.max(MIN,_cropDrag.ow+dx);nh=hasRatio?Math.round(nw*rh/rw):Math.max(MIN,_cropDrag.oh-dy);if(hasRatio)nw=Math.round(nh*rw/rh);ny=_cropDrag.oy+_cropDrag.oh-nh;}
+      else if(_cropDrag.mode==='bl'){nw=Math.max(MIN,_cropDrag.ow-dx);nh=hasRatio?Math.round(nw*rh/rw):Math.max(MIN,_cropDrag.oh+dy);if(hasRatio)nw=Math.round(nh*rw/rh);nx=_cropDrag.ox+_cropDrag.ow-nw;}
+      else if(_cropDrag.mode==='br'){nw=Math.max(MIN,_cropDrag.ow+dx);nh=hasRatio?Math.round(nw*rh/rw):Math.max(MIN,_cropDrag.oh+dy);if(hasRatio)nw=Math.round(nh*rw/rh);}
+      nx=Math.max(0,nx);ny=Math.max(0,ny);nw=Math.min(nw,cw-nx);nh=Math.min(nh,ch-ny);
+      c.x=nx;c.y=ny;c.w=nw;c.h=nh;
+      setCropObj(c);
+    }
+    applyFn();
+  }
+  function endDrag(){ _cropDrag=null; }
+  container.addEventListener('touchstart',startDrag,{passive:false});
+  container.addEventListener('touchmove',moveDrag,{passive:false});
+  container.addEventListener('touchend',endDrag);
+  container.addEventListener('mousedown',startDrag);
+  window.addEventListener('mousemove',moveDrag);
+  window.addEventListener('mouseup',endDrag);
+}
+
+let _cropEventsAttached=false, _cropVideoEventsAttached=false;
+function initCropEvents(){
+  if(_cropEventsAttached)return; _cropEventsAttached=true;
+  _makeCropDragHandler('cropContainer',
+    ()=>_crop, (c)=>{ _crop=c; }, applyCropBox, ()=>_cropRatio);
+}
+function initCropEventsVideo(){
+  if(_cropVideoEventsAttached)return; _cropVideoEventsAttached=true;
+  _makeCropDragHandler('cropContainerVideo',
+    ()=>_cropV, (c)=>{ _cropV=c; }, applyCropBoxVideo, ()=>_cropRatioV);
+}
+
+// ── 모달 닫기 ──
+function closeSaveModal(){
+  // 녹화 중이면 강제 중단
+  if(_recorder && _recorder.state==='recording'){
+    _recorder.stop();
+  }
+  clearInterval(_recTimer);
+  clearInterval(_gifTimer);
+  _recorder=null; _gifFrames=[];
+  document.getElementById('videoRecordBar').classList.remove('show');
+  document.getElementById('videoSettingsPanel').classList.add('show');
+  document.getElementById('saveCancelBtn').textContent='취소';
+  document.getElementById('confirmSaveBtn').disabled=false;
+  document.getElementById('saveModal').classList.remove('open');
+  _fullSaveCanvas=null;
+}
+
+// ── 저장하기 버튼 (이미지/영상 분기) ──
+function confirmSave(){
+  if(_saveType==='video') startVideoRecord();
+  else                    confirmImageSave();
+}
+
+// ══ 이미지 저장 ════════════════════════════════════════════
+function confirmImageSave(){
+  if(!_fullSaveCanvas)return;
+  const container=document.getElementById('cropContainer');
+  const cw=container.offsetWidth, ch=container.offsetHeight;
+  // 컨테이너(cw×ch)와 fullSaveCanvas(2×) 비율로 정확히 변환
+  const scaleX=_fullSaveCanvas.width/cw, scaleY=_fullSaveCanvas.height/ch;
+  const sx=Math.round(_crop.x*scaleX), sy=Math.round(_crop.y*scaleY);
+  const sw=Math.max(1,Math.round(_crop.w*scaleX)), sh=Math.max(1,Math.round(_crop.h*scaleY));
+
+  const cropOut=document.createElement('canvas');
+  cropOut.width=sw; cropOut.height=sh;
+  const coctx=cropOut.getContext('2d');
+  coctx.imageSmoothingEnabled=true; coctx.imageSmoothingQuality='high';
+  coctx.drawImage(_fullSaveCanvas,sx,sy,sw,sh,0,0,sw,sh);
+
+  const link=document.createElement('a');
+  link.download='RainyNote_'+Date.now()+'.png';
+  link.href=cropOut.toDataURL('image/png'); link.click();
+
+  // 갤러리 썸네일
+  const gallery=loadGallery();
+  if(gallery.length>=50)gallery.shift();
+  const thumbW=Math.min(300,sw), thumbH=Math.round(sh*thumbW/sw);
+  const thumbC=document.createElement('canvas');
+  thumbC.width=thumbW; thumbC.height=thumbH;
+  thumbC.getContext('2d').drawImage(cropOut,0,0,sw,sh,0,0,thumbW,thumbH);
+  gallery.push({id:Date.now(),url:thumbC.toDataURL('image/jpeg',0.82),date:new Date().toLocaleString('ko-KR')});
+  saveGallery(gallery);
+
+  points--; savePoints(); updatePointDisplay(); statsRecordSave();
+  closeSaveModal();
+  showToast('💾 이미지 저장 완료! 잔여: '+points+'P');
+  if(points<=0) setTimeout(()=>showAdModal(),700);
+}
+
+// ══ 영상 저장 (WebM: MediaRecorder / GIF: canvas frame capture) ════
+// _cropV 좌표(컨테이너 px) → 실제 앱 캔버스(W×H) 픽셀 좌표로 변환
+function _getCropPxVideo(){
+  const container=document.getElementById('cropContainerVideo');
+  const cw=container.offsetWidth  || W;
+  const ch=container.offsetHeight || H;
+  // fullSaveCanvas는 2× 해상도이므로 앱 캔버스(W×H) 기준으로 환산
+  // 컨테이너는 fullSaveCanvas를 object-fit:fill로 표시 → 비율 동일
+  const scaleX = W / cw;   // 컨테이너 1px = 앱 캔버스 scaleX px
+  const scaleY = H / ch;
+  return{
+    sx: Math.round(_cropV.x * scaleX),
+    sy: Math.round(_cropV.y * scaleY),
+    sw: Math.max(10, Math.round(_cropV.w * scaleX)),
+    sh: Math.max(10, Math.round(_cropV.h * scaleY)),
+    cw, ch
+  };
+}
+
+function startVideoRecord(){
+  if(points<=0){ showAdModal(); return; }
+
+  // ── 녹화 캔버스 (크롭 영역만) ──
+  const {sx,sy,sw,sh}=_getCropPxVideo();
+  if(sw<10||sh<10){ showToast('트리밍 영역이 너무 작습니다.'); return; }
+
+  const recCanvas=document.createElement('canvas');
+  recCanvas.width=sw; recCanvas.height=sh;
+  const recCtx=recCanvas.getContext('2d');
+
+  // 녹화용 배경 이미지 요소 (bgPhoto 또는 새 Image 생성)
+  const _bgVideoImg = document.getElementById('bgPhoto');
+
+  // 배경 이미지를 _bgCommit 값으로 크롭 영역(sx,sy,sw,sh) 기준으로 그리는 함수
+  function drawBgToCtx(ctx, canvasW, canvasH, cropSX, cropSY){
+    if(bgDataUrl && _bgVideoImg && _bgVideoImg.naturalWidth > 0){
+      // _bgCommit: commitBackground()에서 계산된 { dispW, dispH, imgLeft, imgTop }
+      let bc = _bgCommit;
+      if(!bc){
+        // fallback: adj에서 재계산
+        const natW = adj.natW || _bgVideoImg.naturalWidth || 1;
+        const natH = adj.natH || _bgVideoImg.naturalHeight || 1;
+        const vpW  = adj.vpW || canvasW;
+        const vpH  = adj.vpH || canvasH;
+        const baseS = Math.min(vpW / natW, vpH / natH);
+        const userScale = baseS > 0 ? adj.scale / baseS : 1;
+        const screenBase = Math.min(canvasW / natW, canvasH / natH);
+        const dispW = natW * screenBase * userScale;
+        const dispH = natH * screenBase * userScale;
+        const imgCxInVp = adj.tx + natW * adj.scale / 2;
+        const imgCyInVp = adj.ty + natH * adj.scale / 2;
+        const offX = (imgCxInVp - vpW / 2) * (vpW > 0 ? canvasW / vpW : 1);
+        const offY = (imgCyInVp - vpH / 2) * (vpH > 0 ? canvasH / vpH : 1);
+        bc = { dispW, dispH,
+               imgLeft: (canvasW - dispW) / 2 + offX,
+               imgTop:  (canvasH - dispH) / 2 + offY };
+      }
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      // 크롭 오프셋을 translate로 보정 → 크롭 영역(sx,sy) 기준 그리기
+      ctx.save();
+      ctx.translate(-cropSX, -cropSY);
+      ctx.drawImage(_bgVideoImg, bc.imgLeft, bc.imgTop, bc.dispW, bc.dispH);
+      ctx.restore();
+      return;
+    }
+    // 배경 없음 → 그라데이션
+    const bg = ctx.createRadialGradient(
+      sw*.35 - cropSX, sh*.45 - cropSY, 0,
+      sw*.5  - cropSX, sh*.5  - cropSY, sw*.9
+    );
+    bg.addColorStop(0,'#1a2d45'); bg.addColorStop(.55,'#0d1b2e'); bg.addColorStop(1,'#060d16');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  }
+
+  // 매 프레임: 앱 레이어 전체를 recCanvas에 크롭 합성
+  function drawFrame(){
+    recCtx.clearRect(0,0,sw,sh);
+    drawBgToCtx(recCtx, W, H, sx, sy);
+    recCtx.drawImage(weatherCanvas, sx,sy,sw,sh, 0,0,sw,sh);
+    recCtx.drawImage(particleCanvas,sx,sy,sw,sh, 0,0,sw,sh);
+    recCtx.drawImage(textLayerCanvas,sx,sy,sw,sh,0,0,sw,sh);
+  }
+
+  // UI: 설정 패널 숨기고 진행 바 표시
+  document.getElementById('videoSettingsPanel').classList.remove('show');
+  document.getElementById('videoRecordBar').classList.add('show');
+  document.getElementById('confirmSaveBtn').disabled=true;
+  document.getElementById('saveCancelBtn').textContent='중단';
+
+  const totalMs=_videoDur*1000;
+  _recStart=Date.now();
+
+  // ── 브라우저 WebM 지원 여부 체크 (모바일/iOS 폴백) ──
+  const canWebM = (()=>{
+    try {
+      if(!HTMLCanvasElement.prototype.captureStream) return false;
+      if(typeof MediaRecorder === 'undefined') return false;
+      return MediaRecorder.isTypeSupported('video/webm') ||
+             MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ||
+             MediaRecorder.isTypeSupported('video/webm;codecs=vp8');
+    } catch(e){ return false; }
+  })();
+
+  if(_videoFmt==='webm' && !canWebM){
+    // iOS/Safari 등 WebM 미지원 → GIF로 자동 폴백
+    showToast('⚠️ 이 기기는 WebM을 지원하지 않아 GIF로 저장합니다.');
+    _videoFmt = 'gif';
+    // 버튼 UI도 GIF로 전환
+    document.querySelectorAll('.vid-fmt-chip').forEach(c=>{
+      c.classList.toggle('active', c.dataset.fmt==='gif');
+    });
+  }
+
+  if(_videoFmt==='webm'){
+    // ── WebM: MediaRecorder ──
+    const fps=30;
+    let frameId=null;
+    const renderLoop=()=>{ drawFrame(); frameId=requestAnimationFrame(renderLoop); };
+    renderLoop();
+
+    let stream;
+    try{
+      stream=recCanvas.captureStream(fps);
+    } catch(e){
+      showToast('이 브라우저에서 영상 녹화를 지원하지 않습니다. GIF로 대체합니다.');
+      cancelAnimationFrame(frameId);
+      _videoFmt='gif';
+      document.querySelectorAll('.vid-fmt-chip').forEach(c=>{
+        c.classList.toggle('active', c.dataset.fmt==='gif');
+      });
+      startVideoRecord(); return;
+    }
+
+    // 지원되는 mimeType 선택
+    const mimeType = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
+      .find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+
+    let _recorder_local;
+    try {
+      _recorder_local = new MediaRecorder(stream,{mimeType,videoBitsPerSecond:4000000});
+    } catch(e) {
+      try {
+        _recorder_local = new MediaRecorder(stream); // 기본 옵션으로 재시도
+      } catch(e2) {
+        showToast('MediaRecorder 초기화 실패. GIF로 대체합니다.');
+        cancelAnimationFrame(frameId);
+        _videoFmt='gif'; startVideoRecord(); return;
+      }
+    }
+    _recorder = _recorder_local;
+
+    const chunks=[];
+    _recorder.ondataavailable=e=>{ if(e.data.size>0)chunks.push(e.data); };
+    _recorder.onstop=()=>{
+      cancelAnimationFrame(frameId);
+      const usedMime = _recorder.mimeType || mimeType;
+      const ext = usedMime.includes('mp4') ? 'mp4' : 'webm';
+      const blob=new Blob(chunks,{type:usedMime});
+      _downloadBlob(blob,'RainyNote_'+Date.now()+'.'+ext);
+      _afterVideoSave();
+    };
+    _recorder.start(100);
+
+    _recTimer=setInterval(()=>{
+      const elapsed=Date.now()-_recStart;
+      _updateRecProgress(elapsed, totalMs);
+      if(elapsed>=totalMs){ clearInterval(_recTimer); _recorder.stop(); }
+    },100);
+
+  } else {
+    // ── GIF: gif.js 라이브러리로 animated GIF 생성 ──
+    const FPS  = 10;                         // GIF 프레임레이트
+    const DELAY= Math.round(1000 / FPS);     // 프레임 간격(ms)
+    const totalFrames = _videoDur * FPS;
+
+    // gif.js 로드 확인
+    if(typeof GIF === 'undefined'){
+      showToast('⚠️ GIF 라이브러리 로드 실패. WebM으로 대체합니다.');
+      _videoFmt='webm';
+      document.querySelectorAll('.vid-dur-chip[data-fmt]').forEach(c=>c.classList.toggle('active',c.dataset.fmt==='webm'));
+      startVideoRecord(); return;
+    }
+
+    const gif = new GIF({
+      workers: 2,
+      quality: 8,
+      width:  sw,
+      height: sh,
+      workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+    });
+
+    let frameCount = 0;
+    _gifTimer = setInterval(()=>{
+      drawFrame();
+      // 현재 recCanvas 프레임을 GIF에 추가
+      gif.addFrame(recCanvas, {delay: DELAY, copy: true});
+      frameCount++;
+      const elapsed = frameCount * DELAY;
+      _updateRecProgress(elapsed, totalMs);
+
+      if(frameCount >= totalFrames){
+        clearInterval(_gifTimer);
+        showToast('⏳ GIF 인코딩 중...');
+        gif.on('finished', blob=>{
+          _downloadBlob(blob, 'RainyNote_'+Date.now()+'.gif');
+          _afterVideoSave();
+        });
+        gif.render();
+      }
+    }, DELAY);
+  }
+}
+
+function _updateRecProgress(elapsed, total){
+  const pct=Math.min(100,(elapsed/total)*100);
+  const sec=(elapsed/1000).toFixed(1);
+  const fill=document.getElementById('vrecFill');
+  const time=document.getElementById('vrecTime');
+  if(fill) fill.style.width=pct+'%';
+  if(time) time.textContent=sec+'s / '+_videoDur+'s';
+  // 녹화 바 강제 표시 유지 (탭 전환 등으로 숨겨질 수 있으므로)
+  const bar=document.getElementById('videoRecordBar');
+  if(bar && !bar.classList.contains('show')) bar.classList.add('show');
+}
+
+function _downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  // iOS Safari는 a.click() download 속성을 무시하므로 새 탭으로 열기
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if(isIOS){
+    // iOS: 새 탭으로 열어 사용자가 직접 저장 (꾹 누르기 → 저장)
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    showToast('📥 파일을 꾹 눌러 저장하세요');
+  } else {
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+
+function _afterVideoSave(){
+  document.getElementById('videoRecordBar').classList.remove('show');
+  document.getElementById('videoSettingsPanel').classList.add('show');
+  document.getElementById('confirmSaveBtn').disabled=false;
+  document.getElementById('saveCancelBtn').textContent='취소';
+  points--; savePoints(); updatePointDisplay(); statsRecordSave();
+  closeSaveModal();
+  showToast('🎬 영상 저장 완료! 잔여: '+points+'P');
+  if(points<=0) setTimeout(()=>showAdModal(),700);
+}
+
+function _cleanupRecord(){
+  clearInterval(_recTimer); clearInterval(_gifTimer);
+  _recorder=null; _gifFrames=[];
+  document.getElementById('videoRecordBar').classList.remove('show');
+  document.getElementById('videoSettingsPanel').classList.add('show');
+  document.getElementById('confirmSaveBtn').disabled=false;
+  document.getElementById('saveCancelBtn').textContent='취소';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GALLERY MODAL
+// ═══════════════════════════════════════════════════════════
+function openGalleryModal(){
+  document.getElementById('galleryModal').classList.add('open');
+  refreshGallery();
+}
+function closeGalleryModal(){ document.getElementById('galleryModal').classList.remove('open'); }
+function refreshGallery(){
+  const grid=document.getElementById('galleryGrid');
+  const empty=document.getElementById('galleryEmpty');
+  const gallery=loadGallery();
+  grid.innerHTML='';
+  if(gallery.length===0){ empty.style.display='flex'; grid.style.display='none'; return; }
+  empty.style.display='none'; grid.style.display='grid';
+  [...gallery].reverse().forEach(item=>{
+    const div=document.createElement('div');
+    div.className='gal-item';
+    div.innerHTML=`<img src="${item.url}" alt="${item.date}" loading="lazy">
+      <div class="gal-del" onclick="deleteGalleryItem(${item.id},event)"><i class="fas fa-xmark"></i></div>`;
+    div.querySelector('img').onclick=()=>downloadGalleryItem(item);
+    grid.appendChild(div);
+  });
+}
+function deleteGalleryItem(id,e){
+  e.stopPropagation();
+  const gallery=loadGallery().filter(i=>i.id!==id);
+  saveGallery(gallery); refreshGallery();
+  showToast('이미지가 삭제되었습니다.');
+}
+function downloadGalleryItem(item){
+  const a=document.createElement('a');
+  a.download='RainyNote_'+item.id+'.png';
+  a.href=item.url; a.click();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════
+let toastT;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PWA — Service Worker 등록 & 설치 배너
+// ═══════════════════════════════════════════════════════════
+let _deferredPrompt = null;
+
+// beforeinstallprompt: 설치 가능할 때 배너 표시
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredPrompt = e;
+  // 이전에 닫은 적 없으면 배너 표시
+  if (!localStorage.getItem('pwa_dismissed')) {
+    setTimeout(() => {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.classList.add('show');
+    }, 3000); // 3초 후 표시
+  }
+});
+
+// 설치 버튼 클릭
+function pwaInstall() {
+  if (!_deferredPrompt) {
+    showToast('이미 설치되었거나 이 브라우저에서는 지원되지 않습니다.');
+    return;
+  }
+  _deferredPrompt.prompt();
+  _deferredPrompt.userChoice.then(result => {
+    if (result.outcome === 'accepted') {
+      showToast('🎉 Rainy Note가 홈 화면에 추가되었습니다!');
+    }
+    _deferredPrompt = null;
+    document.getElementById('pwaInstallBanner').classList.remove('show');
+  });
+}
+
+// 배너 닫기
+function pwaDismiss() {
+  document.getElementById('pwaInstallBanner').classList.remove('show');
+  localStorage.setItem('pwa_dismissed', '1');
+}
+
+// 앱 설치 완료 감지
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwaInstallBanner').classList.remove('show');
+  showToast('✅ 앱이 설치되었습니다!');
+  _deferredPrompt = null;
+});
+
+// Service Worker 등록
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => {
+        console.log('[SW] 등록 완료:', reg.scope);
+        // 새 버전 감지 시 알림
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              showToast('🆕 업데이트가 있습니다. 새로고침하면 적용됩니다.');
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('[SW] 등록 실패:', err));
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('load',init);
+</script>
+<script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>
+</html>

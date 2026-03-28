@@ -1,0 +1,56 @@
+{
+  "version": 2,
+  "name": "rainy-note",
+  "builds": [
+    {
+      "src": "**/*.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/admin",
+      "dest": "/admin.html"
+    },
+    {
+      "src": "/app",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/sw.js",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Content-Type": "application/javascript; charset=utf-8"
+      },
+      "dest": "/sw.js"
+    },
+    {
+      "src": "/manifest.json",
+      "headers": {
+        "Cache-Control": "public, max-age=86400",
+        "Content-Type": "application/manifest+json; charset=utf-8"
+      },
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/icons/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=2592000, immutable"
+      },
+      "dest": "/icons/$1"
+    },
+    {
+      "src": "/(.*)\\.html",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-Content-Type-Options": "nosniff"
+      },
+      "dest": "/$1.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

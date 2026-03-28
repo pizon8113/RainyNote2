@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Rainy Note — 아이콘 생성기</title>
+<style>
+body { margin:0; padding:20px; background:#060d16; color:#e8f4ff; font-family:'Inter',sans-serif; }
+h2   { color:#7ec8e3; margin-bottom:16px; }
+p    { font-size:13px; color:rgba(255,255,255,0.55); margin-bottom:20px; line-height:1.6; }
+.grid { display:flex; flex-wrap:wrap; gap:16px; margin-bottom:24px; }
+.icon-card { text-align:center; }
+.icon-card span { display:block; font-size:11px; color:rgba(255,255,255,0.5); margin-top:6px; }
+canvas { border-radius:16px; display:block; }
+.btn-row { display:flex; gap:12px; flex-wrap:wrap; }
+button {
+  padding:10px 20px; border-radius:12px; border:none; cursor:pointer;
+  font-size:13px; font-weight:700; background:linear-gradient(135deg,#2d6a9f,#4a90d9);
+  color:#fff; transition:all 0.18s;
+}
+button:hover { opacity:0.88; }
+button.dl { background:linear-gradient(135deg,#2e7d32,#4caf50); }
+#status { margin-top:16px; font-size:12px; color:#81c784; min-height:20px; }
+</style>
+</head>
+<body>
+<h2>💧 Rainy Note — PWA 아이콘 생성기</h2>
+<p>
+  이 페이지에서 <code>icons/icon.svg</code>를 기반으로 모든 PNG 아이콘을 생성할 수 있습니다.<br>
+  생성된 파일을 <b>icons/</b> 폴더에 저장하세요.
+</p>
+
+<div class="grid" id="canvasGrid"></div>
+
+<div class="btn-row">
+  <button onclick="generateAll()">🎨 모든 아이콘 생성</button>
+  <button class="dl" onclick="downloadAll()">⬇️ 모두 다운로드</button>
+</div>
+<div id="status"></div>
+
+<script>
+const SIZES = [72, 96, 128, 144, 152, 192, 384, 512];
+const SVG_URL = 'icon.svg';
+let canvases = {};
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+
+async function loadSVG() {
+  const res  = await fetch(SVG_URL);
+  const text = await res.text();
+  const blob = new Blob([text], { type: 'image/svg+xml' });
+  return URL.createObjectURL(blob);
+}
+
+async function generateAll() {
+  setStatus('⏳ SVG 로딩 중...');
+  const grid = document.getElementById('canvasGrid');
+  grid.innerHTML = '';
+  canvases = {};
+
+  let objUrl;
+  try { objUrl = await loadSVG(); } catch(e) {
+    setStatus('❌ icon.svg 로드 실패. 같은 폴더에 있는지 확인하세요.');
+    return;
+  }
+
+  for (const size of SIZES) {
+    await new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = c.height = size;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, size, size);
+        canvases[size] = c;
+
+        // 미리보기
+        const preview = document.createElement('canvas');
+        const ps = Math.min(size, 96);
+        preview.width = preview.height = ps;
+        preview.getContext('2d').drawImage(c, 0, 0, size, size, 0, 0, ps, ps);
+        const card = document.createElement('div');
+        card.className = 'icon-card';
+        card.appendChild(preview);
+        card.innerHTML += `<span>${size}×${size}</span>`;
+        grid.appendChild(card);
+        resolve();
+      };
+      img.onerror = () => { setStatus(`❌ ${size}px 생성 실패`); resolve(); };
+      img.src = objUrl;
+    });
+  }
+
+  URL.revokeObjectURL(objUrl);
+  setStatus(`✅ ${SIZES.length}개 아이콘 생성 완료! "모두 다운로드" 버튼을 클릭하세요.`);
+}
+
+function downloadAll() {
+  if (Object.keys(canvases).length === 0) {
+    setStatus('⚠️ 먼저 "모든 아이콘 생성"을 클릭하세요.');
+    return;
+  }
+  SIZES.forEach(size => {
+    const c = canvases[size];
+    if (!c) return;
+    const a = document.createElement('a');
+    a.download = `icon-${size}.png`;
+    a.href = c.toDataURL('image/png');
+    a.click();
+  });
+  setStatus('⬇️ 다운로드 시작됨! icons/ 폴더에 저장하세요.');
+}
+
+// 페이지 로드 시 자동 생성
+window.addEventListener('load', generateAll);
+</script>
+<script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>
+</html>

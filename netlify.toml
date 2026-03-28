@@ -1,0 +1,63 @@
+# ══════════════════════════════════════════════════════
+#  Rainy Note — Netlify 배포 설정
+#  배포: https://app.netlify.com 에서 GitHub 연결 후 자동 배포
+# ══════════════════════════════════════════════════════
+
+[build]
+  # 빌드 명령어 (없으면 정적 파일 그대로 배포)
+  command   = "echo 'Static site — no build step'"
+  # 배포할 폴더 (루트 그대로)
+  publish   = "."
+
+# ── 환경 변수 ──
+[build.environment]
+  NODE_VERSION = "20"
+
+# ── HTTP 헤더 설정 ──
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection       = "1; mode=block"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    Permissions-Policy     = "vibration=(*), camera=(*), microphone=()"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Content-Type  = "application/javascript; charset=utf-8"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+    Content-Type  = "application/manifest+json; charset=utf-8"
+
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000, immutable"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# ── 리다이렉트 규칙 ──
+[[redirects]]
+  from   = "/admin"
+  to     = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from   = "/app"
+  to     = "/index.html"
+  status = 200
+
+# ── SPA 폴백 (404 → index.html) ──
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

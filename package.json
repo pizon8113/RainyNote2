@@ -1,0 +1,28 @@
+{
+  "name": "rainy-note",
+  "version": "1.0.0",
+  "description": "유리창에 그림을 그리고 메시지를 남기는 감성 모바일 웹앱",
+  "author": "Rainy Note Team",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "live-server --port=3000 --open=index.html --host=localhost",
+    "start": "live-server --port=3000 --open=index.html",
+    "build": "node scripts/build.js",
+    "preview": "live-server --port=4000 --open=index.html",
+    "lint": "echo 'No lint configured for plain HTML/JS project'"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "rainy-note",
+    "canvas",
+    "drawing",
+    "pwa",
+    "mobile"
+  ]
+}

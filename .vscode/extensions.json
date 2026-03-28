@@ -1,0 +1,30 @@
+{
+  "recommendations": [
+    // ── 핵심: 라이브 서버 (로컬 개발) ──
+    "ritwickdey.LiveServer",
+
+    // ── HTML/CSS/JS 개발 ──
+    "formulahendry.auto-rename-tag",
+    "formulahendry.auto-close-tag",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+
+    // ── PWA / 서비스워커 ──
+    "msjsdiag.debugger-for-chrome",
+
+    // ── Git ──
+    "eamodio.gitlens",
+    "github.vscode-github-actions",
+    "github.vscode-pull-request-github",
+
+    // ── 배포 ──
+    "netlify.netlify-vscode",
+
+    // ── 편의 기능 ──
+    "christian-kohler.path-intellisense",
+    "naumovs.color-highlight",
+    "pkief.material-icon-theme",
+    "zhuangtongfa.material-theme"
+  ]
+}

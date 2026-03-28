@@ -1,0 +1,101 @@
+name: 🌧️ Rainy Note — Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:          # 수동 배포 트리거
+
+# ── 동시 배포 방지 ──
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ══════════════════════════════════════
+  #  1. 코드 품질 체크
+  # ══════════════════════════════════════
+  validate:
+    name: ✅ Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 의존성 설치
+        run: npm ci --ignore-scripts || npm install --ignore-scripts
+
+      - name: HTML 파일 존재 확인
+        run: |
+          test -f index.html && echo "✅ index.html OK"
+          test -f admin.html && echo "✅ admin.html OK"
+          test -f manifest.json && echo "✅ manifest.json OK"
+          test -f sw.js && echo "✅ sw.js OK"
+
+      - name: manifest.json 유효성 검사
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('✅ manifest.json valid');"
+
+  # ══════════════════════════════════════
+  #  2. Netlify 배포
+  # ══════════════════════════════════════
+  deploy-netlify:
+    name: 🚀 Deploy to Netlify
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Netlify CLI로 배포
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: '.'
+          production-branch: main
+          production-deploy: true
+          deploy-message: "Deploy from GitHub Actions — ${{ github.sha }}"
+          enable-pull-request-comment: true
+          enable-commit-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID:    ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 5
+
+  # ══════════════════════════════════════
+  #  3. GitHub Pages 배포 (Netlify 대안)
+  # ══════════════════════════════════════
+  deploy-github-pages:
+    name: 📄 Deploy to GitHub Pages
+    needs: validate
+    runs-on: ubuntu-latest
+    # GitHub Pages 배포는 main 브랜치 push 시에만
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: GitHub Pages 설정
+        uses: actions/configure-pages@v5
+
+      - name: 아티팩트 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: GitHub Pages 배포
+        id: deployment
+        uses: actions/deploy-pages@v4

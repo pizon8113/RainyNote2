@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rainy Note — Admin Dashboard</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#060d16">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<!-- PNG 생성 후: <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96.png"> -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── RESET ── */
+*{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ width:100%; min-height:100%; font-family:'Inter','Noto Sans KR',sans-serif; background:#060d16; color:#e8f4ff; }
+
+/* ══════════════ LOGIN PAGE ══════════════ */
+#loginPage{
+  display:flex; align-items:center; justify-content:center;
+  min-height:100vh; padding:24px;
+  background:radial-gradient(ellipse at 30% 40%,#0d1e36 0%,#060d16 70%);
+}
+.login-card{
+  width:100%; max-width:380px;
+  background:rgba(14,29,46,0.95); border:1px solid rgba(100,180,255,0.22);
+  border-radius:24px; padding:36px 28px;
+  box-shadow:0 8px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(100,180,255,0.06);
+}
+.login-logo{ text-align:center; margin-bottom:28px; }
+.login-logo .drop{ font-size:44px; display:block; margin-bottom:8px;
+  filter:drop-shadow(0 0 16px rgba(126,200,227,0.7));
+  animation:dropBob 3s ease-in-out infinite; }
+@keyframes dropBob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+.login-logo h1{ font-size:20px; font-weight:700; color:#fff; }
+.login-logo p{ font-size:12px; color:rgba(255,255,255,0.4); margin-top:4px; letter-spacing:1px; text-transform:uppercase; }
+
+.field-group{ margin-bottom:16px; }
+.field-group label{ display:block; font-size:11px; font-weight:600; color:rgba(100,180,255,0.8); margin-bottom:6px; letter-spacing:0.8px; text-transform:uppercase; }
+.field-input{
+  width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:12px 14px; color:#fff; font-size:14px; outline:none;
+  font-family:inherit; transition:border 0.2s;
+}
+.field-input:focus{ border-color:rgba(100,180,255,0.5); background:rgba(100,180,255,0.07); }
+.field-input::placeholder{ color:rgba(255,255,255,0.28); }
+
+.login-btn{
+  width:100%; padding:14px; border-radius:14px; border:none;
+  background:linear-gradient(135deg,#1e4a82,#3a7fd5);
+  color:#fff; font-size:15px; font-weight:700; cursor:pointer;
+  font-family:inherit; transition:all 0.18s; margin-top:8px;
+  box-shadow:0 4px 16px rgba(45,106,159,0.4);
+}
+.login-btn:hover{ background:linear-gradient(135deg,#265faa,#4a8fe0); transform:translateY(-1px); }
+.login-btn:active{ transform:scale(0.97); }
+
+.login-error{
+  display:none; background:rgba(220,50,50,0.15); border:1px solid rgba(220,50,50,0.35);
+  border-radius:10px; padding:10px 14px; margin-top:12px;
+  font-size:12px; color:#ff8080; text-align:center;
+}
+.login-error.show{ display:block; }
+.login-hint{ font-size:11px; color:rgba(255,255,255,0.25); text-align:center; margin-top:16px; line-height:1.6; }
+
+/* ══════════════ DASHBOARD ══════════════ */
+#dashboard{ display:none; min-height:100vh; }
+
+/* 사이드바 */
+#sidebar{
+  position:fixed; top:0; left:0; bottom:0; width:220px; z-index:100;
+  background:rgba(10,18,28,0.98); border-right:1px solid rgba(100,180,255,0.1);
+  display:flex; flex-direction:column;
+  transition:transform 0.3s ease;
+}
+.sb-logo{ padding:24px 20px 16px; border-bottom:1px solid rgba(100,180,255,0.1); }
+.sb-logo h2{ font-size:15px; font-weight:700; color:#fff; display:flex; align-items:center; gap:8px; }
+.sb-logo h2 span{ font-size:22px; }
+.sb-logo p{ font-size:10px; color:rgba(255,255,255,0.3); margin-top:3px; letter-spacing:1px; text-transform:uppercase; }
+
+.sb-nav{ flex:1; padding:16px 12px; overflow-y:auto; }
+.sb-section{ font-size:10px; font-weight:700; letter-spacing:1.5px; color:rgba(100,180,255,0.5); padding:8px 8px 4px; text-transform:uppercase; }
+.sb-item{
+  display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+  cursor:pointer; color:rgba(255,255,255,0.6); font-size:13px; font-weight:500;
+  transition:all 0.18s; margin-bottom:2px;
+}
+.sb-item i{ width:18px; text-align:center; font-size:14px; }
+.sb-item:hover{ background:rgba(100,180,255,0.08); color:#fff; }
+.sb-item.active{ background:rgba(100,180,255,0.15); color:#7ec8e3; border:1px solid rgba(100,180,255,0.2); }
+
+.sb-footer{ padding:16px 12px; border-top:1px solid rgba(100,180,255,0.1); }
+.sb-admin-badge{
+  display:flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,0.04); border-radius:10px; padding:10px 12px;
+}
+.sb-avatar{ width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#1e4a82,#3a7fd5); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.sb-admin-info p{ font-size:12px; font-weight:600; color:#fff; }
+.sb-admin-info span{ font-size:10px; color:rgba(255,255,255,0.4); }
+.sb-logout{ margin-top:8px; width:100%; padding:9px; border-radius:10px; border:1px solid rgba(255,80,80,0.25); background:rgba(255,40,40,0.06); color:#ff9090; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.18s; }
+.sb-logout:hover{ background:rgba(255,40,40,0.12); border-color:rgba(255,80,80,0.45); }
+
+/* 메인 콘텐츠 */
+#mainContent{
+  margin-left:220px; padding:28px 28px 40px;
+  min-height:100vh;
+}
+.page-header{ margin-bottom:24px; }
+.page-header h1{ font-size:22px; font-weight:700; color:#fff; display:flex; align-items:center; gap:10px; }
+.page-header p{ font-size:13px; color:rgba(255,255,255,0.45); margin-top:4px; }
+.header-actions{ display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap; }
+.hdr-btn{
+  padding:8px 16px; border-radius:10px; font-size:12px; font-weight:600;
+  cursor:pointer; border:1px solid rgba(100,180,255,0.3); background:rgba(100,180,255,0.1);
+  color:#7ec8e3; font-family:inherit; transition:all 0.18s; display:flex; align-items:center; gap:6px;
+}
+.hdr-btn:hover{ background:rgba(100,180,255,0.18); }
+.hdr-btn.danger{ border-color:rgba(255,80,80,0.3); background:rgba(255,40,40,0.07); color:#ff8080; }
+.hdr-btn.danger:hover{ background:rgba(255,40,40,0.14); }
+
+/* ── 실시간 현황 배너 (오늘의 현황) ── */
+#todayBanner {
+  background:linear-gradient(135deg,rgba(14,29,46,0.95),rgba(10,22,38,0.95));
+  border:1px solid rgba(100,180,255,0.2);
+  border-radius:18px; padding:16px 20px; margin-bottom:24px;
+  display:flex; align-items:center; gap:0; flex-wrap:wrap;
+}
+.today-banner-title {
+  font-size:11px; font-weight:700; color:rgba(100,180,255,0.7);
+  letter-spacing:1.2px; text-transform:uppercase; margin-bottom:12px;
+  width:100%; display:flex; align-items:center; gap:8px;
+}
+.today-live-dot {
+  width:7px; height:7px; background:#4caf50; border-radius:50%;
+  animation: livePulse 1.8s ease-in-out infinite;
+  display:inline-block;
+}
+@keyframes livePulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(1.4);} }
+.today-stats {
+  display:flex; flex-wrap:wrap; gap:0; flex:1;
+}
+.today-stat-item {
+  flex:1; min-width:120px; padding:8px 16px;
+  border-right:1px solid rgba(100,180,255,0.1);
+  display:flex; flex-direction:column; gap:3px;
+}
+.today-stat-item:last-child { border-right:none; }
+.today-stat-label { font-size:10px; color:rgba(255,255,255,0.4); font-weight:600; letter-spacing:0.5px; }
+.today-stat-val { font-size:26px; font-weight:700; color:#fff; line-height:1; }
+.today-stat-sub { font-size:10px; color:rgba(255,255,255,0.35); }
+.today-stat-item.highlight .today-stat-val { color:#ffd54f; }
+.today-stat-item.green-highlight .today-stat-val { color:#81c784; }
+.today-stat-item.blue-highlight .today-stat-val { color:#7ec8e3; }
+.today-last-update { font-size:10px; color:rgba(255,255,255,0.25); width:100%; margin-top:10px; text-align:right; }
+#autoRefreshBadge { 
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(76,175,80,0.12); border:1px solid rgba(76,175,80,0.25);
+  border-radius:20px; padding:4px 10px; font-size:10px; color:#81c784; font-weight:600;
+}
+
+/* 날짜 필터 */
+.date-filter-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+.date-chip{ padding:6px 14px; border-radius:20px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.6); transition:all 0.18s; }
+.date-chip.active{ background:rgba(100,180,255,0.18); border-color:#7ec8e3; color:#7ec8e3; }
+
+/* KPI 카드 그리드 */
+.kpi-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; margin-bottom:24px; }
+.kpi-card{
+  background:rgba(14,29,46,0.85); border:1px solid rgba(100,180,255,0.14);
+  border-radius:16px; padding:20px; position:relative; overflow:hidden;
+  transition:transform 0.18s;
+}
+.kpi-card:hover{ transform:translateY(-2px); }
+.kpi-card::before{ content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(100,180,255,0.04),transparent); pointer-events:none; }
+.kpi-icon{ width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:12px; }
+.kpi-icon.blue  { background:rgba(100,180,255,0.15); color:#7ec8e3; }
+.kpi-icon.green { background:rgba(76,175,80,0.15);   color:#81c784; }
+.kpi-icon.gold  { background:rgba(255,193,7,0.15);   color:#ffd54f; }
+.kpi-icon.purple{ background:rgba(156,39,176,0.18);  color:#ce93d8; }
+.kpi-icon.red   { background:rgba(244,67,54,0.15);   color:#ef9a9a; }
+.kpi-val{ font-size:28px; font-weight:700; color:#fff; line-height:1; margin-bottom:4px; }
+.kpi-label{ font-size:12px; color:rgba(255,255,255,0.5); }
+.kpi-change{ font-size:11px; margin-top:6px; font-weight:600; }
+.kpi-change.up  { color:#81c784; }
+.kpi-change.down{ color:#ef9a9a; }
+.kpi-change.neu { color:rgba(255,255,255,0.35); }
+
+/* 차트 + 테이블 영역 */
+.section-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+@media(max-width:900px){ .section-grid{ grid-template-columns:1fr; } }
+.card{
+  background:rgba(14,29,46,0.85); border:1px solid rgba(100,180,255,0.14);
+  border-radius:16px; padding:20px;
+}
+.card-title{ font-size:13px; font-weight:700; color:rgba(255,255,255,0.85); margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; }
+.card-title span{ font-size:11px; color:rgba(255,255,255,0.4); font-weight:400; }
+.chart-wrap{ position:relative; height:220px; }
+
+/* 테이블 */
+.data-table{ width:100%; border-collapse:collapse; font-size:12px; }
+.data-table th{ text-align:left; padding:8px 10px; color:rgba(100,180,255,0.7); font-weight:700; border-bottom:1px solid rgba(100,180,255,0.1); font-size:10px; letter-spacing:0.8px; text-transform:uppercase; white-space:nowrap; }
+.data-table td{ padding:10px 10px; border-bottom:1px solid rgba(255,255,255,0.05); color:rgba(255,255,255,0.8); vertical-align:middle; }
+.data-table tr:last-child td{ border-bottom:none; }
+.data-table tr:hover td{ background:rgba(100,180,255,0.04); }
+.badge{ display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:20px; font-size:10px; font-weight:700; }
+.badge.green{ background:rgba(76,175,80,0.15); color:#81c784; border:1px solid rgba(76,175,80,0.2); }
+.badge.blue { background:rgba(100,180,255,0.12); color:#7ec8e3; border:1px solid rgba(100,180,255,0.2); }
+.badge.gold { background:rgba(255,193,7,0.12);  color:#ffd54f; border:1px solid rgba(255,193,7,0.2); }
+
+/* 빈 상태 */
+.empty-state{ text-align:center; padding:40px 20px; color:rgba(255,255,255,0.3); }
+.empty-state i{ font-size:40px; opacity:0.3; display:block; margin-bottom:12px; }
+.empty-state p{ font-size:13px; }
+
+/* 구분선 */
+.full-card{ grid-column:1/-1; }
+
+/* 설정 섹션 */
+.settings-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:700px){ .settings-grid{ grid-template-columns:1fr; } }
+.setting-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+.setting-row:last-child{ border-bottom:none; }
+.setting-info p{ font-size:13px; color:#fff; font-weight:500; }
+.setting-info span{ font-size:11px; color:rgba(255,255,255,0.4); }
+.setting-input{ background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:7px 12px; color:#fff; font-size:13px; width:120px; outline:none; font-family:inherit; }
+.setting-input:focus{ border-color:rgba(100,180,255,0.5); }
+.save-settings-btn{ margin-top:16px; padding:11px 24px; border-radius:12px; border:none; background:linear-gradient(135deg,#1e4a82,#3a7fd5); color:#fff; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.18s; }
+.save-settings-btn:hover{ background:linear-gradient(135deg,#265faa,#4a8fe0); }
+
+/* 비밀번호 변경 */
+.pw-change-form{ display:flex; flex-direction:column; gap:12px; }
+.pw-change-form .field-input{ background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); }
+.pw-change-btn{ padding:11px; border-radius:12px; border:none; background:rgba(100,180,255,0.15); border:1px solid rgba(100,180,255,0.3); color:#7ec8e3; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.18s; }
+.pw-change-btn:hover{ background:rgba(100,180,255,0.24); }
+
+/* 반응형 */
+@media(max-width:768px){
+  #sidebar{ transform:translateX(-100%); }
+  #sidebar.open{ transform:translateX(0); }
+  #mainContent{ margin-left:0; padding:16px; }
+  .kpi-grid{ grid-template-columns:repeat(2,1fr); }
+  #menuToggle{ display:flex !important; }
+  .today-stat-item { min-width:90px; }
+  .today-stat-val { font-size:20px; }
+}
+#menuToggle{
+  display:none; position:fixed; top:14px; left:14px; z-index:200;
+  width:40px; height:40px; border-radius:50%; background:rgba(14,29,46,0.9);
+  border:1px solid rgba(100,180,255,0.2); align-items:center; justify-content:center;
+  cursor:pointer; color:#7ec8e3; font-size:16px;
+}
+#sidebarOverlay{ display:none; position:fixed; inset:0; z-index:99; background:rgba(0,0,0,0.5); }
+#sidebarOverlay.open{ display:block; }
+
+/* 알림 토스트 */
+#adminToast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:rgba(14,29,46,0.97); border:1px solid rgba(100,180,255,0.3); color:#fff;
+  padding:11px 22px; border-radius:20px; font-size:13px; opacity:0;
+  transition:all 0.3s; z-index:9999; white-space:nowrap; pointer-events:none;
+}
+#adminToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* 확인 모달 */
+.confirm-backdrop{
+  display:none; position:fixed; inset:0; z-index:900; background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(6px); align-items:center; justify-content:center;
+}
+.confirm-backdrop.open{ display:flex; }
+.confirm-box{
+  background:#0e1d2e; border:1px solid rgba(100,180,255,0.25);
+  border-radius:20px; padding:28px 24px; max-width:340px; width:calc(100% - 48px);
+  text-align:center;
+}
+.confirm-box h3{ font-size:18px; font-weight:700; color:#fff; margin-bottom:10px; }
+.confirm-box p{ font-size:13px; color:rgba(255,255,255,0.55); margin-bottom:20px; line-height:1.6; }
+.confirm-btns{ display:flex; gap:10px; }
+.confirm-btn{ flex:1; padding:12px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; border:none; font-family:inherit; transition:all 0.18s; }
+.confirm-btn.cancel{ background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); }
+.confirm-btn.danger{ background:linear-gradient(135deg,#c62828,#ef5350); color:#fff; }
+
+/* 수익 단가 강조 표시 */
+.revenue-highlight {
+  background:linear-gradient(135deg,rgba(255,193,7,0.1),rgba(255,152,0,0.07));
+  border:1px solid rgba(255,193,7,0.2); border-radius:12px; padding:12px 16px;
+  margin-bottom:12px;
+  display:flex; align-items:center; gap:12px;
+}
+.revenue-highlight i { color:#ffd54f; font-size:20px; }
+.revenue-highlight p { font-size:12px; color:rgba(255,255,255,0.6); }
+.revenue-highlight strong { color:#ffd54f; font-size:18px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOGIN PAGE
+══════════════════════════════════════ -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="drop">💧</span>
+      <h1>Rainy Note</h1>
+      <p>Administrator Console</p>
+    </div>
+    <form onsubmit="doLogin();return false;" autocomplete="on">
+      <div class="field-group">
+        <label>관리자 ID</label>
+        <input type="text" class="field-input" id="loginId" placeholder="admin" autocomplete="username">
+      </div>
+      <div class="field-group">
+        <label>비밀번호</label>
+        <input type="password" class="field-input" id="loginPw" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button type="submit" class="login-btn">
+        <i class="fas fa-sign-in-alt" style="margin-right:8px;"></i> 로그인
+      </button>
+    </form>
+    <div class="login-error" id="loginError">
+      <i class="fas fa-triangle-exclamation" style="margin-right:6px;"></i>
+      ID 또는 비밀번호가 올바르지 않습니다.
+    </div>
+    <p class="login-hint">
+      기본 계정: admin / rainynote2025<br>
+      비밀번호는 설정 탭에서 변경 가능합니다.
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     DASHBOARD
+══════════════════════════════════════ -->
+<div id="dashboard">
+
+  <!-- 모바일 메뉴 토글 -->
+  <div id="menuToggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+  <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- 사이드바 -->
+  <div id="sidebar">
+    <div class="sb-logo">
+      <h2><span>💧</span> Rainy Note</h2>
+      <p>Admin Console</p>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">메인</div>
+      <div class="sb-item active" id="nav-overview" onclick="showPage('overview')">
+        <i class="fas fa-chart-line"></i> 대시보드 개요
+      </div>
+      <div class="sb-item" id="nav-revenue" onclick="showPage('revenue')">
+        <i class="fas fa-coins"></i> 광고 수익
+      </div>
+      <div class="sb-item" id="nav-saves" onclick="showPage('saves')">
+        <i class="fas fa-images"></i> 저장 현황
+      </div>
+      <div class="sb-section" style="margin-top:12px;">시스템</div>
+      <div class="sb-item" id="nav-log" onclick="showPage('log')">
+        <i class="fas fa-calendar-days"></i> 일별 로그
+      </div>
+      <div class="sb-item" id="nav-settings" onclick="showPage('settings')">
+        <i class="fas fa-gear"></i> 설정
+      </div>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-admin-badge">
+        <div class="sb-avatar">👤</div>
+        <div class="sb-admin-info">
+          <p id="sbAdminId">admin</p>
+          <span>관리자</span>
+        </div>
+      </div>
+      <button class="sb-logout" onclick="doLogout()">
+        <i class="fas fa-sign-out-alt" style="margin-right:6px;"></i>로그아웃
+      </button>
+    </div>
+  </div>
+
+  <!-- 메인 콘텐츠 -->
+  <div id="mainContent">
+
+    <!-- ── 개요 페이지 ── -->
+    <div id="page-overview">
+      <div class="page-header">
+        <h1><i class="fas fa-chart-line" style="color:#7ec8e3;font-size:20px;"></i> 대시보드 개요</h1>
+        <p id="overviewDate">로딩 중...</p>
+        <div class="header-actions">
+          <div class="date-filter-row">
+            <div class="date-chip active" onclick="setFilter('today',this)">오늘</div>
+            <div class="date-chip" onclick="setFilter('7d',this)">7일</div>
+            <div class="date-chip" onclick="setFilter('30d',this)">30일</div>
+            <div class="date-chip" onclick="setFilter('all',this)">전체</div>
+          </div>
+          <button class="hdr-btn" onclick="refreshData()"><i class="fas fa-rotate-right"></i> 새로고침</button>
+          <span id="autoRefreshBadge"><i class="fas fa-circle-dot" style="font-size:8px;"></i> 자동 새로고침</span>
+        </div>
+      </div>
+
+      <!-- ★ 오늘의 실시간 현황 배너 -->
+      <div id="todayBanner">
+        <div class="today-banner-title">
+          <span class="today-live-dot"></span>
+          오늘의 실시간 현황 (<span id="todayDateLabel">—</span>)
+        </div>
+        <div class="today-stats">
+          <div class="today-stat-item blue-highlight">
+            <div class="today-stat-label">📺 광고 시청 수</div>
+            <div class="today-stat-val" id="todayAdViews">0</div>
+            <div class="today-stat-sub">오늘 총 시청 횟수</div>
+          </div>
+          <div class="today-stat-item green-highlight">
+            <div class="today-stat-label">💾 이미지 저장 수</div>
+            <div class="today-stat-val" id="todaySaves">0</div>
+            <div class="today-stat-sub">오늘 총 저장 횟수</div>
+          </div>
+          <div class="today-stat-item highlight">
+            <div class="today-stat-label">💰 광고 수익 (추정)</div>
+            <div class="today-stat-val" id="todayRevenue">₩0</div>
+            <div class="today-stat-sub" id="todayRevenueRate">단가 ₩50/회</div>
+          </div>
+          <div class="today-stat-item">
+            <div class="today-stat-label">📊 전환율</div>
+            <div class="today-stat-val" id="todayConvRate">—</div>
+            <div class="today-stat-sub">광고→저장 전환</div>
+          </div>
+        </div>
+        <div class="today-last-update">마지막 업데이트: <span id="lastUpdateTime">—</span></div>
+      </div>
+
+      <!-- KPI 카드 -->
+      <div class="kpi-grid" id="kpiGrid">
+        <div class="kpi-card">
+          <div class="kpi-icon blue"><i class="fas fa-eye"></i></div>
+          <div class="kpi-val" id="kpiAdViews">—</div>
+          <div class="kpi-label">광고 시청 수</div>
+          <div class="kpi-change neu" id="kpiAdViewsChange">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon gold"><i class="fas fa-coins"></i></div>
+          <div class="kpi-val" id="kpiRevenue">—</div>
+          <div class="kpi-label">광고 수익 (추정)</div>
+          <div class="kpi-change neu" id="kpiRevenueChange">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon green"><i class="fas fa-download"></i></div>
+          <div class="kpi-val" id="kpiSaves">—</div>
+          <div class="kpi-label">이미지 저장 수</div>
+          <div class="kpi-change neu" id="kpiSavesChange">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon purple"><i class="fas fa-chart-pie"></i></div>
+          <div class="kpi-val" id="kpiConvRate">—</div>
+          <div class="kpi-label">광고→저장 전환율</div>
+          <div class="kpi-change neu" id="kpiConvChange">—</div>
+        </div>
+      </div>
+
+      <!-- 차트 2열 -->
+      <div class="section-grid">
+        <div class="card">
+          <div class="card-title">광고 시청 추이 <span id="chartRangeLabel">최근 7일</span></div>
+          <div class="chart-wrap"><canvas id="adChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">저장 횟수 추이 <span id="chartRangeLabel2">최근 7일</span></div>
+          <div class="chart-wrap"><canvas id="saveChart"></canvas></div>
+        </div>
+        <div class="card full-card">
+          <div class="card-title">수익 추이 (원) <span>추정 단가 기준</span></div>
+          <div class="chart-wrap" style="height:180px;"><canvas id="revenueChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 광고 수익 페이지 ── -->
+    <div id="page-revenue" style="display:none;">
+      <div class="page-header">
+        <h1><i class="fas fa-coins" style="color:#ffd54f;font-size:20px;"></i> 광고 수익</h1>
+        <p>광고 시청 수 및 예상 수익 상세</p>
+      </div>
+
+      <!-- 오늘 수익 강조 -->
+      <div class="revenue-highlight">
+        <i class="fas fa-coins"></i>
+        <div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;letter-spacing:0.5px;margin-bottom:2px;">오늘 추정 수익</div>
+          <strong id="rev_todayHighlight">₩0</strong>
+          <p>광고 <span id="rev_todayViewsHighlight">0</span>회 시청 · 단가 ₩<span id="rev_rpaHighlight">50</span>/회</p>
+        </div>
+      </div>
+
+      <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));">
+        <div class="kpi-card">
+          <div class="kpi-icon gold"><i class="fas fa-coins"></i></div>
+          <div class="kpi-val" id="rev_total">—</div>
+          <div class="kpi-label">누적 추정 수익(원)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon blue"><i class="fas fa-eye"></i></div>
+          <div class="kpi-val" id="rev_totalViews">—</div>
+          <div class="kpi-label">누적 광고 시청 수</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon green"><i class="fas fa-calendar-day"></i></div>
+          <div class="kpi-val" id="rev_today">—</div>
+          <div class="kpi-label">오늘 수익(원)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon purple"><i class="fas fa-trophy"></i></div>
+          <div class="kpi-val" id="rev_bestDay">—</div>
+          <div class="kpi-label">최고 수익 일자</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:0;">
+        <div class="card-title">단가 설정</div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <p>광고 1회 수익 단가</p>
+            <span>광고 1회 시청 당 예상 수익 (원)</span>
+          </div>
+          <input type="number" class="setting-input" id="revenuePerAd" min="1" max="9999" placeholder="50">
+        </div>
+        <button class="save-settings-btn" onclick="saveRevenueSettings()"><i class="fas fa-save" style="margin-right:6px;"></i>단가 저장</button>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">일별 광고 수익 내역 <span>최근 30일</span></div>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="revenueTable">
+            <thead><tr>
+              <th>날짜</th><th>광고 시청</th><th>수익(원)</th><th>비고</th>
+            </tr></thead>
+            <tbody id="revenueTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 저장 현황 페이지 ── -->
+    <div id="page-saves" style="display:none;">
+      <div class="page-header">
+        <h1><i class="fas fa-images" style="color:#81c784;font-size:20px;"></i> 저장 현황</h1>
+        <p>이미지 저장 수 상세 현황</p>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));">
+        <div class="kpi-card">
+          <div class="kpi-icon green"><i class="fas fa-download"></i></div>
+          <div class="kpi-val" id="sv_total">—</div>
+          <div class="kpi-label">누적 저장 수</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon blue"><i class="fas fa-calendar-day"></i></div>
+          <div class="kpi-val" id="sv_today">—</div>
+          <div class="kpi-label">오늘 저장 수</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon gold"><i class="fas fa-fire"></i></div>
+          <div class="kpi-val" id="sv_max">—</div>
+          <div class="kpi-label">최다 저장일 저장 수</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon purple"><i class="fas fa-chart-bar"></i></div>
+          <div class="kpi-val" id="sv_avg">—</div>
+          <div class="kpi-label">일 평균 저장 수</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:0;">
+        <div class="card-title">일별 저장 내역 <span>최근 30일</span></div>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="savesTable">
+            <thead><tr>
+              <th>날짜</th><th>저장 횟수</th><th>광고 시청</th><th>전환율</th>
+            </tr></thead>
+            <tbody id="savesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 일별 로그 페이지 ── -->
+    <div id="page-log" style="display:none;">
+      <div class="page-header">
+        <h1><i class="fas fa-calendar-days" style="color:#ce93d8;font-size:20px;"></i> 일별 로그</h1>
+        <p>날짜별 전체 활동 기록</p>
+        <div class="header-actions">
+          <button class="hdr-btn danger" onclick="confirmClearStats()">
+            <i class="fas fa-trash-can"></i> 통계 초기화
+          </button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">전체 일별 로그 <span id="logCount">—</span></div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr>
+              <th>날짜</th><th>광고 시청</th><th>이미지 저장</th><th>추정 수익(원)</th><th>전환율</th>
+            </tr></thead>
+            <tbody id="logTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 설정 페이지 ── -->
+    <div id="page-settings" style="display:none;">
+      <div class="page-header">
+        <h1><i class="fas fa-gear" style="color:#7ec8e3;font-size:20px;"></i> 설정</h1>
+        <p>관리자 계정 및 시스템 설정</p>
+      </div>
+      <div class="settings-grid">
+        <div class="card">
+          <div class="card-title">관리자 계정</div>
+          <form class="pw-change-form" onsubmit="changePassword();return false;" autocomplete="on">
+            <div>
+              <label style="font-size:11px;color:rgba(100,180,255,0.8);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;display:block;margin-bottom:6px;">관리자 ID</label>
+              <input type="text" class="field-input" id="newAdminId" placeholder="새 관리자 ID" autocomplete="username">
+            </div>
+            <div>
+              <label style="font-size:11px;color:rgba(100,180,255,0.8);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;display:block;margin-bottom:6px;">현재 비밀번호</label>
+              <input type="password" class="field-input" id="currPw" placeholder="현재 비밀번호 입력" autocomplete="current-password">
+            </div>
+            <div>
+              <label style="font-size:11px;color:rgba(100,180,255,0.8);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;display:block;margin-bottom:6px;">새 비밀번호</label>
+              <input type="password" class="field-input" id="newPw" placeholder="새 비밀번호 (8자 이상)" autocomplete="new-password">
+            </div>
+            <div>
+              <label style="font-size:11px;color:rgba(100,180,255,0.8);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;display:block;margin-bottom:6px;">새 비밀번호 확인</label>
+              <input type="password" class="field-input" id="confirmPw" placeholder="새 비밀번호 재입력" autocomplete="new-password">
+            </div>
+            <button type="submit" class="pw-change-btn">
+              <i class="fas fa-key" style="margin-right:6px;"></i>계정 정보 변경
+            </button>
+          </form>
+        </div>
+        <div class="card">
+          <div class="card-title">수익 단가 설정</div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <p>광고 1회 수익 단가</p>
+              <span>실제 광고 플랫폼 정책에 맞게 설정하세요</span>
+            </div>
+            <input type="number" class="setting-input" id="revenuePerAdSetting" min="1" max="9999" placeholder="50">
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <p>하루 최대 광고 횟수</p>
+              <span>현재 앱 설정값 (참고용)</span>
+            </div>
+            <input type="number" class="setting-input" value="3" disabled style="opacity:0.5;">
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <p>데이터 보관 기간</p>
+              <span>일별 로그 최대 보관 일수</span>
+            </div>
+            <input type="number" class="setting-input" id="retentionDays" min="7" max="365" placeholder="90">
+          </div>
+          <button class="save-settings-btn" onclick="saveAllSettings()"><i class="fas fa-save" style="margin-right:6px;"></i>설정 저장</button>
+        </div>
+        <div class="card">
+          <div class="card-title">앱 바로가기</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+            <a href="index.html" style="text-decoration:none;">
+              <button class="hdr-btn" style="width:100%;justify-content:center;padding:12px;">
+                <i class="fas fa-droplet"></i> Rainy Note 앱 열기
+              </button>
+            </a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">위험 구역</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+            <button class="hdr-btn danger" style="width:100%;justify-content:center;padding:12px;" onclick="confirmClearStats()">
+              <i class="fas fa-trash-can"></i> 통계 데이터 초기화
+            </button>
+          </div>
+          <p style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:10px;line-height:1.6;">
+            통계를 초기화하면 모든 광고 시청 수, 저장 수, 수익 기록이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mainContent -->
+</div><!-- /dashboard -->
+
+<!-- 확인 모달 -->
+<div class="confirm-backdrop" id="confirmModal">
+  <div class="confirm-box">
+    <h3>⚠️ 통계 초기화</h3>
+    <p>모든 광고 시청 수, 저장 수, 수익 기록이 영구 삭제됩니다.<br>이 작업은 되돌릴 수 없습니다.</p>
+    <div class="confirm-btns">
+      <button class="confirm-btn cancel" onclick="closeConfirm()">취소</button>
+      <button class="confirm-btn danger" onclick="clearStats()">초기화</button>
+    </div>
+  </div>
+</div>
+
+<div id="adminToast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG & STATE
+// ══════════════════════════════════════════
+const STATS_KEY   = 'rn_stats_v1';
+const ADMIN_KEY   = 'rn_admin_v1';
+const DEFAULT_ID  = 'admin';
+const DEFAULT_PW  = 'rainynote2025';
+
+let currentFilter = 'today';
+let charts = {};
+let _autoRefreshTimer = null;
+const AUTO_REFRESH_INTERVAL = 30000; // 30초 자동 새로고침
+
+// ══════════════════════════════════════════
+//  ADMIN CREDENTIALS
+// ══════════════════════════════════════════
+function loadAdmin(){
+  try{ return JSON.parse(localStorage.getItem(ADMIN_KEY)||'null') || {id:DEFAULT_ID, pw:DEFAULT_PW}; }
+  catch(e){ return {id:DEFAULT_ID, pw:DEFAULT_PW}; }
+}
+function saveAdmin(obj){ localStorage.setItem(ADMIN_KEY, JSON.stringify(obj)); }
+
+// ── 로그인 ──
+function doLogin(){
+  const id = document.getElementById('loginId').value.trim();
+  const pw = document.getElementById('loginPw').value;
+  const admin = loadAdmin();
+  if(id === admin.id && pw === admin.pw){
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('sbAdminId').textContent = id;
+    document.getElementById('loginError').classList.remove('show');
+    initDashboard();
+    startAutoRefresh();
+  } else {
+    document.getElementById('loginError').classList.add('show');
+    document.getElementById('loginPw').value = '';
+    document.getElementById('loginPw').focus();
+  }
+}
+
+// Enter 키: ID 필드에서 Tab처럼 PW 포커스
+document.getElementById('loginId').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPw').focus(); });
+
+// ── 로그아웃 ──
+function doLogout(){
+  stopAutoRefresh();
+  document.getElementById('loginId').value = '';
+  document.getElementById('loginPw').value = '';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loginPage').style.display  = 'flex';
+  Object.values(charts).forEach(c=>c&&c.destroy&&c.destroy());
+  charts = {};
+}
+
+// ══════════════════════════════════════════
+//  AUTO REFRESH
+// ══════════════════════════════════════════
+function startAutoRefresh(){
+  stopAutoRefresh();
+  _autoRefreshTimer = setInterval(()=>{
+    renderTodayBanner();
+    // 현재 열린 페이지 새로고침
+    const pages = ['overview','revenue','saves','log'];
+    pages.forEach(p=>{
+      const el = document.getElementById('page-'+p);
+      if(el && el.style.display !== 'none'){
+        if(p==='overview') renderOverview();
+        if(p==='revenue')  renderRevenuePage();
+        if(p==='saves')    renderSavesPage();
+        if(p==='log')      renderLogPage();
+      }
+    });
+  }, AUTO_REFRESH_INTERVAL);
+}
+
+function stopAutoRefresh(){
+  if(_autoRefreshTimer){ clearInterval(_autoRefreshTimer); _autoRefreshTimer=null; }
+}
+
+// ══════════════════════════════════════════
+//  STATS HELPERS
+// ══════════════════════════════════════════
+function loadStats(){
+  try{ return JSON.parse(localStorage.getItem(STATS_KEY)||'null') || {totalAdViews:0,totalSaves:0,dailyLog:[]}; }
+  catch(e){ return {totalAdViews:0,totalSaves:0,dailyLog:[]}; }
+}
+
+function getRevenuePerAd(){
+  const saved = localStorage.getItem('rn_revenue_per_ad');
+  return saved ? parseInt(saved) : 50;
+}
+
+function getToday(){ return new Date().toLocaleDateString('ko-KR'); }
+
+function getFilteredDays(filter){
+  const s = loadStats();
+  const log = [...s.dailyLog].reverse();
+  if(filter === 'today'){
+    const today = getToday();
+    return log.filter(d=>d.date===today);
+  }
+  if(filter === '7d')  return log.slice(0,7);
+  if(filter === '30d') return log.slice(0,30);
+  return log;
+}
+
+// ══════════════════════════════════════════
+//  TODAY BANNER (실시간 현황)
+// ══════════════════════════════════════════
+function renderTodayBanner(){
+  const s   = loadStats();
+  const rpa = getRevenuePerAd();
+  const today = getToday();
+  const td  = s.dailyLog.find(d=>d.date===today) || {adViews:0, saves:0};
+  const rev = td.adViews * rpa;
+  const conv= td.adViews>0 ? ((td.saves/td.adViews)*100).toFixed(1)+'%' : '—';
+  const now = new Date();
+
+  document.getElementById('todayDateLabel').textContent  = today;
+  document.getElementById('todayAdViews').textContent    = td.adViews.toLocaleString();
+  document.getElementById('todaySaves').textContent      = td.saves.toLocaleString();
+  document.getElementById('todayRevenue').textContent    = '₩'+rev.toLocaleString();
+  document.getElementById('todayConvRate').textContent   = conv;
+  document.getElementById('todayRevenueRate').textContent= '단가 ₩'+rpa+'/회';
+  document.getElementById('lastUpdateTime').textContent  =
+    now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// ══════════════════════════════════════════
+//  DASHBOARD INIT
+// ══════════════════════════════════════════
+function initDashboard(){
+  const now = new Date();
+  document.getElementById('overviewDate').textContent =
+    now.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'}) +
+    ' ' + now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+
+  const rpa = getRevenuePerAd();
+  const el1 = document.getElementById('revenuePerAd');
+  const el2 = document.getElementById('revenuePerAdSetting');
+  if(el1) el1.value = rpa;
+  if(el2) el2.value = rpa;
+  const rd = document.getElementById('retentionDays');
+  if(rd) rd.value = parseInt(localStorage.getItem('rn_retention_days')||'90');
+
+  const newId = document.getElementById('newAdminId');
+  if(newId) newId.value = loadAdmin().id;
+
+  renderTodayBanner();
+  renderOverview();
+}
+
+function refreshData(){
+  renderTodayBanner();
+  renderOverview();
+  if(document.getElementById('page-revenue').style.display !== 'none') renderRevenuePage();
+  if(document.getElementById('page-saves').style.display !== 'none')   renderSavesPage();
+  if(document.getElementById('page-log').style.display !== 'none')     renderLogPage();
+  showAdminToast('✅ 데이터 새로고침 완료');
+}
+
+// ══════════════════════════════════════════
+//  PAGE NAVIGATION
+// ══════════════════════════════════════════
+const PAGES = ['overview','revenue','saves','log','settings'];
+function showPage(name){
+  PAGES.forEach(p=>{
+    document.getElementById('page-'+p).style.display = p===name ? 'block' : 'none';
+    document.getElementById('nav-'+p).classList.toggle('active', p===name);
+  });
+  if(name==='overview') renderOverview();
+  if(name==='revenue')  renderRevenuePage();
+  if(name==='saves')    renderSavesPage();
+  if(name==='log')      renderLogPage();
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+// ══════════════════════════════════════════
+//  OVERVIEW PAGE
+// ══════════════════════════════════════════
+function setFilter(f, el){
+  currentFilter = f;
+  document.querySelectorAll('.date-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderOverview();
+}
+
+function renderOverview(){
+  const days = getFilteredDays(currentFilter);
+  const s = loadStats();
+  const rpa = getRevenuePerAd();
+
+  const sumAds   = days.reduce((a,d)=>a+d.adViews,0);
+  const sumSaves = days.reduce((a,d)=>a+d.saves,0);
+  const sumRev   = days.reduce((a,d)=>a+(d.adViews*rpa),0);
+  const convRate = sumAds>0 ? ((sumSaves/sumAds)*100).toFixed(1) : '—';
+
+  const yStr = (()=>{ const d=new Date(); d.setDate(d.getDate()-1); return d.toLocaleDateString('ko-KR'); })();
+  const yd = s.dailyLog.find(d=>d.date===yStr);
+
+  function changeHTML(cur, prev){
+    if(prev===undefined||prev===null) return '<span class="kpi-change neu">비교 데이터 없음</span>';
+    const diff = cur - prev;
+    if(diff>0) return `<span class="kpi-change up">▲ ${diff} 전일 대비</span>`;
+    if(diff<0) return `<span class="kpi-change down">▼ ${Math.abs(diff)} 전일 대비</span>`;
+    return `<span class="kpi-change neu">— 전일과 동일</span>`;
+  }
+
+  document.getElementById('kpiAdViews').textContent = sumAds.toLocaleString();
+  document.getElementById('kpiRevenue').textContent = '₩'+sumRev.toLocaleString();
+  document.getElementById('kpiSaves').textContent   = sumSaves.toLocaleString();
+  document.getElementById('kpiConvRate').textContent = convRate+(convRate==='—'?'':'%');
+
+  if(currentFilter==='today'){
+    document.getElementById('kpiAdViewsChange').innerHTML = changeHTML(sumAds,   yd?.adViews);
+    document.getElementById('kpiRevenueChange').innerHTML = changeHTML(sumRev,   yd?(yd.adViews*rpa):undefined);
+    document.getElementById('kpiSavesChange').innerHTML   = changeHTML(sumSaves, yd?.saves);
+    const yConv = yd&&yd.adViews>0 ? ((yd.saves/yd.adViews)*100).toFixed(1) : null;
+    document.getElementById('kpiConvChange').innerHTML    = yConv ? changeHTML(parseFloat(convRate||0),parseFloat(yConv)) : '<span class="kpi-change neu">비교 데이터 없음</span>';
+  } else {
+    ['kpiAdViewsChange','kpiRevenueChange','kpiSavesChange','kpiConvChange'].forEach(id=>{
+      document.getElementById(id).innerHTML = `<span class="kpi-change neu">기간 내 합계</span>`;
+    });
+  }
+
+  // 차트 (최근 7일 고정)
+  const chartDays = [...s.dailyLog].slice(-7);
+  const labels = chartDays.map(d=>d.date.replace(/\d{4}\. /,'').replace('.',''));
+  const adData  = chartDays.map(d=>d.adViews);
+  const svData  = chartDays.map(d=>d.saves);
+  const rvData  = chartDays.map(d=>d.adViews*rpa);
+
+  const chartRange = currentFilter==='today'?'오늘':currentFilter==='7d'?'최근 7일':currentFilter==='30d'?'최근 30일':'전체';
+  document.querySelectorAll('#chartRangeLabel,#chartRangeLabel2').forEach(e=>e.textContent=chartRange);
+
+  buildLineChart('adChart',    'adChart',    labels, adData, '#7ec8e3', '광고 시청 수');
+  buildLineChart('saveChart',  'saveChart',  labels, svData, '#81c784', '저장 수');
+  buildBarChart( 'revenueChart','revenueChart',labels,rvData,'#ffd54f', '수익(원)');
+}
+
+// ══════════════════════════════════════════
+//  REVENUE PAGE
+// ══════════════════════════════════════════
+function renderRevenuePage(){
+  const s = loadStats();
+  const rpa = getRevenuePerAd();
+  const today = getToday();
+  const td = s.dailyLog.find(d=>d.date===today);
+  const totalRev = s.totalAdViews * rpa;
+  const todayRev = td ? td.adViews*rpa : 0;
+  const todayViews = td ? td.adViews : 0;
+
+  const bestDay = s.dailyLog.reduce((a,d)=>(!a||d.adViews>a.adViews)?d:a, null);
+
+  // 강조 배너
+  document.getElementById('rev_todayHighlight').textContent = '₩'+todayRev.toLocaleString();
+  document.getElementById('rev_todayViewsHighlight').textContent = todayViews;
+  document.getElementById('rev_rpaHighlight').textContent = rpa;
+
+  document.getElementById('rev_total').textContent      = '₩'+totalRev.toLocaleString();
+  document.getElementById('rev_totalViews').textContent = s.totalAdViews.toLocaleString();
+  document.getElementById('rev_today').textContent      = '₩'+todayRev.toLocaleString();
+  document.getElementById('rev_bestDay').textContent    = bestDay ? bestDay.date.replace(/\d{4}\. /,'').replace('.','') : '—';
+
+  document.getElementById('revenuePerAd').value = rpa;
+
+  const tbody = document.getElementById('revenueTableBody');
+  const recent = [...s.dailyLog].reverse().slice(0,30);
+  tbody.innerHTML = recent.length === 0
+    ? '<tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.3);padding:24px;">데이터 없음</td></tr>'
+    : recent.map(d=>{
+        const rev = d.adViews*rpa;
+        const isToday = d.date===today;
+        return `<tr>
+          <td>${d.date}${isToday?'<span class="badge blue" style="margin-left:6px;">오늘</span>':''}</td>
+          <td><strong style="color:#7ec8e3;">${d.adViews}</strong></td>
+          <td><strong style="color:#ffd54f;">₩${rev.toLocaleString()}</strong></td>
+          <td>${rev>0?'<span class="badge gold">수익 발생</span>':'<span class="badge" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);">없음</span>'}</td>
+        </tr>`;
+      }).join('');
+}
+
+// ══════════════════════════════════════════
+//  SAVES PAGE
+// ══════════════════════════════════════════
+function renderSavesPage(){
+  const s = loadStats();
+  const today = getToday();
+  const td = s.dailyLog.find(d=>d.date===today);
+  const maxDay = s.dailyLog.reduce((a,d)=>(!a||d.saves>a.saves)?d:a, null);
+  const avg = s.dailyLog.length>0 ? (s.totalSaves/s.dailyLog.length).toFixed(1) : '—';
+
+  document.getElementById('sv_total').textContent = s.totalSaves.toLocaleString();
+  document.getElementById('sv_today').textContent = td ? td.saves : '0';
+  document.getElementById('sv_max').textContent   = maxDay ? maxDay.saves : '—';
+  document.getElementById('sv_avg').textContent   = avg;
+
+  const tbody = document.getElementById('savesTableBody');
+  const recent = [...s.dailyLog].reverse().slice(0,30);
+  tbody.innerHTML = recent.length === 0
+    ? '<tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.3);padding:24px;">데이터 없음</td></tr>'
+    : recent.map(d=>{
+        const conv = d.adViews>0 ? ((d.saves/d.adViews)*100).toFixed(1)+'%' : '—';
+        const isToday = d.date===today;
+        return `<tr>
+          <td>${d.date}${isToday?'<span class="badge blue" style="margin-left:6px;">오늘</span>':''}</td>
+          <td><strong style="color:#81c784;">${d.saves}</strong></td>
+          <td>${d.adViews}</td>
+          <td>${conv}</td>
+        </tr>`;
+      }).join('');
+}
+
+// ══════════════════════════════════════════
+//  LOG PAGE
+// ══════════════════════════════════════════
+function renderLogPage(){
+  const s = loadStats();
+  const rpa = getRevenuePerAd();
+  const today = getToday();
+  const reversed = [...s.dailyLog].reverse();
+
+  document.getElementById('logCount').textContent = reversed.length+'일 기록';
+
+  const tbody = document.getElementById('logTableBody');
+  tbody.innerHTML = reversed.length === 0
+    ? '<tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,0.3);padding:24px;">기록 없음 — 앱에서 광고 시청 또는 저장 후 데이터가 쌓입니다.</td></tr>'
+    : reversed.map(d=>{
+        const rev  = d.adViews*rpa;
+        const conv = d.adViews>0 ? ((d.saves/d.adViews)*100).toFixed(1)+'%' : '—';
+        const isToday = d.date===today;
+        return `<tr${isToday?' style="background:rgba(100,180,255,0.05);"':''}>
+          <td>${d.date}${isToday?'<span class="badge blue" style="margin-left:6px;">오늘</span>':''}</td>
+          <td><strong style="color:#7ec8e3;">${d.adViews}</strong></td>
+          <td><strong style="color:#81c784;">${d.saves}</strong></td>
+          <td><strong style="color:#ffd54f;">₩${rev.toLocaleString()}</strong></td>
+          <td>${conv}</td>
+        </tr>`;
+      }).join('');
+}
+
+// ══════════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════════
+function saveRevenueSettings(){
+  const v = parseInt(document.getElementById('revenuePerAd').value);
+  if(isNaN(v)||v<1){ showAdminToast('⚠️ 유효한 단가를 입력하세요'); return; }
+  localStorage.setItem('rn_revenue_per_ad', v);
+  showAdminToast('✅ 단가가 저장되었습니다 (₩'+v+'/회)');
+  renderTodayBanner();
+  renderOverview();
+}
+
+function saveAllSettings(){
+  const rpa = parseInt(document.getElementById('revenuePerAdSetting').value);
+  const rd  = parseInt(document.getElementById('retentionDays').value);
+  if(!isNaN(rpa)&&rpa>0) localStorage.setItem('rn_revenue_per_ad', rpa);
+  if(!isNaN(rd)&&rd>=7)  localStorage.setItem('rn_retention_days', rd);
+  showAdminToast('✅ 설정이 저장되었습니다');
+  const el = document.getElementById('revenuePerAd');
+  if(el) el.value = rpa||50;
+  renderTodayBanner();
+}
+
+function changePassword(){
+  const admin  = loadAdmin();
+  const currPw = document.getElementById('currPw').value;
+  const newId  = document.getElementById('newAdminId').value.trim();
+  const newPw  = document.getElementById('newPw').value;
+  const cfPw   = document.getElementById('confirmPw').value;
+
+  if(currPw !== admin.pw){ showAdminToast('⚠️ 현재 비밀번호가 틀립니다'); return; }
+  if(!newId)              { showAdminToast('⚠️ 새 ID를 입력하세요'); return; }
+  if(newPw.length<8)      { showAdminToast('⚠️ 비밀번호는 8자 이상이어야 합니다'); return; }
+  if(newPw !== cfPw)      { showAdminToast('⚠️ 새 비밀번호가 일치하지 않습니다'); return; }
+
+  saveAdmin({id:newId, pw:newPw});
+  document.getElementById('sbAdminId').textContent = newId;
+  document.getElementById('currPw').value = '';
+  document.getElementById('newPw').value  = '';
+  document.getElementById('confirmPw').value = '';
+  showAdminToast('✅ 계정 정보가 변경되었습니다');
+}
+
+// ══════════════════════════════════════════
+//  CLEAR STATS
+// ══════════════════════════════════════════
+function confirmClearStats(){
+  document.getElementById('confirmModal').classList.add('open');
+}
+function closeConfirm(){
+  document.getElementById('confirmModal').classList.remove('open');
+}
+function clearStats(){
+  localStorage.removeItem(STATS_KEY);
+  closeConfirm();
+  showAdminToast('🗑️ 통계 데이터가 초기화되었습니다');
+  renderTodayBanner();
+  renderOverview();
+  renderLogPage();
+}
+
+// ══════════════════════════════════════════
+//  CHARTS (Chart.js)
+// ══════════════════════════════════════════
+const CHART_DEFAULTS = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{display:false}, tooltip:{
+    backgroundColor:'rgba(10,20,35,0.92)',
+    titleColor:'#7ec8e3', bodyColor:'rgba(255,255,255,0.75)',
+    borderColor:'rgba(100,180,255,0.2)', borderWidth:1,
+    padding:10, cornerRadius:10,
+  }},
+  scales:{
+    x:{ grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'rgba(255,255,255,0.4)',font:{size:10}} },
+    y:{ grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'rgba(255,255,255,0.4)',font:{size:10}}, beginAtZero:true }
+  }
+};
+
+function buildLineChart(key, canvasId, labels, data, color, label){
+  if(charts[key]){ charts[key].destroy(); }
+  const ctx = document.getElementById(canvasId);
+  if(!ctx) return;
+  charts[key] = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label, data,
+        borderColor: color,
+        backgroundColor: color+'22',
+        pointBackgroundColor: color,
+        pointRadius:4, pointHoverRadius:6,
+        borderWidth:2, tension:0.4, fill:true
+      }]
+    },
+    options:{ ...CHART_DEFAULTS }
+  });
+}
+
+function buildBarChart(key, canvasId, labels, data, color, label){
+  if(charts[key]){ charts[key].destroy(); }
+  const ctx = document.getElementById(canvasId);
+  if(!ctx) return;
+  charts[key] = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label, data,
+        backgroundColor: color+'99',
+        borderColor: color,
+        borderWidth:1, borderRadius:6,
+      }]
+    },
+    options:{ ...CHART_DEFAULTS }
+  });
+}
+
+// ══════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+
+let adminToastTimer;
+function showAdminToast(msg){
+  const t = document.getElementById('adminToast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(adminToastTimer);
+  adminToastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ══════════════════════════════════════════
+//  AUTO DEMO DATA (첫 실행 시 샘플 데이터 주입)
+// ══════════════════════════════════════════
+function injectDemoDataIfEmpty(){
+  const s = loadStats();
+  if(s.dailyLog.length > 0) return; // 이미 데이터 있으면 스킵
+
+  const demo = {totalAdViews:0, totalSaves:0, dailyLog:[]};
+  for(let i=13;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const dateStr = d.toLocaleDateString('ko-KR');
+    const av = Math.floor(Math.random()*12)+1;
+    const sv = Math.floor(Math.random()*(av+2));
+    demo.dailyLog.push({date:dateStr, adViews:av, saves:sv, revenue:av*50});
+    demo.totalAdViews += av;
+    demo.totalSaves   += sv;
+  }
+  localStorage.setItem(STATS_KEY, JSON.stringify(demo));
+}
+
+// ══════════════════════════════════════════
+//  START
+// ══════════════════════════════════════════
+injectDemoDataIfEmpty();
+</script>
+<script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>
+</html>
