@@ -41,10 +41,10 @@
 <!-- PNG 아이콘 추가: icons/generate-icons.html 에서 생성 후 icons/ 폴더에 저장하세요 -->
 
 <!-- ── 외부 라이브러리 ── -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css?v=2">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <!-- GIF 인코더 (animated GIF 영상 저장용) -->
-<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js?v=2"></script>
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html,body { width:100%; height:100%; overflow:hidden; font-family:'Inter','Noto Sans KR',sans-serif; background:#000; }
@@ -139,18 +139,21 @@ html,body { width:100%; height:100%; overflow:hidden; font-family:'Inter','Noto 
   outline:2px dashed rgba(126,200,227,0.85);
   background:rgba(126,200,227,0.06);
 }
-/* Delete badge on selected text */
-.text-node.selected::after {
-  content:'✕';
-  position:absolute; top:-10px; right:-10px;
-  width:20px; height:20px; border-radius:50%;
-  background:rgba(220,50,50,0.85); color:#fff;
-  font-size:10px; font-weight:700;
-  display:flex; align-items:center; justify-content:center;
-  line-height:20px; text-align:center;
-  box-shadow:0 2px 6px rgba(0,0,0,0.4);
+/* 선택된 텍스트 노드 내 삭제 버튼 */
+.tn-del-btn {
+  display:none;
+  position:absolute; top:-12px; right:-12px;
+  width:24px; height:24px; border-radius:50%;
+  background:rgba(220,50,50,0.9); border:2px solid #fff;
+  color:#fff; font-size:11px; font-weight:700;
+  align-items:center; justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,0.5);
   cursor:pointer;
+  /* 터치 실제 클릭 가능 — 이 버튼만 pointer-events:auto */
+  pointer-events:auto;
+  z-index:20; line-height:1;
 }
+.text-node.selected .tn-del-btn { display:flex; }
 
 /* ── CONTROL PANEL ── */
 #controlPanel {
@@ -188,12 +191,17 @@ html,body { width:100%; height:100%; overflow:hidden; font-family:'Inter','Noto 
 
 /* Delete selected text button */
 #delTextBtn {
-  display:none; width:100%; margin-top:8px;
-  background:rgba(220,50,50,0.15); border:1px solid rgba(220,50,50,0.35);
-  border-radius:12px; padding:10px; color:#ff8080; font-size:12px; font-weight:600;
+  display:flex; width:100%; margin-top:8px;
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:10px; color:rgba(255,255,255,0.25); font-size:12px; font-weight:600;
   cursor:pointer; align-items:center; justify-content:center; gap:6px;
+  opacity:0.4; transition:all 0.2s;
+  /* pointer-events 제거 — 항상 클릭 가능 */
 }
-#delTextBtn.visible { display:flex; }
+#delTextBtn.visible {
+  background:rgba(220,50,50,0.18); border-color:rgba(220,50,50,0.5);
+  color:#ff8080; opacity:1;
+}
 
 /* Sliders */
 .slider-row { display:flex; flex-direction:column; gap:12px; margin-top:4px; }
@@ -498,6 +506,13 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 }
 .save-type-tab i { font-size:13px; }
 
+/* ── 이미지 포맷 선택 패널 ── */
+#imgFmtPanel {
+  width:100%; box-sizing:border-box;
+  background:rgba(0,0,0,0.2); border:1px solid rgba(100,180,255,0.12);
+  border-radius:12px; padding:10px 14px; margin-top:8px;
+}
+
 /* ── 영상 설정 패널 ── */
 #videoSettingsPanel {
   background:rgba(0,0,0,0.2); border:1px solid rgba(100,180,255,0.12);
@@ -676,7 +691,9 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         <button class="style-btn" onclick="toggleStylePopup()"><i class="fas fa-palette"></i> Style</button>
         <button class="apply-btn" onclick="applyText()"><i class="fas fa-check"></i></button>
       </div>
-      <button id="delTextBtn" onclick="deleteSelectedNode()">
+      <button id="delTextBtn"
+              onclick="deleteSelectedNode()"
+              ontouchend="deleteSelectedNode();event.preventDefault();">
         <i class="fas fa-trash-can"></i> 선택한 텍스트 삭제
       </button>
       <div class="sec-title">Adjust</div>
@@ -965,6 +982,16 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
         <!-- 크롭 정보 -->
         <div id="cropInfo">드래그로 영역 이동 · 모서리 핸들로 크기 조절</div>
+        <!-- 이미지 포맷 선택 -->
+        <div id="imgFmtPanel">
+          <div class="vid-setting-row" style="margin-bottom:0;">
+            <span class="vid-setting-label"><i class="fas fa-file-image" style="margin-right:4px;"></i>저장 포맷</span>
+            <div class="vid-dur-chips">
+              <div class="vid-dur-chip active" data-imgfmt="png"  onclick="setImgFmt('png',this)">PNG</div>
+              <div class="vid-dur-chip"        data-imgfmt="jpeg" onclick="setImgFmt('jpeg',this)">JPEG</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ── 영상 저장 패널 ── -->
@@ -1083,12 +1110,14 @@ let currentTexture='rainy';
 let brushSize=8, density=0.6, bgBlur=0;
 let isDrawing=false, lastX=0, lastY=0;
 
-// ── TEXT SYSTEM (단일 노드만) ──
+// ── TEXT SYSTEM (다중 노드) ──
 let textStyle = { font:'sans-serif', size:24, color:'#ffffff' };
-let currentTextNode = null;   // 현재 유일한 텍스트 노드
+let textNodes = [];         // 모든 텍스트 노드 배열 { id, text, x, y, font, size, color }
+let selectedTextId = null;  // 현재 선택(드래그) 중인 노드 id
+let currentTextNode = null; // 하위호환용 — 마지막으로 추가된 노드 참조
 let isDraggingText = false;
 let textDragOX=0, textDragOY=0;
-let _textPlacing = false; // 텍스트 배치 중 플래그
+let _textPlacing = false;   // 텍스트 배치 중 플래그
 
 // ── UNDO STACK (weatherCanvas ImageData 기반) ──
 // 최대 20단계 보존
@@ -2297,15 +2326,20 @@ function getPos(e){
   return{x:t.clientX-rect.left, y:t.clientY-rect.top};
 }
 
-// 텍스트 노드 히트 테스트
+// 텍스트 노드 히트 테스트 — 히트된 노드의 id 반환, 없으면 null
 function hitTextNode(px,py){
-  if(!currentTextNode) return false;
-  const el=document.getElementById('tn-text');
-  if(!el) return false;
-  const r=el.getBoundingClientRect();
+  if(textNodes.length===0) return null;
   const ar=document.getElementById('app').getBoundingClientRect();
-  const x=r.left-ar.left, y=r.top-ar.top;
-  return px>=x-8 && px<=x+r.width+8 && py>=y-8 && py<=y+r.height+8;
+  // 마지막에 추가된 노드가 위에 있으므로 역순탄색
+  for(let i=textNodes.length-1;i>=0;i--){
+    const node=textNodes[i];
+    const el=document.getElementById(node.id);
+    if(!el) continue;
+    const r=el.getBoundingClientRect();
+    const x=r.left-ar.left, y=r.top-ar.top;
+    if(px>=x-8 && px<=x+r.width+8 && py>=y-8 && py<=y+r.height+8) return node.id;
+  }
+  return null;
 }
 
 // ── 진동 헬퍼 ──
@@ -2334,9 +2368,12 @@ function vibeEnd(){
 function onTouchStart(e){
   e.preventDefault();
   const pos=getPos(e);
-  if(hitTextNode(pos.x,pos.y)){
+  const hitId=hitTextNode(pos.x,pos.y);
+  if(hitId){
     isDraggingText=true;
-    const el=document.getElementById('tn-text');
+    selectedTextId=hitId;
+    _setSelectedText(hitId);
+    const el=document.getElementById(hitId);
     if(el){
       const r=el.getBoundingClientRect();
       const ar=document.getElementById('app').getBoundingClientRect();
@@ -2345,6 +2382,8 @@ function onTouchStart(e){
     }
     return;
   }
+  // 빈 공간 터치: 선택 해제
+  if(selectedTextId){ _setSelectedText(null); selectedTextId=null; }
   // 유리 닦기 시작 전 undo 스냅샷
   pushUndo();
   isDrawing=true; lastX=pos.x; lastY=pos.y;
@@ -2354,7 +2393,7 @@ function onTouchStart(e){
 function onTouchMove(e){
   e.preventDefault();
   const pos=getPos(e);
-  if(isDraggingText){ moveTextEl(pos.x-textDragOX, pos.y-textDragOY); return; }
+  if(isDraggingText){ moveTextEl(selectedTextId, pos.x-textDragOX, pos.y-textDragOY); return; }
   if(!isDrawing) return;
   erase(lastX,lastY,pos.x,pos.y);
   vibeMove(pos.x, pos.y);
@@ -2367,9 +2406,12 @@ function onTouchEnd(){
 
 function onMouseDown(e){
   const pos=getPos(e);
-  if(hitTextNode(pos.x,pos.y)){
+  const hitId=hitTextNode(pos.x,pos.y);
+  if(hitId){
     isDraggingText=true;
-    const el=document.getElementById('tn-text');
+    selectedTextId=hitId;
+    _setSelectedText(hitId);
+    const el=document.getElementById(hitId);
     if(el){
       const r=el.getBoundingClientRect();
       const ar=document.getElementById('app').getBoundingClientRect();
@@ -2378,13 +2420,15 @@ function onMouseDown(e){
     }
     return;
   }
+  // 빈 공간 클릭: 선택 해제
+  if(selectedTextId){ _setSelectedText(null); selectedTextId=null; }
   pushUndo();
   isDrawing=true; lastX=pos.x; lastY=pos.y;
   erase(pos.x,pos.y,pos.x,pos.y);
 }
 function onMouseMove(e){
   const pos=getPos(e);
-  if(isDraggingText){ moveTextEl(pos.x-textDragOX, pos.y-textDragOY); return; }
+  if(isDraggingText){ moveTextEl(selectedTextId, pos.x-textDragOX, pos.y-textDragOY); return; }
   if(!isDrawing) return;
   erase(lastX,lastY,pos.x,pos.y); lastX=pos.x; lastY=pos.y;
 }
@@ -2426,10 +2470,16 @@ function resetGlass(){
   if(blurSlider) blurSlider.value = 0;
   if(blurVal)    blurVal.textContent = '0px';
 
-  // ── 텍스트 노드 제거 ──
-  const tnEl = document.getElementById('tn-text');
-  if(tnEl) tnEl.remove();
+  // ── 텍스트 노드 전체 제거 ──
+  textNodes.forEach(node=>{
+    const el=document.getElementById(node.id);
+    if(el) el.remove();
+  });
+  textNodes = [];
   currentTextNode = null;
+  selectedTextId  = null;
+  document.querySelectorAll('.text-node').forEach(e => e.classList.remove('selected'));
+  _syncDelBtn(null);
   // textLayerCanvas도 클리어
   if(tCtx) tCtx.clearRect(0,0,W,H);
 
@@ -2441,32 +2491,56 @@ function resetGlass(){
 }
 
 // ═══════════════════════════════════════════════════════════
-//  TEXT NODE — 단일 텍스트, 중앙 배치 후 드래그 이동
+//  TEXT NODE — 다중 텍스트 노드, 개별 드래그·삭제 지원
 // ═══════════════════════════════════════════════════════════
+
+// 선택 상태 시각화 + 삭제 버튼 표시
+function _setSelectedText(id){
+  selectedTextId = id;
+  // 모든 노드 선택 해제 후 해당 노드만 selected 클래스 부여
+  document.querySelectorAll('.text-node').forEach(el=>{
+    el.classList.toggle('selected', !!id && el.id === id);
+  });
+  // 삭제 버튼: 선택됐거나 텍스트가 1개뿐이면 활성화
+  _syncDelBtn(id);
+}
+
+// 삭제 버튼 활성화 상태를 textNodes 기준으로 동기화
+function _syncDelBtn(selectedId){
+  const delBtn = document.getElementById('delTextBtn');
+  if(!delBtn) return;
+  // 선택된 노드가 있거나 노드가 1개뿐이면 활성화
+  const active = !!selectedId || textNodes.length === 1;
+  delBtn.classList.toggle('visible', active);
+  if(selectedId) delBtn.dataset.target = selectedId;
+  else if(textNodes.length === 1) delBtn.dataset.target = textNodes[0].id;
+  else delete delBtn.dataset.target;
+}
 
 function applyText(){
   const msg=document.getElementById('msgInput').value.trim();
   if(!msg){ showToast('메시지를 입력해 주세요.'); return; }
 
-  // 기존 텍스트 DOM 제거
-  const old=document.getElementById('tn-text');
-  if(old) old.remove();
+  // 고유 id 생성
+  const nodeId = 'tn-' + Date.now();
 
-  // 새 노드 데이터
-  currentTextNode={
-    text:msg,
-    x:0, y:0,
-    font:textStyle.font,
-    size:textStyle.size,
-    color:textStyle.color
+  // 노드 데이터 생성
+  const nodeData = {
+    id:    nodeId,
+    text:  msg,
+    x:     0, y: 0,
+    font:  textStyle.font,
+    size:  textStyle.size,
+    color: textStyle.color
   };
+  textNodes.push(nodeData);
+  currentTextNode = nodeData; // 호환성 유지
 
   // DOM 요소 생성 — 앱 컨테이너에 추가
   const app=document.getElementById('app');
   const el=document.createElement('div');
-  el.id='tn-text';
+  el.id=nodeId;
   el.className='text-node';
-  el.textContent=msg;
   el.style.fontFamily=textStyle.font;
   el.style.fontSize=textStyle.size+'px';
   el.style.color=textStyle.color;
@@ -2475,77 +2549,127 @@ function applyText(){
   el.style.visibility='hidden';
   el.style.left='0px';
   el.style.top='0px';
+
+  // 텍스트 span (내용)
+  const span = document.createElement('span');
+  span.className = 'tn-text-content';
+  span.textContent = msg;
+  el.appendChild(span);
+
+  // 삭제 버튼 (선택 시에만 표시)
+  const delBadge = document.createElement('button');
+  delBadge.className = 'tn-del-btn';
+  delBadge.innerHTML = '✕';
+  delBadge.title = '삭제';
+  // touchend와 click 모두 처리 (모바일/PC 대응)
+  const _doDelete = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    _deleteNodeById(nodeId);
+  };
+  delBadge.addEventListener('touchend', _doDelete, {passive:false});
+  delBadge.addEventListener('click',    _doDelete);
+  el.appendChild(delBadge);
+
   app.appendChild(el);
 
-  // 입력창 초기화 (배치 전에 처리)
+  // 입력창 초기화
   document.getElementById('msgInput').value='';
 
   // 배치 플래그 설정 — resize 중에 buildWeather 스킵
   _textPlacing = true;
 
   // 3프레임 후 실제 크기 측정 → 정중앙 배치
-  // (패널 애니메이션/레이아웃 완료 후 측정)
   function placeCentered(){
     const appRect=app.getBoundingClientRect();
     const appW=appRect.width||W;
     const appH=appRect.height||H;
     const tw=el.offsetWidth||Math.min(msg.length*textStyle.size*0.6, appW*0.85);
     const th=el.offsetHeight||textStyle.size*1.5;
-    const cx=Math.round((appW-tw)/2);
-    const cy=Math.round((appH-th)/2);
-    currentTextNode.x=cx;
-    currentTextNode.y=cy;
+    // 여러 개일 때 살짝 오프셋을 두어 겹치지 않게
+    const offset=(textNodes.length-1)*20;
+    const cx=Math.round(Math.min((appW-tw)/2+offset, appW-tw));
+    const cy=Math.round(Math.min((appH-th)/2+offset, appH-th));
+    nodeData.x=cx; nodeData.y=cy;
     el.style.left=cx+'px';
     el.style.top=cy+'px';
     el.style.visibility='visible';
     _textPlacing = false;
+    // 새로 추가한 노드 선택 상태로
+    _setSelectedText(nodeId);
+    _syncDelBtn(nodeId);
     showToast('✍️ 드래그로 텍스트를 이동하세요!');
   }
 
-  // rAF 3단계 — 레이아웃이 완전히 안정된 후 배치
   requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(placeCentered)));
 }
 
-// 텍스트 DOM 요소를 직접 위치 이동
-function moveTextEl(nx,ny){
-  const el=document.getElementById('tn-text');
-  if(!el||!currentTextNode) return;
+// 특정 id 텍스트 DOM 요소를 직접 위치 이동
+function moveTextEl(id, nx, ny){
+  if(!id) return;
+  const el=document.getElementById(id);
+  const node=textNodes.find(n=>n.id===id);
+  if(!el||!node) return;
   const tw=el.offsetWidth||80, th=el.offsetHeight||30;
   const cx=Math.max(0,Math.min(W-tw,nx));
   const cy=Math.max(0,Math.min(H-th,ny));
   el.style.left=cx+'px';
   el.style.top=cy+'px';
-  currentTextNode.x=cx;
-  currentTextNode.y=cy;
+  node.x=cx; node.y=cy;
 }
 
-// 텍스트 삭제 버튼
-function deleteSelectedNode(){
-  const el=document.getElementById('tn-text');
+// ID로 특정 텍스트 노드 삭제 (내부 공통 함수)
+function _deleteNodeById(targetId){
+  if(!targetId) return;
+  const el = document.getElementById(targetId);
   if(el) el.remove();
-  currentTextNode=null;
-  const delBtn=document.getElementById('delTextBtn');
-  if(delBtn) delBtn.classList.remove('visible');
+  textNodes = textNodes.filter(n => n.id !== targetId);
+  currentTextNode = textNodes.length > 0 ? textNodes[textNodes.length-1] : null;
+  if(selectedTextId === targetId) selectedTextId = null;
+  document.querySelectorAll('.text-node').forEach(e => e.classList.remove('selected'));
+  _syncDelBtn(null);
   showToast('텍스트가 삭제되었습니다.');
 }
 
-// 저장용: textLayerCanvas에 텍스트 렌더링
+// 패널의 "선택한 텍스트 삭제" 버튼 — DOM 탐색 우선
+function deleteSelectedNode(){
+  // 1순위: DOM에서 .selected 클래스를 가진 text-node 직접 탐색
+  const selectedEl = document.querySelector('.text-node.selected');
+  const delBtn     = document.getElementById('delTextBtn');
+  const targetId   = (selectedEl && selectedEl.id)
+                  || selectedTextId
+                  || (delBtn && delBtn.dataset.target)
+                  || null;
+
+  if(!targetId){
+    if(textNodes.length === 1){ _deleteNodeById(textNodes[0].id); return; }
+    showToast('삭제할 텍스트를 먼저 터치하세요.');
+    return;
+  }
+  _deleteNodeById(targetId);
+}
+
+// 저장용: textLayerCanvas에 모든 텍스트 노드 렌더링
 function redrawTextLayer(){
   tCtx.clearRect(0,0,W,H);
-  if(!currentTextNode) return;
-  const el=document.getElementById('tn-text');
-  if(!el) return;
-  const r=el.getBoundingClientRect();
+  if(textNodes.length===0) return;
   const ar=document.getElementById('app').getBoundingClientRect();
-  const tx=r.left-ar.left+r.width/2;
-  const ty=r.top-ar.top+r.height/2;
-  tCtx.save();
-  tCtx.font=`${currentTextNode.size}px ${currentTextNode.font}`;
-  tCtx.fillStyle=currentTextNode.color;
-  tCtx.shadowColor='rgba(0,0,0,0.75)'; tCtx.shadowBlur=14;
-  tCtx.textAlign='center'; tCtx.textBaseline='middle';
-  tCtx.fillText(currentTextNode.text,tx,ty);
-  tCtx.restore();
+  textNodes.forEach(node=>{
+    const el=document.getElementById(node.id);
+    if(!el) return;
+    // span.tn-text-content 기준으로 위치 계산 (삭제 버튼 배지 제외)
+    const span = el.querySelector('.tn-text-content') || el;
+    const r = span.getBoundingClientRect();
+    const tx = r.left - ar.left + r.width  / 2;
+    const ty = r.top  - ar.top  + r.height / 2;
+    tCtx.save();
+    tCtx.font=`${node.size}px ${node.font}`;
+    tCtx.fillStyle=node.color;
+    tCtx.shadowColor='rgba(0,0,0,0.75)'; tCtx.shadowBlur=14;
+    tCtx.textAlign='center'; tCtx.textBaseline='middle';
+    tCtx.fillText(node.text, tx, ty);
+    tCtx.restore();
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2593,6 +2717,7 @@ let _crop  = { x:0, y:0, w:0, h:0 };   // 이미지 탭 크롭 (컨테이너 px)
 let _cropV = { x:0, y:0, w:0, h:0 };   // 영상 탭 크롭  (컨테이너 px) — 독립 객체
 let _cropDrag = null;
 let _saveType  = 'image';    // 'image' | 'video'
+let _saveImgFmt= 'png';      // 'png' | 'jpeg'  ← 이미지 저장 포맷
 let _videoDur  = 5;          // 녹화 시간(초)
 let _videoFmt  = 'webm';     // 'webm' | 'gif'
 let _recorder  = null;
@@ -2636,6 +2761,11 @@ function setVideoFmt(fmt, el){
   document.getElementById('videoInfo').textContent = fmt==='gif'
     ? '⚠️ GIF는 파일이 크고 색감이 제한됩니다. WebM 권장.'
     : '트리밍 영역 기준으로 실시간 화면을 녹화합니다';
+}
+function setImgFmt(fmt, el){
+  _saveImgFmt = fmt;
+  document.querySelectorAll('.vid-dur-chip[data-imgfmt]').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
 }
 
 // ── 전체 합성 캔버스 빌드 (저장용 스냅샷) ──
@@ -2978,9 +3108,15 @@ function confirmImageSave(){
   coctx.imageSmoothingEnabled=true; coctx.imageSmoothingQuality='high';
   coctx.drawImage(_fullSaveCanvas,sx,sy,sw,sh,0,0,sw,sh);
 
+  // 포맷 결정 (기본 PNG)
+  const isJpeg = _saveImgFmt === 'jpeg';
+  const mimeImg = isJpeg ? 'image/jpeg' : 'image/png';
+  const extImg  = isJpeg ? 'jpg' : 'png';
+  const qualImg = isJpeg ? 0.92 : 1;
+
   const link=document.createElement('a');
-  link.download='RainyNote_'+Date.now()+'.png';
-  link.href=cropOut.toDataURL('image/png'); link.click();
+  link.download='RainyNote_'+Date.now()+'.'+extImg;
+  link.href=cropOut.toDataURL(mimeImg, qualImg); link.click();
 
   // 갤러리 썸네일
   const gallery=loadGallery();
