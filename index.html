@@ -2,6 +2,10 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1450948725343408"
+     crossorigin="anonymous"></script>
+<!-- RainyNote_Main -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Rainy Note — 유리창 감성 낙서 앱</title>
 
@@ -659,9 +663,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
       <div class="topbar-icon-btn" onclick="openGalleryModal()" title="저장된 이미지">
         <i class="fas fa-magnifying-glass"></i>
       </div>
-      <a class="topbar-icon-btn" href="download.html" title="VS Code용 ZIP 다운로드" style="text-decoration:none;color:inherit;">
-        <i class="fas fa-download"></i>
-      </a>
+
       <div id="pointBadge" onclick="showAdModal()">
         <i class="fas fa-droplet drop-icon"></i>
         <span class="pt-val" id="topPtVal">5P</span>
@@ -902,6 +904,17 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
       <div class="modal-drop-icon">🌧️</div>
       <div class="modal-title">잠깐만요, 비가 지나갑니다...</div>
       <div class="modal-sub">광고가 끝나면 빗방울을 받을 수 있어요!</div>
+
+      <!-- ── Google AdSense 광고 슬롯 (RainyNote_Main) ── -->
+      <div id="adSenseSlot" style="width:100%;margin:10px 0;overflow:hidden;border-radius:8px;">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-1450948725343408"
+             data-ad-slot="6146963377"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
+
       <div class="modal-status-card">
         <div class="status-title">Rainy Note Premium</div>
         <div class="status-sub">Sponsored · 광고 시청 중</div>
@@ -1305,6 +1318,11 @@ async function startWatchingAd() {
   if(adsToday>=MAX_ADS_DAY){ showToast('오늘 광고를 모두 시청하셨습니다.'); return; }
   closeAdModal1();
   document.getElementById('adModal2').classList.add('open');
+
+  // ── AdSense 광고 초기화 (RainyNote_Main 슬롯 push) ──
+  try {
+    (adsbygoogle = window.adsbygoogle || []).push({});
+  } catch(e){ /* AdSense 미로드 시 무시 */ }
   try {
     await AdManager.loadAd();
     AdManager.showAd(
