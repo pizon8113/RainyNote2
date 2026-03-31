@@ -1,8 +1,0 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "live.rainynote.twa",
-        "sha256_cert_fingerprints": ["58:5E:44:4B:A0:F9:32:7D:41:02:05:02:E1:7D:19:DE:65:90:83:BD:7C:45:1A:4B:1D:4F:A1:B6:79:6A:D9:A4"]
-      }
-    }]

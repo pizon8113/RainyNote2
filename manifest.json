@@ -1,5 +1,4 @@
 {
-  "id": "com.rainynote.app",
   "name": "Rainy Note",
   "short_name": "RainyNote",
   "description": "유리창에 빗방울 낙서를 남기는 감성 노트 앱",
@@ -16,39 +15,18 @@
       "src": "/icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "RainyNote Main Screen"
-    }
-  ],
+  "_icons_note": "PNG 아이콘은 icons/generate-icons.html 로 생성 후 아래를 추가하세요: icon-192.png, icon-512.png",
+  "prefer_related_applications": false,
   "shortcuts": [
     {
       "name": "새 작품 만들기",
       "short_name": "새 작품",
       "description": "Rainy Note 앱을 열어 새 작품을 시작합니다",
       "url": "/index.html",
-      "icons": [
-        { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
-      ]
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }
   ]
 }
