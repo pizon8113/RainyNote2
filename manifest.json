@@ -9,7 +9,11 @@
   "background_color": "#060d16",
   "theme_color": "#0d1b2a",
   "lang": "ko",
-  "categories": ["lifestyle", "art", "entertainment"],
+  "categories": [
+    "lifestyle",
+    "art",
+    "entertainment"
+  ],
   "icons": [
     {
       "src": "/icons/icon.svg",
@@ -26,7 +30,13 @@
       "short_name": "새 작품",
       "description": "Rainy Note 앱을 열어 새 작품을 시작합니다",
       "url": "/index.html",
-      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [
+        {
+          "src": "/icons/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     }
   ]
 }
