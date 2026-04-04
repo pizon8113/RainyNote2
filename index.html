@@ -927,7 +927,10 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
       <div class="ad-prompt-banner">
         <span class="banner-icon">🌧️</span>
         <h3>빗방울이 모두 떨어졌어요</h3>
-        <p>광고를 시청하면 <strong style="color:#7ec8e3;">+3 빗방울</strong>을 받을 수 있어요.<br>하루 최대 5번까지 충전 가능해요.</p>
+        <p>광고를 시청하면 빗방울을 받을 수 있어요.<br>
+           <strong style="color:#7ec8e3;">15초</strong> 시청 → <strong style="color:#7ec8e3;">+3P</strong> &nbsp;|&nbsp;
+           <strong style="color:#ffd200;">30초 완주</strong> → <strong style="color:#ffd200;">+6P 🏆</strong><br>
+           <span style="font-size:12px;color:rgba(255,255,255,0.45);">횟수는 시청 시간과 무관하게 1회 차감 · 하루 최대 5회</span></p>
         <div class="earn-chips">
           <div class="earn-chip">💧 잔여: <span id="balanceTxt">0P</span></div>
           <div class="earn-chip">📺 남은 횟수: <span id="adsLeftChip">5</span>/5</div>
@@ -937,7 +940,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
       <div class="modal-btns">
         <button class="modal-btn cancel" onclick="closeAdModal1()">닫기</button>
         <button class="modal-btn primary" id="watchAdBtn" onclick="startWatchingAd()">
-          <i class="fas fa-play" style="font-size:12px;margin-right:4px;"></i> 광고 보기 (+3P)
+          <i class="fas fa-play" style="font-size:12px;margin-right:4px;"></i> 광고 보기 (+3~6P)
         </button>
       </div>
     </div>
@@ -964,9 +967,10 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         <div class="status-title">Rainy Note Premium</div>
         <div class="status-sub">Sponsored · 광고 시청 중</div>
         <div class="ad-progress-wrap">
-          <div class="ad-progress-bar"><div class="ad-progress-fill" id="adProgressFill" style="width:0%"></div></div>
-          <div class="ad-time" id="adTimeTxt">15초 남음</div>
+          <div class="ad-progress-bar"><div class="ad-progress-fill" id="adProgressFill" style="width:0%;transition:width 0.9s linear,background 0.5s ease;"></div></div>
+          <div class="ad-time" id="adTimeTxt">30초 남음</div>
         </div>
+        <div id="adBonusTxt" style="font-size:11px;color:rgba(255,255,255,0.55);text-align:center;margin-top:7px;transition:color 0.3s;">15초 이상 시청 시 +3P · 30초 완주 시 +6P</div>
       </div>
       <div class="modal-btns">
         <button class="modal-btn cancel" onclick="cancelAd()">취소</button>
@@ -978,20 +982,21 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
   <!-- AD MODAL 3: Complete -->
   <div class="modal-backdrop" id="adModal3">
     <div class="modal-box">
-      <div class="modal-drop-icon">💧</div>
-      <div class="modal-title">유리창이 맑아졌어요!</div>
-      <div class="modal-sub">빗방울 3개를 획득했어요.<br>이제 작품을 마음껏 저장하세요 ✨</div>
+      <div class="modal-drop-icon" id="adModal3Icon">💧</div>
+      <div class="modal-title" id="adModal3Title">유리창이 맑아졌어요!</div>
+      <div class="modal-sub" id="adModal3Sub">빗방울 3개를 획득했어요.<br>이제 작품을 마음껏 저장하세요 ✨</div>
       <hr class="modal-divider">
       <div class="modal-status-card">
-        <div class="status-success">
+        <div class="status-success" id="adModal3Status">
           <i class="fas fa-circle-check"></i>
-          <span>광고 시청 완료 · +3P 준비됨</span>
+          <span id="adModal3StatusTxt">광고 시청 완료 · +3P 준비됨</span>
         </div>
       </div>
       <div class="modal-btns">
         <button class="modal-btn cancel" onclick="closeAdModal3()">나중에</button>
-        <button class="modal-btn success" onclick="claimPoints()">
-          <i class="fas fa-droplet" style="font-size:12px;margin-right:4px;"></i> +3P 받기
+        <button class="modal-btn success" id="adClaimBtn" onclick="claimPoints()">
+          <i class="fas fa-droplet" style="font-size:12px;margin-right:4px;"></i>
+          <span id="adClaimBtnTxt">+3P 받기</span>
         </button>
       </div>
     </div>
@@ -1187,8 +1192,9 @@ let points    = parseInt(localStorage.getItem('rn_points')    ?? '10');
 let adsToday  = parseInt(localStorage.getItem('rn_ads_today') ?? '0');
 let adsDate   =          localStorage.getItem('rn_ads_date')  ?? '';
 const MAX_ADS_DAY = 5;
-const AD_DURATION = 15;
-let adTimer=null, adElapsed=0;
+const AD_DURATION_SHORT = 15;  // 15초 → +3P
+const AD_DURATION_LONG  = 30;  // 30초 → +6P
+let adTimer=null, adElapsed=0, _adEarnedPoints=3;
 
 // ── PARTICLES ──
 let particles=[];
@@ -1257,18 +1263,52 @@ function pseudo(n){ return ((Math.sin(n)*43758.5453123)%1+1)%1; }
 const AdManager = {
   loadAd() { return new Promise(resolve => setTimeout(resolve, 300)); },
   showAd(onComplete, onFail) {
-    adElapsed=0;
-    document.getElementById('adProgressFill').style.width='0%';
-    document.getElementById('adTimeTxt').textContent=`${AD_DURATION}초 남음`;
+    adElapsed = 0;
+    _adEarnedPoints = 3; // 기본값 3P
+
+    const fillEl = document.getElementById('adProgressFill');
+    const timeTxt = document.getElementById('adTimeTxt');
+    const bonusTxt = document.getElementById('adBonusTxt');
+
+    fillEl.style.width = '0%';
+    fillEl.style.background = 'linear-gradient(90deg,#4fc3f7,#7ec8e3)'; // 기본 파란색
+    timeTxt.textContent = `${AD_DURATION_LONG}초 남음`;
+    if(bonusTxt) bonusTxt.textContent = '15초 이상 시청 시 +3P · 30초 완주 시 +6P';
+
     adTimer = setInterval(()=>{
       adElapsed++;
-      const pct=(adElapsed/AD_DURATION)*100;
-      document.getElementById('adProgressFill').style.width=pct+'%';
-      document.getElementById('adTimeTxt').textContent=`${AD_DURATION-adElapsed}초 남음`;
-      if(adElapsed>=AD_DURATION){ clearInterval(adTimer); onComplete(); }
-    },1000);
+      // 30초 기준으로 진행바 계산
+      const pct = Math.min((adElapsed / AD_DURATION_LONG) * 100, 100);
+      fillEl.style.width = pct + '%';
+
+      const remaining = AD_DURATION_LONG - adElapsed;
+
+      // 15초 도달 시 → 3P 보상 해금 + 색상 변화
+      if(adElapsed === AD_DURATION_SHORT) {
+        _adEarnedPoints = 3;
+        fillEl.style.background = 'linear-gradient(90deg,#43e97b,#38f9d7)'; // 초록색
+        if(bonusTxt) bonusTxt.textContent = '🎉 +3P 달성! 30초 완주하면 +6P';
+        timeTxt.textContent = `${remaining}초 남음 (+6P 도전 중)`;
+      } else if(adElapsed > AD_DURATION_SHORT && adElapsed < AD_DURATION_LONG) {
+        timeTxt.textContent = `${remaining}초 남음 (+6P 도전 중)`;
+      }
+
+      // 30초 완료 → 6P 보상
+      if(adElapsed >= AD_DURATION_LONG) {
+        clearInterval(adTimer);
+        _adEarnedPoints = 6;
+        fillEl.style.background = 'linear-gradient(90deg,#f7971e,#ffd200)'; // 골드색
+        if(bonusTxt) bonusTxt.textContent = '🏆 30초 완주! +6P 획득!';
+        onComplete();
+      }
+    }, 1000);
   },
-  cancelAd() { clearInterval(adTimer); adElapsed=0; }
+  cancelAd() {
+    clearInterval(adTimer);
+    // 15초 이상 시청했으면 3P는 유지, 미달이면 0P
+    if(adElapsed < AD_DURATION_SHORT) _adEarnedPoints = 0;
+    adElapsed = 0;
+  }
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -1492,9 +1532,18 @@ function showAdModal() {
 }
 function closeAdModal1() { document.getElementById('adModal1').classList.remove('open'); }
 function cancelAd() {
+  const watchedSec = adElapsed; // cancelAd() 내부에서 adElapsed를 0으로 초기화하기 전에 저장
   AdManager.cancelAd();
   document.getElementById('adModal2').classList.remove('open');
-  showToast('광고가 취소되었습니다.');
+
+  if(watchedSec >= AD_DURATION_SHORT) {
+    // 15초 이상 시청 후 취소 → 보상 지급 후 닫기
+    _adEarnedPoints = 3;
+    openAdModal3(3);
+    showToast('15초 이상 시청하여 +3P를 받을 수 있어요!');
+  } else {
+    showToast(`광고가 취소되었습니다. (${watchedSec}초 시청 · 15초 이상 시 +3P)`);
+  }
 }
 function closeAdModal3() { document.getElementById('adModal3').classList.remove('open'); }
 
@@ -1512,7 +1561,7 @@ async function startWatchingAd() {
     AdManager.showAd(
       ()=>{
         document.getElementById('adModal2').classList.remove('open');
-        document.getElementById('adModal3').classList.add('open');
+        openAdModal3(_adEarnedPoints);
       },
       ()=>{
         document.getElementById('adModal2').classList.remove('open');
@@ -1524,12 +1573,35 @@ async function startWatchingAd() {
     showToast('광고를 불러올 수 없습니다.');
   }
 }
+// 광고 완료 후 modal3 열기 — 획득 포인트에 따라 UI 동적 업데이트
+function openAdModal3(earnedP) {
+  const is6P = earnedP >= 6;
+  document.getElementById('adModal3Icon').textContent  = is6P ? '🏆' : '💧';
+  document.getElementById('adModal3Title').textContent = is6P ? '완벽 완주! 보너스 획득!' : '유리창이 맑아졌어요!';
+  document.getElementById('adModal3Sub').innerHTML     = is6P
+    ? `빗방울 <strong style="color:#ffd200;">${earnedP}개</strong>를 획득했어요! (30초 완주 보너스 🎉)<br>이제 작품을 마음껏 저장하세요 ✨`
+    : `빗방울 <strong style="color:#7ec8e3;">${earnedP}개</strong>를 획득했어요.<br>이제 작품을 마음껏 저장하세요 ✨`;
+  document.getElementById('adModal3StatusTxt').textContent = is6P
+    ? `30초 완주 보너스 · +${earnedP}P 준비됨`
+    : `광고 시청 완료 · +${earnedP}P 준비됨`;
+  document.getElementById('adClaimBtnTxt').textContent = `+${earnedP}P 받기`;
+  // 6P이면 버튼 골드 강조
+  const btn = document.getElementById('adClaimBtn');
+  btn.style.background = is6P
+    ? 'linear-gradient(135deg,#f7971e,#ffd200)'
+    : '';
+  btn.style.color = is6P ? '#1a1000' : '';
+  document.getElementById('adModal3').classList.add('open');
+}
+
 function claimPoints() {
-  points+=3; adsToday++; // 광고 1회 시청 → +3P
+  const earned = _adEarnedPoints > 0 ? _adEarnedPoints : 3;
+  points   += earned;
+  adsToday += 1;           // ★ 시청 시간(3P/6P)에 상관없이 항상 1회 차감
   savePoints(); updatePointDisplay();
-  statsRecordAd(); // ← 광고 수익 통계 기록
+  statsRecordAd();         // 광고 수익 통계 기록
   document.getElementById('adModal3').classList.remove('open');
-  showToast('🎉 +3P 획득! 잔여 빗방울: '+points+'P  |  오늘 남은 광고: '+(MAX_ADS_DAY-adsToday)+'회');
+  showToast(`🎉 +${earned}P 획득! 잔여 빗방울: ${points}P  |  오늘 남은 광고: ${MAX_ADS_DAY - adsToday}회`);
 }
 
 // ═══════════════════════════════════════════════════════════
