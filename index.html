@@ -40,9 +40,11 @@
 <meta name="msapplication-TileColor" content="#0d1b2a">
 
 <!-- ── 파비콘 / 아이콘 ── -->
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230d1b2a'/><text y='.9em' font-size='80' x='10'>💧</text></svg>">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
-<!-- PNG 아이콘 추가: icons/generate-icons.html 에서 생성 후 icons/ 폴더에 저장하세요 -->
+<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
+<meta name="msapplication-TileImage" content="/icons/icon-192.png">
 
 <!-- ── 외부 라이브러리 ── -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -54,6 +56,12 @@
 html,body { width:100%; height:100%; overflow:hidden; font-family:'Inter','Noto Sans KR',sans-serif; background:#000; }
 
 #app { display:flex; flex-direction:column; width:100%; height:100%; max-width:430px; margin:0 auto; position:relative; overflow:hidden; }
+
+/* 모바일: 100svh(최소 뷰포트 = 키보드 올라와도 변하지 않는 높이)로 고정 */
+@supports (height: 100svh) {
+  html, body { height: 100svh; }
+  #app { height: 100svh; }
+}
 
 /* ── TOP BAR ── */
 #topbar {
@@ -105,7 +113,15 @@ html,body { width:100%; height:100%; overflow:hidden; font-family:'Inter','Noto 
 #pointBadge .pt-val { font-size:13px; font-weight:700; color:#fff; }
 
 /* ── CANVAS LAYERS ── */
-#canvasWrap { position:absolute; inset:0; overflow:hidden; background:#0d1b2a; }
+/* canvasWrap: position:fixed + max-width 제한 — 키보드/패널/주소창 어떤 상황에도 크기 불변 */
+#canvasWrap {
+  position:fixed;
+  top:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:430px;
+  height:100%; /* JS에서 _fixedH로 고정 */
+  overflow:hidden; background:#0d1b2a;
+  z-index:0;
+}
 #bgImage {
   position:absolute; inset:0; z-index:0;
   /* overflow:hidden 제거 — 축소 시 이미지가 잘리는 원인.
@@ -372,6 +388,25 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 #galleryEmpty { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; color:rgba(255,255,255,0.35); gap:10px; }
 #galleryEmpty i { font-size:48px; opacity:0.3; }
 #galleryEmpty p { font-size:14px; }
+
+/* ── PRIVACY MODAL ── */
+#privacyModal {
+  position:fixed; inset:0; z-index:900;
+  display:none; flex-direction:column;
+  background:#0d1b2a; max-width:430px; left:50%; transform:translateX(-50%);
+}
+#privacyModal.open { display:flex; }
+#privacyTopBar {
+  display:flex; align-items:center; gap:12px;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px;
+  background:rgba(8,18,32,0.95); backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(100,180,255,0.12);
+  flex-shrink:0;
+}
+#privacyTopBar h3 { flex:1; font-size:16px; font-weight:700; color:#fff; }
+#privacyFrame {
+  flex:1; width:100%; border:none; background:#0d1b2a;
+}
 
 /* ── BG ADJUST MODAL ── */
 #bgAdjustModal {
@@ -863,12 +898,21 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
     </div>
   </div>
 
+  <!-- PRIVACY MODAL -->
+  <div id="privacyModal">
+    <div id="privacyTopBar">
+      <div class="gal-top-btn" onclick="closePrivacyModal()" title="닫기"><i class="fas fa-chevron-left"></i></div>
+      <h3>🔒 개인정보처리방침</h3>
+    </div>
+    <iframe id="privacyFrame" src="" title="개인정보처리방침" loading="lazy"></iframe>
+  </div>
+
   <!-- GALLERY MODAL -->
   <div id="galleryModal">
     <div id="galleryTopBar">
       <div class="gal-top-btn" onclick="closeGalleryModal()" title="닫기"><i class="fas fa-chevron-left"></i></div>
       <h3>💧 Rainy Note 저장소</h3>
-      <div class="gal-top-btn" onclick="window.open('privacy.html','_blank')" title="개인정보처리방침"><i class="fas fa-shield-halved"></i></div>
+      <div class="gal-top-btn" onclick="openPrivacyModal()" title="개인정보처리방침"><i class="fas fa-shield-halved"></i></div>
     </div>
     <div id="galleryGrid"></div>
     <div id="galleryEmpty" style="display:none;">
@@ -1156,6 +1200,15 @@ let bgTransform = { scale:1, x:0, y:0 };
 // commitBackground()에서 계산된 배경 배치 정보 (buildFullCanvas/drawFrame 공유)
 let _bgCommit = null;
 
+// ── ERASE MASK ──
+// 닦아낸 모양을 Float32Array(alpha 값 0없음~1닦임)로 저장
+// setTexture/buildWeather 후 wCtx에 직접 픽셀 조작으로 적용
+let _eraseMask = null;          // Float32Array, 크기 W*H
+let _eraseMaskW = 0, _eraseMaskH = 0;
+// _eraseCanvas는 합성용으로만 사용 (ImageData → wCtx destination-out)
+const _eraseCanvas = document.createElement('canvas');
+const _eraseCtx    = _eraseCanvas.getContext('2d', {willReadFrequently: true});
+
 // ── GALLERY ──
 const GALLERY_KEY = 'rn_gallery_v1';
 function loadGallery() { try { return JSON.parse(localStorage.getItem(GALLERY_KEY)||'[]'); } catch(e){return[];} }
@@ -1219,11 +1272,43 @@ const AdManager = {
 };
 
 // ═══════════════════════════════════════════════════════════
+//  CANVAS SIZE — 초기화 시 한 번만 측정, 이후 고정
+// ═══════════════════════════════════════════════════════════
+// 키보드·패널·주소창 등에 의한 크기 변화를 완전 차단
+// 화면 회전(가로↔세로) 시에만 재측정
+let _fixedW = 0, _fixedH = 0;
+
+function _measureFixedSize() {
+  // screen.width/height 대신 visualViewport(없으면 window.innerWidth/Height) 사용
+  // — 페이지 로드 시점의 실제 화면 크기 (키보드 영향 없음)
+  const appEl = document.getElementById('app');
+  const vv = window.visualViewport;
+  // app의 max-width:430px 적용
+  const maxW = 430;
+  const fullW = vv ? Math.round(vv.width)  : window.innerWidth;
+  const fullH = vv ? Math.round(vv.height) : window.innerHeight;
+  _fixedW = Math.min(fullW, maxW);
+  _fixedH = fullH;
+  // canvasWrap 높이를 CSS로 고정 (JS로 직접 설정해 dvh/svh 변동 무시)
+  const cw = document.getElementById('canvasWrap');
+  if(cw) { cw.style.height = _fixedH + 'px'; cw.style.width = _fixedW + 'px'; }
+}
+
+// ═══════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════
 function init() {
+  // 초기 고정 크기 측정 (키보드·패널 영향 이전)
+  _measureFixedSize();
   resize();
-  window.addEventListener('resize', resize);
+
+  // ── resize 이벤트: 화면 회전(가로↔세로)만 처리 ──
+  // 키보드/주소창/패널에 의한 높이 변화는 완전 무시
+  window.addEventListener('resize', _onOrientationChange);
+  if(window.visualViewport) {
+    window.visualViewport.addEventListener('resize', _onViewportResize);
+  }
+
   drawCanvas.addEventListener('touchstart', onTouchStart, {passive:false});
   drawCanvas.addEventListener('touchmove',  onTouchMove,  {passive:false});
   drawCanvas.addEventListener('touchend',   onTouchEnd);
@@ -1237,9 +1322,96 @@ function init() {
   repositionUI();
 }
 
+// ── resize 핸들러: 화면 회전만 처리, 키보드/패널 완전 무시 ──
+let _lastW = 0, _lastH = 0;
+let _resizeTimer = null;
+let _lastOrientW = window.innerWidth; // 초기 폭 (방향 전환 감지용)
+
+function _onOrientationChange() {
+  // 폭이 바뀐 경우만 = 화면 회전 (높이만 바뀌는 건 키보드/주소창)
+  const curW = window.innerWidth;
+  if(Math.abs(curW - _lastOrientW) < 5) return;
+  _lastOrientW = curW;
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(()=>{
+    if(_textPlacing || _panelAnimating) return;
+    _measureFixedSize();
+    resize();
+  }, 200);
+}
+
+function _onViewportResize() {
+  // visualViewport 높이 변화 = 키보드/주소창 → canvasWrap 크기 고정 유지
+  // 폭이 바뀐 경우만 처리 (화면 회전)
+  if(!window.visualViewport) return;
+  const vvW = Math.round(window.visualViewport.width);
+  if(Math.abs(vvW - _lastOrientW) >= 5) {
+    _lastOrientW = vvW;
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(()=>{
+      if(_textPlacing || _panelAnimating) return;
+      _measureFixedSize();
+      resize();
+    }, 200);
+  }
+  // 높이만 변한 경우: 아무것도 하지 않음 (canvasWrap은 fixed + _fixedH로 고정됨)
+}
+// bgPhoto를 _bgCommit 기준으로 재표시하는 헬퍼
+function _restoreBgPhoto() {
+  if(!bgDataUrl || !_bgCommit) return;
+  const photo = document.getElementById('bgPhoto');
+  if(!photo) return;
+  if(!photo.src || photo.src === window.location.href) photo.src = bgDataUrl;
+  photo.style.display         = 'block';
+  photo.style.position        = 'absolute';
+  photo.style.objectFit       = 'fill';
+  photo.style.objectPosition  = 'center center';
+  photo.style.width           = _bgCommit.dispW   + 'px';
+  photo.style.height          = _bgCommit.dispH   + 'px';
+  photo.style.left            = _bgCommit.imgLeft + 'px';
+  photo.style.top             = _bgCommit.imgTop  + 'px';
+  photo.style.maxWidth        = 'none';
+  photo.style.maxHeight       = 'none';
+  photo.style.transform       = 'none';
+  bgImage.style.background      = '#000';
+  bgImage.style.backgroundImage = 'none';
+}
+
 function resize() {
-  const app=document.getElementById('app');
-  W=app.clientWidth; H=app.clientHeight;
+  // 텍스트 배치 중에는 완전히 차단
+  if(_textPlacing) return;
+  // ── 고정 크기 사용 ──
+  // _fixedW/_fixedH는 초기화 시 또는 화면 회전 시에만 갱신됨
+  // 키보드·패널·주소창 등에 의한 변화는 완전 무시
+  if(!_fixedW || !_fixedH) _measureFixedSize();
+  const newW = _fixedW, newH = _fixedH;
+  if(!newW || !newH) return;
+  // 비정상 크기 무시 (세로가 가로의 60% 미만이면 잘못 측정된 것)
+  if(newH < newW * 0.6) return;
+  _lastW = newW; _lastH = newH;
+  // 크기가 실질적으로 변하지 않으면 캔버스 재설정 스킵 (모바일 키보드 등)
+  if(W === newW && H === newH) {
+    // 크기 같으면 bgPhoto/성에만 확인해서 복원
+    if(bgDataUrl && _bgCommit) _restoreBgPhoto();
+    return;
+  }
+  // ── 리사이즈 전 _eraseMask 스케일 보존 ──
+  if(_eraseMask && _eraseMaskW > 0 && _eraseMaskH > 0) {
+    const newMask = new Float32Array(newW * newH);
+    const sx = _eraseMaskW / newW, sy = _eraseMaskH / newH;
+    for(let ny=0; ny<newH; ny++){
+      for(let nx=0; nx<newW; nx++){
+        const ox = Math.min(_eraseMaskW-1, Math.round(nx*sx));
+        const oy = Math.min(_eraseMaskH-1, Math.round(ny*sy));
+        newMask[ny*newW+nx] = _eraseMask[oy*_eraseMaskW+ox];
+      }
+    }
+    _eraseMask  = newMask;
+  } else {
+    _eraseMask  = new Float32Array(newW * newH);
+  }
+  _eraseMaskW = newW; _eraseMaskH = newH;
+  W=newW; H=newH;
   [weatherCanvas,drawCanvas,particleCanvas,textLayerCanvas].forEach(c=>{ c.width=W; c.height=H; });
   // Droplets 오프스크린 캔버스도 크기 동기화
   _beadCanvas.width=W; _beadCanvas.height=H;
@@ -1247,9 +1419,12 @@ function resize() {
   particleCanvas.style.zIndex = (currentTexture === 'droplets') ? '1' : '3';
   // 리사이즈 시 배경 이미지 위치/크기 재계산 (contain + userScale 재적용)
   if(bgDataUrl && adj.natW > 0) commitBackground();
-  // 텍스트 배치 중에는 buildWeather 스킵
-  if(!_textPlacing) buildWeather();
-  initParticles(); redrawTextLayer();
+  buildWeather();
+  // resize 후 bgPhoto도 항상 복원
+  if(bgDataUrl && _bgCommit) _restoreBgPhoto();
+  initParticles();
+  // textLayerCanvas는 저장 시에만 사용 — resize 시 클리어만 (잔상 방지)
+  tCtx.clearRect(0,0,W,H);
 }
 
 function repositionUI() {
@@ -1258,12 +1433,20 @@ function repositionUI() {
   const navH=nav.offsetHeight||80;
   panel.style.bottom=navH+'px';
 }
+let _panelAnimating = false; // 패널 애니메이션 중 플래그
 function togglePanel() {
   const panel = document.getElementById('controlPanel');
   panel.classList.toggle('collapsed');
   const btn = document.querySelector('.back-btn i');
   if(btn) btn.className = panel.classList.contains('collapsed') ? 'fas fa-chevron-left' : 'fas fa-chevron-down';
-  setTimeout(repositionUI,350);
+  // 패널 전환 중 resize 차단 (모바일 캔버스 정사각형 버그 방지)
+  _panelAnimating = true;
+  setTimeout(()=>{
+    _panelAnimating = false;
+    repositionUI();
+    // 패널 토글 후 bgPhoto/성에 복원 (모바일에서 사라지는 버그 방지)
+    if(bgDataUrl && _bgCommit) _restoreBgPhoto();
+  }, 400);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1805,11 +1988,11 @@ function setTexture(name,el) {
   currentTexture=name;
   document.querySelectorAll('.tex-card').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
-  wCtx.clearRect(0,0,W,H);
-  // Droplets: bead를 성애 레이어(weatherCanvas) 아래에 두어 닦으면 bead+배경 드러남
-  // 나머지 모드: 파티클(비·눈)이 성애 레이어 위에 보여야 함
   particleCanvas.style.zIndex = (name === 'droplets') ? '1' : '3';
+  // buildWeather 내부에서 _applyEraseCanvas()가 자동으로 닦아낸 모양 복원
   buildWeather(); initParticles();
+  // 텍스처 전환 후 bgPhoto 항상 복원 (모바일에서 사라지는 버그 수정)
+  if(bgDataUrl && _bgCommit) _restoreBgPhoto();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1844,6 +2027,40 @@ function buildWeather() {
   else if(currentTexture==='frosty')   drawFrostyGlass();
   else if(currentTexture==='foggy')    drawFoggyGlass();
   else if(currentTexture==='droplets') drawDropletsGlass();
+  // 성에를 다시 그린 후 _eraseCanvas의 닦아낸 모양을 즉시 복원 (모바일 포함)
+  _applyEraseCanvas();
+  // buildWeather 후 bgPhoto 항상 복원 보장 (모바일 렌더링 버그 방지)
+  if(bgDataUrl && _bgCommit) {
+    requestAnimationFrame(_restoreBgPhoto);
+  }
+}
+
+// _eraseMask를 wCtx에 적용: 닦인 위치의 wCtx 픽셀을 투명하게 만듦
+function _applyEraseCanvas() {
+  if(!_eraseMask || _eraseMaskW !== W || _eraseMaskH !== H) return;
+  // 닦인 픽셀이 하나라도 있는지 확인 (전부 0이면 스킵)
+  let hasData = false;
+  for(let i=0; i<_eraseMask.length; i++){ if(_eraseMask[i]>0){ hasData=true; break; } }
+  if(!hasData) return;
+  // _eraseCanvas에 마스크 이미지 구성
+  if(_eraseCanvas.width !== W || _eraseCanvas.height !== H){
+    _eraseCanvas.width  = W;
+    _eraseCanvas.height = H;
+  }
+  const imgData = _eraseCtx.createImageData(W, H);
+  const d = imgData.data;
+  for(let i=0; i<_eraseMask.length; i++){
+    const a = _eraseMask[i];
+    if(a > 0){
+      d[i*4+3] = Math.min(255, Math.round(a * 255));
+    }
+  }
+  _eraseCtx.putImageData(imgData, 0, 0);
+  // destination-out으로 wCtx에서 닦인 영역 제거
+  wCtx.save();
+  wCtx.globalCompositeOperation = 'destination-out';
+  wCtx.drawImage(_eraseCanvas, 0, 0);
+  wCtx.restore();
 }
 
 // ── Rainy: realistic rain-wet glass ──
@@ -2333,7 +2550,24 @@ function undoStroke(){
   if(undoStack.length===0){ showToast('더 이상 되돌릴 수 없습니다.'); return; }
   const snap=undoStack.pop();
   wCtx.putImageData(snap,0,0);
+  // _eraseCanvas도 undo 스냅샷 기준으로 동기화
+  // snap의 투명한 픽셀이 닦아낸 영역 — 그것을 _eraseCanvas에 반영
+  _syncEraseCanvasFromSnap(snap);
   showToast('이전 단계로 복구됐어요!');
+}
+
+// wCtx 스냅샷에서 투명 영역(닦인 곳)을 추출해 _eraseMask를 동기화
+function _syncEraseCanvasFromSnap(snap) {
+  if(!snap || snap.width!==W || snap.height!==H) return;
+  if(!_eraseMask || _eraseMaskW!==W || _eraseMaskH!==H){
+    _eraseMask  = new Float32Array(W*H);
+    _eraseMaskW = W; _eraseMaskH = H;
+  }
+  const d = snap.data;
+  for(let i=0,p=0; i<d.length; i+=4,p++){
+    // 투명할수록(alpha 낮을수록) 더 닦인 것
+    _eraseMask[p] = (255 - d[i+3]) / 255;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2453,16 +2687,82 @@ function onMouseMove(e){
 }
 function onMouseUp(){ isDrawing=false; isDraggingText=false; }
 
-function erase(x0,y0,x1,y1){
-  wCtx.save(); wCtx.globalCompositeOperation='destination-out';
+// wCtx(성에 레이어)를 destination-out으로 닦기
+function _drawEraseMark(ctx, x0, y0, x1, y1, brushR) {
+  ctx.save(); ctx.globalCompositeOperation='destination-out';
   const dx=x1-x0, dy=y1-y0, dist=Math.sqrt(dx*dx+dy*dy)||1;
-  const r=brushSize*2.5, steps=Math.max(1,Math.ceil(dist/(r*.5)));
+  const r=brushR, steps=Math.max(1,Math.ceil(dist/(r*.5)));
   for(let i=0;i<=steps;i++){
     const t=steps===1?0:i/steps, cx=x0+dx*t, cy=y0+dy*t;
-    const g=wCtx.createRadialGradient(cx,cy,r*.1,cx,cy,r);
+    const g=ctx.createRadialGradient(cx,cy,r*.1,cx,cy,r);
     g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(.6,'rgba(0,0,0,0.95)'); g.addColorStop(1,'rgba(0,0,0,0)');
-    wCtx.fillStyle=g; wCtx.beginPath(); wCtx.arc(cx,cy,r,0,Math.PI*2); wCtx.fill();
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
   }
+  ctx.restore();
+}
+// 닦아낸 위치를 _eraseMask(Float32Array)에 기록
+// 원형 반경 r 안에서 반경에 따라 닦임두(0없음~1닦임)를 max로 스탬코드
+function _recordEraseMark(x0, y0, x1, y1, brushR) {
+  if(!_eraseMask || _eraseMaskW !== W || _eraseMaskH !== H) return;
+  const dx=x1-x0, dy=y1-y0, dist=Math.sqrt(dx*dx+dy*dy)||1;
+  const r=brushR, steps=Math.max(1,Math.ceil(dist/(r*.5)));
+  for(let s=0;s<=steps;s++){
+    const t=steps===1?0:s/steps;
+    const cx=Math.round(x0+dx*t), cy=Math.round(y0+dy*t);
+    // 원 바운딩 박스
+    const x1b=Math.max(0,Math.floor(cx-r)), x2b=Math.min(W-1,Math.ceil(cx+r));
+    const y1b=Math.max(0,Math.floor(cy-r)), y2b=Math.min(H-1,Math.ceil(cy+r));
+    for(let py=y1b;py<=y2b;py++){
+      for(let px=x1b;px<=x2b;px++){
+        const d=Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy));
+        if(d>r) continue;
+        // 중심에서 r*0.6까지는 완전 닦임, 그 이후 부드럽게
+        const alpha = d < r*0.6 ? 1.0 : 1.0 - (d - r*0.6)/(r*0.4);
+        const idx = py*W+px;
+        if(alpha > _eraseMask[idx]) _eraseMask[idx] = alpha;
+      }
+    }
+  }
+}
+function erase(x0,y0,x1,y1){
+  const r = brushSize*2.5;
+  // wCtx (성에 레이어) 즉시 닦기
+  _drawEraseMark(wCtx, x0, y0, x1, y1, r);
+  // _eraseCanvas에 닦아낸 위치 기록 (텍스처 전환 시 복원용)
+  _recordEraseMark(x0, y0, x1, y1, r);
+}
+
+// ── 닦은 구멍(투명 영역)을 새 텍스처 위에 복원 ──
+// prevSnap: 이전 weatherCanvas의 ImageData (같은 크기 또는 스케일된 것)
+// 투명도(alpha)가 낮을수록 더 많이 닦인 것 → destination-out으로 재적용
+function _restoreEraseHoles(prevSnap) {
+  if(!prevSnap || prevSnap.width!==W || prevSnap.height!==H) return;
+  // 임시 캔버스에 prevSnap 복원 후 destination-out으로 현재 wCtx에 합성
+  const tmpC = document.createElement('canvas');
+  tmpC.width = W; tmpC.height = H;
+  const tmpX = tmpC.getContext('2d');
+  // prevSnap의 알파를 마스크로 사용: 투명했던 곳은 새 텍스처도 지움
+  // prevSnap을 그대로 올리고 destination-in으로 구멍만 추출
+  tmpX.putImageData(prevSnap, 0, 0);
+  // alpha 채널만 반전 마스크로 사용하는 픽셀 조작
+  const d = prevSnap.data;
+  const maskData = tmpX.createImageData(W, H);
+  for(let i=0; i<d.length; i+=4){
+    // 닦인 정도 = 원본 alpha의 반전 (alpha 낮을수록 더 닦임)
+    const erased = 255 - d[i+3];
+    maskData.data[i]   = 0;
+    maskData.data[i+1] = 0;
+    maskData.data[i+2] = 0;
+    maskData.data[i+3] = erased; // 닦인 양만큼 투명하게
+  }
+  const maskC = document.createElement('canvas');
+  maskC.width = W; maskC.height = H;
+  const maskX = maskC.getContext('2d');
+  maskX.putImageData(maskData, 0, 0);
+  // 새 텍스처(wCtx)에서 닦인 영역을 destination-out으로 제거
+  wCtx.save();
+  wCtx.globalCompositeOperation = 'destination-out';
+  wCtx.drawImage(maskC, 0, 0);
   wCtx.restore();
 }
 
@@ -2504,6 +2804,8 @@ function resetGlass(){
 
   // ── 유리창·파티클 초기화 ──
   undoStack=[];
+  // _eraseMask 초기화 (닦아낸 모양 완전 제거)
+  if(_eraseMask) _eraseMask.fill(0);
   buildWeather();
   initParticles();
   showToast('유리창과 배경이 초기화되었습니다!');
@@ -2592,35 +2894,42 @@ function applyText(){
 
   app.appendChild(el);
 
-  // 입력창 초기화
-  document.getElementById('msgInput').value='';
+  // 입력창 초기화 + 포커스 해제 (모바일 키보드 내려감)
+  const msgInput = document.getElementById('msgInput');
+  msgInput.value = '';
+  msgInput.blur();
 
-  // 배치 플래그 설정 — resize 중에 buildWeather 스킵
+  // 배치 플래그 — 이 중에는 resize() 완전 차단
   _textPlacing = true;
 
-  // 3프레임 후 실제 크기 측정 → 정중앙 배치
+  // 텍스트 중앙 배치 실행
   function placeCentered(){
-    const appRect=app.getBoundingClientRect();
-    const appW=appRect.width||W;
-    const appH=appRect.height||H;
-    const tw=el.offsetWidth||Math.min(msg.length*textStyle.size*0.6, appW*0.85);
-    const th=el.offsetHeight||textStyle.size*1.5;
-    // 여러 개일 때 살짝 오프셋을 두어 겹치지 않게
-    const offset=(textNodes.length-1)*20;
-    const cx=Math.round(Math.min((appW-tw)/2+offset, appW-tw));
-    const cy=Math.round(Math.min((appH-th)/2+offset, appH-th));
-    nodeData.x=cx; nodeData.y=cy;
-    el.style.left=cx+'px';
-    el.style.top=cy+'px';
-    el.style.visibility='visible';
+    // _fixedW/_fixedH: canvasWrap의 실제 고정 크기 (키보드/패널 영향 없음)
+    const appW = _fixedW || W;
+    const appH = _fixedH || H;
+    el.style.visibility = 'hidden';
+    el.style.left = '-9999px';
+    el.style.top  = '-9999px';
+    const tw = el.offsetWidth  || Math.min(msg.length * textStyle.size * 0.6, appW * 0.85);
+    const th = el.offsetHeight || textStyle.size * 1.5;
+    const idx = textNodes.length - 1;
+    const offset = idx * 24;
+    const cx = Math.max(0, Math.min(Math.round((appW - tw) / 2) + offset, appW - tw));
+    const cy = Math.max(0, Math.min(Math.round((appH - th) / 2) + offset, appH - th));
+    nodeData.x = cx; nodeData.y = cy;
+    el.style.left = cx + 'px';
+    el.style.top  = cy + 'px';
+    el.style.visibility = 'visible';
     _textPlacing = false;
-    // 새로 추가한 노드 선택 상태로
     _setSelectedText(nodeId);
     _syncDelBtn(nodeId);
     showToast('✍️ 드래그로 텍스트를 이동하세요!');
   }
 
-  requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(placeCentered)));
+  // 키보드 내려가는 시간 후 배치 (canvasWrap은 fixed이므로 크기 변화 없음)
+  setTimeout(()=>{
+    requestAnimationFrame(()=>requestAnimationFrame(placeCentered));
+  }, 100);
 }
 
 // 특정 id 텍스트 DOM 요소를 직접 위치 이동
@@ -2792,6 +3101,7 @@ function setImgFmt(fmt, el){
 //   1) CSS object-fit:contain  → 이미지를 W×H 박스 안에 비율 유지하며 중앙 배치
 //   2) transform:scale(userScale) translate(offX, offY) → 사용자 확대/축소·드래그 반영
 function buildFullCanvas(cb){
+  // textLayerCanvas에 저장 직전에만 그리기 (평소엔 항상 비어있어야 함 — 잔상 방지)
   redrawTextLayer();
   const SCALE=2;
   const OW=W*SCALE, OH=H*SCALE;
@@ -2804,6 +3114,8 @@ function buildFullCanvas(cb){
     oct.drawImage(weatherCanvas,  0,0,W,H, 0,0,OW,OH);
     oct.drawImage(particleCanvas, 0,0,W,H, 0,0,OW,OH);
     oct.drawImage(textLayerCanvas,0,0,W,H, 0,0,OW,OH);
+    // 저장용 합성 완료 후 즉시 textLayerCanvas 클리어 (화면 잔상 방지)
+    tCtx.clearRect(0,0,W,H);
     const imgData=oct.getImageData(0,0,OW,OH);
     const d=imgData.data;
     for(let j=0;j<d.length;j+=4){
@@ -3425,6 +3737,21 @@ function openGalleryModal(){
   refreshGallery();
 }
 function closeGalleryModal(){ document.getElementById('galleryModal').classList.remove('open'); }
+
+// ── 개인정보처리방침 모달 ──
+function openPrivacyModal(){
+  const modal = document.getElementById('privacyModal');
+  const frame = document.getElementById('privacyFrame');
+  // iframe src 설정 — 아직 로드 안 됐을 때만 설정 (중복 로드 방지)
+  const currentSrc = frame.getAttribute('src') || '';
+  if(!currentSrc || currentSrc === 'about:blank') {
+    frame.src = 'privacy.html';
+  }
+  modal.classList.add('open');
+}
+function closePrivacyModal(){
+  document.getElementById('privacyModal').classList.remove('open');
+}
 function refreshGallery(){
   const grid=document.getElementById('galleryGrid');
   const empty=document.getElementById('galleryEmpty');
