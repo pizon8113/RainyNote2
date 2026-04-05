@@ -587,21 +587,19 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
   z-index:2;
 }
 .gv-btn {
-  flex:1; max-width:160px; padding:13px 0; border-radius:14px; border:none;
-  font-size:13px; font-weight:700; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; gap:7px;
+  flex:1; max-width:200px; padding:14px 0; border-radius:14px; border:none;
+  font-size:14px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
 }
-.gv-btn.download { background:linear-gradient(135deg,#2d6a9f,#4a90d9); color:#fff; }
-.gv-btn.share    { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; }
+.gv-btn.download { background:linear-gradient(135deg,#1a6fa8,#4a90d9); color:#fff; box-shadow:0 4px 16px rgba(26,111,168,0.4); }
 .gv-btn.del      { background:rgba(220,50,50,0.18); border:1px solid rgba(220,80,80,0.35); color:#ff6b6b; }
 .gv-btn:active   { filter:brightness(0.85); transform:scale(0.97); }
 
 /* ── PRIVACY MODAL (전체화면) ── */
 #privacyModal {
-  position:fixed; inset:0; z-index:900;
+  position:fixed; inset:0; z-index:1000;
   display:none; flex-direction:column;
   background:#0d1b2a;
-  /* ★ 전체화면: max-width/left/transform 제거 */
   left:0; right:0; top:0; bottom:0;
   transform:none; max-width:none;
 }
@@ -609,14 +607,14 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 #privacyTopBar {
   display:flex; align-items:center; gap:12px;
   padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px;
-  background:rgba(8,18,32,0.98); backdrop-filter:blur(16px);
+  background:rgba(8,18,32,1); backdrop-filter:blur(16px);
   border-bottom:1px solid rgba(100,180,255,0.15);
-  flex-shrink:0;
+  flex-shrink:0; position:relative; z-index:2;
 }
 #privacyTopBar h3 { flex:1; font-size:16px; font-weight:700; color:#fff; }
 #privacyFrame {
   flex:1; width:100%; border:none; background:#0d1b2a;
-  display:block; min-height:0;
+  display:block; min-height:0; position:relative; z-index:1;
 }
 
 /* ── BG ADJUST MODAL ── */
@@ -879,36 +877,26 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 #shareSheetPreview .ss-info { flex:1; min-width:0; }
 #shareSheetPreview .ss-fname { font-size:11px; font-weight:600; color:#e8f4ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #shareSheetPreview .ss-fsize { font-size:10px; color:rgba(255,255,255,0.4); margin-top:2px; }
-.share-grid {
-  display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px;
+/* ── 저장 버튼 행 ── */
+.ss-btn-row {
+  display:flex; flex-direction:column; gap:10px; margin-top:4px;
 }
-.share-item {
-  display:flex; flex-direction:column; align-items:center; gap:6px;
-  cursor:pointer; padding:8px 4px; border-radius:14px;
-  transition:background 0.15s;
+.ss-btn {
+  width:100%; padding:16px; border-radius:16px; border:none;
+  font-size:15px; font-weight:700; cursor:pointer; font-family:inherit;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  transition:all 0.15s;
 }
-.share-item:active { background:rgba(100,180,255,0.1); }
-.share-item .si-icon {
-  width:50px; height:50px; border-radius:16px; display:flex; align-items:center; justify-content:center;
-  font-size:22px; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+.ss-save {
+  background:linear-gradient(135deg,#1a6fa8,#27b87a);
+  color:#fff; box-shadow:0 4px 20px rgba(26,111,168,0.45);
 }
-.share-item .si-label { font-size:10px; font-weight:600; color:rgba(255,255,255,0.75); text-align:center; line-height:1.2; }
-.si-gallery   { background:linear-gradient(135deg,#1a8a4a,#27ae60); }
-.si-kakao     { background:#FAE100; }
-.si-kakao i   { color:#3A1D1D !important; }
-.si-email     { background:linear-gradient(135deg,#1a6fa8,#2a9fd6); }
-.si-instagram { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
-.si-copy      { background:linear-gradient(135deg,#2d3a4a,#3d5068); border:1px solid rgba(100,180,255,0.25); }
-.si-download  { background:linear-gradient(135deg,#2d4a6a,#3d70a8); }
-.si-more      { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); }
-.si-facebook  { background:linear-gradient(135deg,#1877f2,#0a5ad4); }
-.share-divider { height:1px; background:rgba(255,255,255,0.07); margin:0 0 12px; }
-#shareSheetCancelBtn {
-  width:100%; padding:13px; border-radius:14px; border:1px solid rgba(100,180,255,0.2);
-  background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.7);
-  font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;
+.ss-save:active { filter:brightness(0.88); transform:scale(0.97); }
+.ss-cancel {
+  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15);
+  color:rgba(255,255,255,0.65);
 }
-#shareSheetCancelBtn:active { background:rgba(255,255,255,0.1); }
+.ss-cancel:active { background:rgba(255,255,255,0.12); }
 #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
 /* ── PWA 설치 배너 ── */
@@ -985,7 +973,10 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
   pointer-events:none;
   opacity:0;
   transition:opacity 0.4s ease;
-  /* 배경 없음 — Canvas 태그로 교체 */
+  background-size:cover;
+  background-position:center top;
+  background-repeat:no-repeat;
+  /* mix-blend-mode는 JS에서 동적으로 설정 */
 }
 #dropletOverlay.visible { opacity:1; }
 /* 내부 캔버스가 꽉 채우도록 */
@@ -1487,9 +1478,10 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 
   <!-- Hidden inputs -->
   <!-- ★ label 기반 트리거: Android WebView에서 input.click()보다 label.click()이 더 안정적 -->
+  <!-- ★ capture 속성 없음: 갤러리만 열림 (capture 있으면 카메라 직접 실행됨) -->
   <label id="fileGalleryLabel" style="display:none;">
     <input type="file" id="fileGallery"
-           accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/*"
+           accept="image/*"
            onchange="handlePhotoUpload(event)">
   </label>
   <canvas id="snapCanvas" style="display:none;"></canvas>
@@ -1541,11 +1533,16 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
       <div id="camTopBar">
         <div class="cam-top-btn" onclick="closeCamera()"><i class="fas fa-xmark"></i></div>
         <div id="camTitle">카메라</div>
-        <div class="cam-top-btn" onclick="switchCamera()"><i class="fas fa-camera-rotate"></i></div>
+        <div style="width:44px;"></div>
       </div>
       <div id="camBottomBar">
-        <div class="cam-side-btn" onclick="openGalleryFromCamera()"><i class="fas fa-images"></i><span>Gallery</span></div>
+        <!-- 전면/후면 전환 (좌측) -->
+        <div class="cam-side-btn" onclick="switchCamera()" id="camSwitchBtn">
+          <i class="fas fa-camera-rotate"></i>
+          <span>전환</span>
+        </div>
         <div id="shutterBtn" onclick="capturePhoto()"></div>
+        <!-- 플래시 (우측) -->
         <div class="cam-side-btn" onclick="toggleFlash()"><i class="fas fa-bolt" id="flashIcon"></i><span id="flashLabel">Flash</span></div>
       </div>
     </div>
@@ -1635,7 +1632,6 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
     <img id="galViewerImg" src="" alt="이미지 확대">
     <div id="galViewerBottomBar">
       <button class="gv-btn download" onclick="gvDownload()"><i class="fas fa-download"></i> 저장</button>
-      <button class="gv-btn share" onclick="gvShare()"><i class="fas fa-share-nodes"></i> 공유</button>
       <button class="gv-btn del" onclick="gvDelete()"><i class="fas fa-trash"></i> 삭제</button>
     </div>
   </div>
@@ -1863,11 +1859,11 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 
 </div><!-- /app -->
 
-<!-- ── 커스텀 공유 바텀시트 (앱 컨테이너 밖 — fixed 레이아웃 정확) ── -->
+<!-- ── 저장 확인 시트 (SNS 공유 제거 → 저장+취소만) ── -->
 <div id="shareSheet" onclick="if(event.target===this)closeShareSheet()">
   <div id="shareSheetBox">
     <div id="shareSheetHandle"></div>
-    <div id="shareSheetTitle">💾 저장 &amp; 공유</div>
+    <div id="shareSheetTitle">💾 이미지 저장</div>
     <!-- 파일 미리보기 -->
     <div id="shareSheetPreview">
       <img id="ssPreviewImg" src="" alt="preview">
@@ -1876,48 +1872,15 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         <div class="ss-fsize" id="ssFsize">저장 준비 완료</div>
       </div>
     </div>
-    <!-- 공유 옵션 그리드 -->
-    <div class="share-grid">
-      <!-- 갤러리 저장 -->
-      <div class="share-item" onclick="ssAction('gallery')">
-        <div class="si-icon si-gallery"><i class="fas fa-images" style="color:#fff;"></i></div>
-        <div class="si-label">내 폰<br>갤러리</div>
-      </div>
-      <!-- 카카오톡 -->
-      <div class="share-item" onclick="ssAction('kakao')">
-        <div class="si-icon si-kakao">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="#3A1D1D"><path d="M12 3C6.48 3 2 6.79 2 11.46c0 2.95 1.87 5.55 4.72 7.07l-.88 3.24a.3.3 0 0 0 .44.33l3.79-2.51c.61.09 1.24.14 1.93.14 5.52 0 10-3.79 10-8.27C22 6.79 17.52 3 12 3z"/></svg>
-        </div>
-        <div class="si-label">카카오톡</div>
-      </div>
-      <!-- 이메일 -->
-      <div class="share-item" onclick="ssAction('email')">
-        <div class="si-icon si-email"><i class="fas fa-envelope" style="color:#fff;"></i></div>
-        <div class="si-label">이메일</div>
-      </div>
-      <!-- 인스타그램 -->
-      <div class="share-item" onclick="ssAction('instagram')">
-        <div class="si-icon si-instagram"><i class="fab fa-instagram" style="color:#fff;"></i></div>
-        <div class="si-label">Instagram</div>
-      </div>
-      <!-- 클립보드 복사 -->
-      <div class="share-item" onclick="ssAction('copy')">
-        <div class="si-icon si-copy"><i class="fas fa-copy" style="color:#7ec8e3;"></i></div>
-        <div class="si-label">이미지<br>복사</div>
-      </div>
-      <!-- PC 다운로드 -->
-      <div class="share-item" onclick="ssAction('download')">
-        <div class="si-icon si-download"><i class="fas fa-download" style="color:#fff;"></i></div>
-        <div class="si-label">PC<br>다운로드</div>
-      </div>
-      <!-- 페이스북 -->
-      <div class="share-item" onclick="ssAction('facebook')">
-        <div class="si-icon si-facebook"><i class="fab fa-facebook-f" style="color:#fff;"></i></div>
-        <div class="si-label">Facebook</div>
-      </div>
+    <!-- 저장 + 취소 버튼 -->
+    <div class="ss-btn-row">
+      <button class="ss-btn ss-save" onclick="ssAction('gallery')">
+        <i class="fas fa-download"></i> 내 폰에 저장
+      </button>
+      <button class="ss-btn ss-cancel" onclick="closeShareSheet()">
+        취소
+      </button>
     </div>
-    <div class="share-divider"></div>
-    <button id="shareSheetCancelBtn" onclick="closeShareSheet()">닫기</button>
   </div>
 </div>
 
@@ -2468,15 +2431,26 @@ function closePhotoSheet() {
 }
 function triggerGallery() {
   closePhotoSheet();
-  // Android WebView: label.click()이 input.click()보다 갤러리 연동이 안정적
-  // 짧은 지연으로 sheet 닫힘 애니메이션 이후 트리거
+  // ★ 갤러리 연동 강화: 바텀시트 닫힘 후 충분한 딜레이 후 트리거
   setTimeout(() => {
-    const inp = document.getElementById('fileGallery');
-    inp.value = ''; // 같은 파일 재선택 가능하도록 초기화
-    // label 클릭 우선, 실패 시 input 직접 클릭 fallback
+    _openGalleryInput();
+  }, 200);
+}
+
+function _openGalleryInput() {
+  const inp = document.getElementById('fileGallery');
+  if(!inp) return;
+  inp.value = ''; // 같은 파일 재선택 허용
+
+  // ★ iOS 14+: input.click()이 가장 안정적 (label 경유 시 차단될 수 있음)
+  // ★ Android: input에 직접 click() — user gesture 컨텍스트 내에서 호출되어야 함
+  try {
+    inp.click();
+  } catch(e) {
+    // fallback: label 클릭
     const lbl = document.getElementById('fileGalleryLabel');
-    if(lbl) { lbl.click(); } else { inp.click(); }
-  }, 120);
+    if(lbl) lbl.click();
+  }
 }
 function handlePhotoUpload(e) {
   const file=e.target.files[0]; if(!file)return;
@@ -2909,38 +2883,53 @@ async function triggerCamera() {
 }
 async function startCamera(facingMode) {
   stopCameraStream();
-  // ★ 세로형(portrait) 해상도 우선: height를 더 크게 설정해 모바일 세로 파인더 꽉 채움
-  const videoConstraints = {
-    facingMode,
-    width:  { ideal: 1080 },
-    height: { ideal: 1920 }
-  };
+
+  /* ── 해상도 제약 없이 요청 → 브라우저/기기가 최적 해상도 선택 ──
+     width/height ideal 고정 시 일부 Android에서 16:9 가로형 스트림을
+     세로 화면에 끼워 넣어 뷰파인더가 좁아지는 현상 발생.
+     제약을 facingMode만 전달하면 기기 native 종횡비 그대로 사용됨. */
   try {
-    camStream = await navigator.mediaDevices.getUserMedia({video: videoConstraints, audio:false});
-  } catch(e) {
-    // 세로형 실패 시 기본 요청으로 fallback
-    camStream = await navigator.mediaDevices.getUserMedia({video: {facingMode}, audio:false});
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, aspectRatio: { ideal: 9/16 } },
+      audio: false
+    });
+  } catch(e1) {
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({video: {facingMode}, audio:false});
+    } catch(e2) {
+      camStream = await navigator.mediaDevices.getUserMedia({video: true, audio:false});
+    }
   }
-  const video=document.getElementById('camVideo');
-  video.srcObject=camStream;
-  // 메타데이터 로드 + play 완전히 대기
-  await new Promise(r=>{
-    video.onloadedmetadata=()=>{ video.play().then(r).catch(r); };
+
+  const video = document.getElementById('camVideo');
+  video.srcObject = camStream;
+
+  /* ── 영상 싱크 핵심: canplay 이벤트까지 대기 후 play ──
+     loadedmetadata만으로는 첫 프레임이 렌더되지 않아 검은 화면이 보임 */
+  await new Promise(resolve => {
+    const done = () => { video.removeEventListener('canplay', done); resolve(); };
+    video.addEventListener('canplay', done, {once:true});
+    video.load();
+    video.play().catch(()=>{});
   });
-  const cs=document.getElementById('cameraScreen');
-  facingMode==='user'?cs.classList.add('front'):cs.classList.remove('front');
+
+  const cs = document.getElementById('cameraScreen');
+  facingMode === 'user' ? cs.classList.add('front') : cs.classList.remove('front');
   document.getElementById('cameraBg').classList.add('open');
   cs.classList.add('open');
-  if(navigator.wakeLock) try{await navigator.wakeLock.request('screen');}catch(e){}
-  // 플래시 상태 동기화 (카메라 전환 시 초기화)
-  flashOn=false;
-  document.getElementById('flashIcon').style.color='#fff';
-  document.getElementById('flashLabel').textContent='Flash';
-  // torch 지원 여부 UI 반영
+
+  if(navigator.wakeLock) try { await navigator.wakeLock.request('screen'); } catch(e){}
+
+  // 플래시 초기화
+  flashOn = false;
+  document.getElementById('flashIcon').style.color = '#fff';
+  document.getElementById('flashLabel').textContent = 'Flash';
+
+  // torch 지원 여부 → 미지원 시 플래시 버튼 dim 처리
   const track = camStream?.getVideoTracks()[0];
   const caps  = track?.getCapabilities?.();
-  const flashBtn = document.querySelector('.cam-side-btn:last-child');
-  if(flashBtn) flashBtn.style.opacity = caps?.torch ? '1' : '0.45';
+  const flashSideBtn = document.querySelector('#camBottomBar .cam-side-btn:last-child');
+  if(flashSideBtn) flashSideBtn.style.opacity = (caps?.torch) ? '1' : '0.4';
 }
 function stopCameraStream() {
   camStream?.getTracks().forEach(t=>t.stop()); camStream=null;
@@ -3159,108 +3148,47 @@ function onDropletOpacityChange(val) {
 }
 
 /* ════════════════════════════════════════════
-   1차 레이어: 배경 제거 후 Canvas 렌더링
+   1차 레이어: CSS mix-blend-mode 방식으로 물방울 표시
+   ★ Canvas 픽셀 조작 제거 → 이미지 그대로 표시 (가장 안정적)
    ════════════════════════════════════════════ */
 function _applyDropletOverlay() {
   const overlay = document.getElementById('dropletOverlay');
   if(_currentDropletTex === 0) {
     overlay.classList.remove('visible');
     overlay.innerHTML = '';
+    overlay.style.backgroundImage = 'none';
     return;
   }
   const src = DROPLET_TEXTURES[_currentDropletTex];
-  overlay.style.opacity = '0';
-  overlay.classList.remove('visible');
 
-  // 캐시 있으면 바로 사용
-  if(_dtexCache[_currentDropletTex]) {
-    _renderDropletCanvas(overlay, _dtexCache[_currentDropletTex]);
-    return;
-  }
-
-  // 이미지 로드 → Canvas로 배경 제거
-  // ★ crossOrigin 제거: 같은 도메인 이미지는 CORS 불필요. 설정 시 데스크탑 보안 오류 원인
-  function _doLoadTex(src, useCORS) {
-    const img = new Image();
-    if(useCORS) img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const offC = document.createElement('canvas');
-      offC.width  = img.naturalWidth  || 1080;
-      offC.height = img.naturalHeight || 1920;
-      const offCtx = offC.getContext('2d', {willReadFrequently:true});
-      offCtx.drawImage(img, 0, 0);
-
-      // ── 배경 제거 알고리즘 ──
-      let data;
-      try { data = offCtx.getImageData(0, 0, offC.width, offC.height); } catch(e) { data = null; }
-      if(data) {
-        const d = data.data;
-        for(let i = 0; i < d.length; i += 4) {
-          const r = d[i], g = d[i+1], b = d[i+2];
-          const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-          const maxC = Math.max(r,g,b), minC = Math.min(r,g,b);
-          const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
-          const blueBias = b - Math.max(r, g);
-          if(brightness > 230 && saturation < 0.08) {
-            d[i+3] = 0;
-          } else if(brightness > 200 && saturation < 0.12 && blueBias < 15) {
-            d[i+3] = Math.round(Math.min(1, (255 - brightness) / 55 * 2.5) * 255);
-          } else if(brightness > 180 && saturation < 0.15 && blueBias < 20) {
-            d[i+3] = Math.round(Math.min(1, (255 - brightness) / 75 * 2.0) * 255);
-          } else if(brightness > 160 && saturation < 0.18) {
-            d[i+3] = Math.round(Math.max(0.25, 1 - (brightness - 130) / 130) * 255);
-          }
-        }
-        offCtx.putImageData(data, 0, 0);
-      }
-      _dtexCache[_currentDropletTex] = offC;
-      _renderDropletCanvas(overlay, offC);
-    };
-    img.onerror = () => {
-      if(useCORS) {
-        // CORS 실패 → crossOrigin 없이 재시도
-        _doLoadTex(src, false);
-      } else {
-        // 최종 실패: background-image fallback
-        overlay.innerHTML = '';
-        overlay.style.backgroundImage = `url('${src}')`;
-        overlay.style.backgroundSize  = 'cover';
-        overlay.style.backgroundPosition = 'center';
-        overlay.style.opacity = _dropletOpacity;
-        overlay.classList.add('visible');
-      }
-    };
-    img.src = src;
-  }
-  _doLoadTex(src, false); // crossOrigin 없이 시작 (같은 도메인)
+  // ★ CSS background-image 방식으로 직접 표시 (Canvas 픽셀처리 완전 제거)
+  // mix-blend-mode: multiply → 흰 배경은 투명처럼 보이고 물방울 테두리만 남음
+  overlay.innerHTML = '';
+  overlay.style.backgroundImage   = `url('${src}')`;
+  overlay.style.backgroundSize    = 'cover';
+  overlay.style.backgroundPosition = 'center top';
+  overlay.style.backgroundRepeat  = 'no-repeat';
+  overlay.style.mixBlendMode      = 'multiply';
+  overlay.style.opacity           = _dropletOpacity;
+  overlay.classList.add('visible');
 }
 
 function _renderDropletCanvas(overlay, offC) {
+  // 레거시 호환용 (현재는 CSS 방식으로 대체됨)
   overlay.innerHTML = '';
   const c = document.createElement('canvas');
-  // canvasWrap의 실제 크기에 맞춤 (데스크탑에서 offsetWidth=0 방어)
   const wrap = document.getElementById('canvasWrap');
   const ww = wrap.offsetWidth  || (typeof _fixedW !== 'undefined' && _fixedW) || W || window.innerWidth  || 430;
   const wh = wrap.offsetHeight || (typeof _fixedH !== 'undefined' && _fixedH) || H || window.innerHeight || 932;
-  c.width  = ww;
-  c.height = wh;
-  c.style.width  = '100%';
-  c.style.height = '100%';
-  c.style.position = 'absolute';
-  c.style.inset = '0';
+  c.width  = ww; c.height = wh;
+  c.style.width='100%'; c.style.height='100%';
+  c.style.position='absolute'; c.style.inset='0';
   const ctx = c.getContext('2d');
-  // 처리된 offC를 화면 전체에 cover 방식으로 그리기
-  const srcAR = offC.width  / offC.height;
-  const dstAR = c.width     / c.height;
-  let sx=0, sy=0, sw=offC.width, sh=offC.height;
-  if(srcAR > dstAR){
-    sw = Math.round(offC.height * dstAR);
-    sx = Math.round((offC.width - sw) / 2);
-  } else {
-    sh = Math.round(offC.width / dstAR);
-    sy = Math.round((offC.height - sh) / 2);
-  }
-  ctx.drawImage(offC, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  const srcAR = offC.width/offC.height, dstAR = c.width/c.height;
+  let sx=0,sy=0,sw=offC.width,sh=offC.height;
+  if(srcAR > dstAR){ sw=Math.round(offC.height*dstAR); sx=Math.round((offC.width-sw)/2); }
+  else             { sh=Math.round(offC.width/dstAR);  sy=Math.round((offC.height-sh)/2); }
+  ctx.drawImage(offC,sx,sy,sw,sh,0,0,c.width,c.height);
   overlay.appendChild(c);
   overlay.style.opacity = _dropletOpacity;
   overlay.classList.add('visible');
@@ -5077,7 +5005,7 @@ function confirmImageSave(){
     if(ssFsize) ssFsize.textContent = Math.round(blob.size/1024)+'KB · '+extImg.toUpperCase()+' 이미지';
 
     document.getElementById('shareSheet').classList.add('open');
-    showToast('✅ 이미지 준비 완료! 저장 방법을 선택하세요.');
+    showToast('✅ 이미지 준비 완료!');
   }, mimeImg, qualImg);
 
   if(points<=0) setTimeout(()=>showAdModal(),700);
@@ -5091,69 +5019,17 @@ function closeShareSheet(){
 }
 
 async function ssAction(type){
-  if(!_ssBlob && type !== 'download') { showToast('⚠️ 파일을 준비 중입니다. 잠시 후 다시 시도하세요.'); return; }
-
+  if(!_ssBlob) { showToast('⚠️ 파일을 준비 중입니다. 잠시 후 다시 시도하세요.'); return; }
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  const file  = _ssBlob ? new File([_ssBlob], _ssFilename, {type: _ssMimeType}) : null;
 
-  if(type === 'gallery'){
-    // ── 갤러리 저장: 직접 다운로드 (시스템 공유창 없음) ──
-    _ssDownload();
-    showToast(isIOS ? '📥 이미지를 꾹 눌러 "사진에 추가"를 선택하세요.' : '💾 다운로드가 시작되었습니다!');
-    closeShareSheet();
-
-  } else if(type === 'kakao'){
-    // ── 카카오톡: 이미지 저장 후 카카오에서 첨부 안내 ──
-    _ssDownload();
-    showToast('📥 이미지 저장 후 카카오톡에서 첨부하세요.');
-    closeShareSheet();
-
-  } else if(type === 'email'){
-    // ── 이메일: 이미지 저장 + mailto 열기 ──
-    _ssDownload();
-    const mailto = `mailto:?subject=Rainy Note 작품&body=Rainy Note로 만든 작품입니다.%0A(이미지가 다운로드되었습니다)`;
-    window.open(mailto, '_blank');
-    closeShareSheet();
-
-  } else if(type === 'instagram'){
-    // ── 인스타그램: 직접 연동 불가, 이미지 저장 후 안내 ──
-    _ssDownload();
-    showToast('📸 이미지 저장 후 Instagram 앱에서 업로드하세요!');
-    closeShareSheet();
-
-  } else if(type === 'copy'){
-    // ── 클립보드 복사 (이미지) ──
-    try {
-      if(navigator.clipboard && window.ClipboardItem && _ssBlob){
-        await navigator.clipboard.write([new ClipboardItem({[_ssMimeType]: _ssBlob})]);
-        showToast('📋 이미지가 클립보드에 복사되었습니다!');
-        closeShareSheet();
-        return;
-      }
-    } catch(e){}
-    showToast('⚠️ 이 브라우저는 이미지 복사를 지원하지 않습니다.');
-
-  } else if(type === 'download'){
-    // ── PC 직접 다운로드 ──
-    _ssDownload();
-    showToast('💾 다운로드가 시작되었습니다!');
-    closeShareSheet();
-
-  } else if(type === 'facebook'){
-    // ── 페이스북: 파일 직접 첨부 불가 → 이미지 저장 후 Facebook 앱/웹 안내 ──
-    // (Facebook Web Share API는 파일 첨부 미지원, URL만 가능)
-    _ssDownload();
-    showToast('📥 이미지 저장 후 Facebook 앱에서 "사진 업로드"로 공유하세요!');
-    closeShareSheet();
-    // 모바일: 짧은 딜레이 후 Facebook 앱 열기 시도
-    setTimeout(()=>{
-      const isMobile = /Android|iPhone|iPad/.test(navigator.userAgent);
-      if(isMobile){
-        // Facebook 앱 딥링크 시도 (실패하면 무시)
-        try { window.location.href = 'fb://'; } catch(e){}
-      }
-    }, 1200);
+  // ── 저장 (내 폰에 저장) ──
+  _ssDownload();
+  if(isIOS){
+    showToast('📥 사진이 열립니다. 꾹 눌러 "사진에 추가"를 선택하세요.');
+  } else {
+    showToast('💾 저장이 시작되었습니다!');
   }
+  closeShareSheet();
 }
 
 function _ssDownload(){
@@ -5504,15 +5380,19 @@ function closeGalleryModal(){ document.getElementById('galleryModal').classList.
 function openPrivacyModal(){
   const modal = document.getElementById('privacyModal');
   const frame = document.getElementById('privacyFrame');
-  // iframe src 설정 — 아직 로드 안 됐을 때만 설정 (중복 로드 방지)
+  // ★ 항상 ?iframe=1 파라미터로 로드 → privacy.html에서 헤더 숨김 처리
+  const wantSrc = 'privacy.html?iframe=1';
   const currentSrc = frame.getAttribute('src') || '';
-  if(!currentSrc || currentSrc === 'about:blank') {
-    frame.src = 'privacy.html';
+  if(!currentSrc || currentSrc === 'about:blank' || !currentSrc.includes('privacy')) {
+    frame.src = wantSrc;
   }
   modal.classList.add('open');
+  // body 스크롤 잠금 (모바일 배경 스크롤 방지)
+  document.body.style.overflow = 'hidden';
 }
 function closePrivacyModal(){
   document.getElementById('privacyModal').classList.remove('open');
+  document.body.style.overflow = '';
 }
 function refreshGallery(){
   const grid=document.getElementById('galleryGrid');
