@@ -1092,6 +1092,8 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
   border:2px solid rgba(255,255,255,0.1);
   background:#060d16; position:relative;
   transition:all 0.2s; aspect-ratio:9/16;
+  /* 데스크탑에서 그리드 너비가 줄어들 때 높이 보장 */
+  min-height:80px;
 }
 .dtex-card:active { transform:scale(0.96); }
 .dtex-card.active {
@@ -1357,7 +1359,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
     <!-- 9종 텍스처 그리드 (3열) -->
     <div class="dtex-grid dtex-grid-3col" style="margin-top:10px;">
       <div class="dtex-card" id="dtex1" onclick="selectDropletTex(1)">
-        <img src="images/droplet-tex1.png?v=3" alt="Natural Drops" loading="lazy">
+        <img src="images/droplet-tex1.png?v=4" alt="Natural Drops" loading="eager">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Natural</strong>
@@ -1365,7 +1367,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex2" onclick="selectDropletTex(2)">
-        <img src="images/droplet-tex2.png" alt="Rain Trails" loading="lazy">
+        <img src="images/droplet-tex2.png?v=4" alt="Rain Trails" loading="eager">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Rain Trail</strong>
@@ -1373,7 +1375,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex3" onclick="selectDropletTex(3)">
-        <img src="images/droplet-tex3.png" alt="Micro Mist" loading="lazy">
+        <img src="images/droplet-tex3.png?v=4" alt="Micro Mist" loading="eager">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Micro Mist</strong>
@@ -1381,7 +1383,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex4" onclick="selectDropletTex(4)">
-        <img src="images/droplet-tex4.png" alt="Crystal Drops" loading="lazy">
+        <img src="images/droplet-tex4.png?v=4" alt="Crystal Drops" loading="eager">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Crystal</strong>
@@ -1389,7 +1391,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex5" onclick="selectDropletTex(5)">
-        <img src="images/droplet-tex5.png" alt="Frosted Glass" loading="lazy">
+        <img src="images/droplet-tex5.png?v=4" alt="Frosted Glass" loading="eager">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Frosted</strong>
@@ -1397,7 +1399,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex6" onclick="selectDropletTex(6)">
-        <img src="images/droplet-tex6.png" alt="Scatter Drops" loading="lazy">
+        <img src="images/droplet-tex6.png?v=4" alt="Scatter Drops" loading="eager">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Scatter</strong>
@@ -1405,7 +1407,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex7" onclick="selectDropletTex(7)">
-        <img src="images/droplet-tex7.png" alt="Morning Dew" loading="lazy">
+        <img src="images/droplet-tex7.png?v=4" alt="Morning Dew" loading="eager">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Morning Dew</strong>
@@ -1413,7 +1415,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex8" onclick="selectDropletTex(8)">
-        <img src="images/droplet-tex8.png" alt="Heavy Rain" loading="lazy">
+        <img src="images/droplet-tex8.png?v=4" alt="Heavy Rain" loading="eager">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Heavy Rain</strong>
@@ -1421,7 +1423,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex9" onclick="selectDropletTex(9)">
-        <img src="images/droplet-tex9.png" alt="Winter Frost" loading="lazy">
+        <img src="images/droplet-tex9.png?v=4" alt="Winter Frost" loading="eager">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Winter Frost</strong>
@@ -2907,15 +2909,38 @@ async function triggerCamera() {
 }
 async function startCamera(facingMode) {
   stopCameraStream();
-  camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode,width:{ideal:1920},height:{ideal:1080}},audio:false});
+  // ★ 세로형(portrait) 해상도 우선: height를 더 크게 설정해 모바일 세로 파인더 꽉 채움
+  const videoConstraints = {
+    facingMode,
+    width:  { ideal: 1080 },
+    height: { ideal: 1920 }
+  };
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({video: videoConstraints, audio:false});
+  } catch(e) {
+    // 세로형 실패 시 기본 요청으로 fallback
+    camStream = await navigator.mediaDevices.getUserMedia({video: {facingMode}, audio:false});
+  }
   const video=document.getElementById('camVideo');
   video.srcObject=camStream;
-  await new Promise(r=>{video.onloadedmetadata=()=>{video.play();r();}});
+  // 메타데이터 로드 + play 완전히 대기
+  await new Promise(r=>{
+    video.onloadedmetadata=()=>{ video.play().then(r).catch(r); };
+  });
   const cs=document.getElementById('cameraScreen');
   facingMode==='user'?cs.classList.add('front'):cs.classList.remove('front');
   document.getElementById('cameraBg').classList.add('open');
   cs.classList.add('open');
   if(navigator.wakeLock) try{await navigator.wakeLock.request('screen');}catch(e){}
+  // 플래시 상태 동기화 (카메라 전환 시 초기화)
+  flashOn=false;
+  document.getElementById('flashIcon').style.color='#fff';
+  document.getElementById('flashLabel').textContent='Flash';
+  // torch 지원 여부 UI 반영
+  const track = camStream?.getVideoTracks()[0];
+  const caps  = track?.getCapabilities?.();
+  const flashBtn = document.querySelector('.cam-side-btn:last-child');
+  if(flashBtn) flashBtn.style.opacity = caps?.torch ? '1' : '0.45';
 }
 function stopCameraStream() {
   camStream?.getTracks().forEach(t=>t.stop()); camStream=null;
@@ -2938,11 +2963,21 @@ async function switchCamera() {
   catch(e){ camFacingMode=prev; showToast('카메라 전환에 실패했습니다.'); }
 }
 function toggleFlash() {
+  const track=camStream?.getVideoTracks()[0];
+  const caps = track?.getCapabilities?.();
+  if(!caps?.torch){
+    showToast('⚡ 이 기기/브라우저는 플래시를 지원하지 않습니다.');
+    return;
+  }
   flashOn=!flashOn;
   document.getElementById('flashIcon').style.color=flashOn?'#ffe066':'#fff';
   document.getElementById('flashLabel').textContent=flashOn?'On':'Flash';
-  const track=camStream?.getVideoTracks()[0];
-  if(track?.getCapabilities?.()?.torch) track.applyConstraints({advanced:[{torch:flashOn}]}).catch(()=>{});
+  track.applyConstraints({advanced:[{torch:flashOn}]}).catch(err=>{
+    showToast('플래시 오류: ' + (err.message||err.name));
+    flashOn=false;
+    document.getElementById('flashIcon').style.color='#fff';
+    document.getElementById('flashLabel').textContent='Flash';
+  });
 }
 function capturePhoto() {
   const video=document.getElementById('camVideo');
@@ -3089,6 +3124,15 @@ function openDropletPicker(el) {
   document.getElementById('dropletPickerBackdrop').classList.add('open');
   document.getElementById('dropletPickerSheet').classList.add('open');
   _refreshDropletPickerUI();
+  // ★ 데스크탑: 피커가 열릴 때 이미지 강제 로드 (off-screen lazy 문제 해결)
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.dtex-card img').forEach(img => {
+      if(!img.complete || img.naturalWidth === 0) {
+        const s = img.getAttribute('src');
+        if(s) { img.src = ''; img.src = s; }
+      }
+    });
+  });
 }
 function closeDropletPicker() {
   document.getElementById('dropletPickerBackdrop').classList.remove('open');
@@ -3135,70 +3179,71 @@ function _applyDropletOverlay() {
   }
 
   // 이미지 로드 → Canvas로 배경 제거
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    const offC = document.createElement('canvas');
-    offC.width  = img.naturalWidth;
-    offC.height = img.naturalHeight;
-    const offCtx = offC.getContext('2d', {willReadFrequently:true});
-    offCtx.drawImage(img, 0, 0);
+  // ★ crossOrigin 제거: 같은 도메인 이미지는 CORS 불필요. 설정 시 데스크탑 보안 오류 원인
+  function _doLoadTex(src, useCORS) {
+    const img = new Image();
+    if(useCORS) img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const offC = document.createElement('canvas');
+      offC.width  = img.naturalWidth  || 1080;
+      offC.height = img.naturalHeight || 1920;
+      const offCtx = offC.getContext('2d', {willReadFrequently:true});
+      offCtx.drawImage(img, 0, 0);
 
-    // ── 배경 제거 알고리즘 (개선판) ──
-    // JPEG는 흰/회색 배경이고 물방울은 투명한 렌즈 형태 (어두운 테두리 + 밝은 반사)
-    // 전략: 밝기+채도 기반 스크리닝 → 스크린 블렌드 방식으로 배경 제거
-    const data = offCtx.getImageData(0, 0, offC.width, offC.height);
-    const d = data.data;
-    for(let i = 0; i < d.length; i += 4) {
-      const r = d[i], g = d[i+1], b = d[i+2];
-      // 밝기 (0~255)
-      const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-      // 채도
-      const maxC = Math.max(r,g,b), minC = Math.min(r,g,b);
-      const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
-      // 색온도 (파란빛 = 물방울 반사광, 흰빛 = 배경)
-      const blueBias = b - Math.max(r, g);
-
-      if(brightness > 230 && saturation < 0.08) {
-        // 완전히 밝은 흰 배경 → 완전 투명
-        d[i+3] = 0;
-      } else if(brightness > 200 && saturation < 0.12 && blueBias < 15) {
-        // 밝은 회백색 배경 → 거의 투명
-        const alpha = (255 - brightness) / 55;
-        d[i+3] = Math.round(Math.min(1, alpha * 2.5) * 255);
-      } else if(brightness > 180 && saturation < 0.15 && blueBias < 20) {
-        // 중간 회색 배경 → 반투명
-        const alpha = (255 - brightness) / 75;
-        d[i+3] = Math.round(Math.min(1, alpha * 2.0) * 255);
-      } else if(brightness > 160 && saturation < 0.18) {
-        // 약한 회색 → 약간 투명
-        const alpha = 1 - ((brightness - 130) / 130);
-        d[i+3] = Math.round(Math.max(0.25, alpha) * 255);
+      // ── 배경 제거 알고리즘 ──
+      let data;
+      try { data = offCtx.getImageData(0, 0, offC.width, offC.height); } catch(e) { data = null; }
+      if(data) {
+        const d = data.data;
+        for(let i = 0; i < d.length; i += 4) {
+          const r = d[i], g = d[i+1], b = d[i+2];
+          const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+          const maxC = Math.max(r,g,b), minC = Math.min(r,g,b);
+          const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
+          const blueBias = b - Math.max(r, g);
+          if(brightness > 230 && saturation < 0.08) {
+            d[i+3] = 0;
+          } else if(brightness > 200 && saturation < 0.12 && blueBias < 15) {
+            d[i+3] = Math.round(Math.min(1, (255 - brightness) / 55 * 2.5) * 255);
+          } else if(brightness > 180 && saturation < 0.15 && blueBias < 20) {
+            d[i+3] = Math.round(Math.min(1, (255 - brightness) / 75 * 2.0) * 255);
+          } else if(brightness > 160 && saturation < 0.18) {
+            d[i+3] = Math.round(Math.max(0.25, 1 - (brightness - 130) / 130) * 255);
+          }
+        }
+        offCtx.putImageData(data, 0, 0);
       }
-      // 어두운 픽셀 / 높은 채도 / 파란 반사 → 물방울 테두리 유지
-    }
-    offCtx.putImageData(data, 0, 0);
-    _dtexCache[_currentDropletTex] = offC;
-    _renderDropletCanvas(overlay, offC);
-  };
-  img.onerror = () => {
-    // 로드 실패 시 원본 이미지 그대로 배경으로 사용
-    overlay.style.backgroundImage = `url('${src}')`;
-    overlay.style.backgroundSize  = 'cover';
-    overlay.style.backgroundPosition = 'center';
-    overlay.style.opacity = _dropletOpacity;
-    overlay.classList.add('visible');
-  };
-  img.src = src;
+      _dtexCache[_currentDropletTex] = offC;
+      _renderDropletCanvas(overlay, offC);
+    };
+    img.onerror = () => {
+      if(useCORS) {
+        // CORS 실패 → crossOrigin 없이 재시도
+        _doLoadTex(src, false);
+      } else {
+        // 최종 실패: background-image fallback
+        overlay.innerHTML = '';
+        overlay.style.backgroundImage = `url('${src}')`;
+        overlay.style.backgroundSize  = 'cover';
+        overlay.style.backgroundPosition = 'center';
+        overlay.style.opacity = _dropletOpacity;
+        overlay.classList.add('visible');
+      }
+    };
+    img.src = src;
+  }
+  _doLoadTex(src, false); // crossOrigin 없이 시작 (같은 도메인)
 }
 
 function _renderDropletCanvas(overlay, offC) {
   overlay.innerHTML = '';
   const c = document.createElement('canvas');
-  // canvasWrap의 실제 크기에 맞춤
+  // canvasWrap의 실제 크기에 맞춤 (데스크탑에서 offsetWidth=0 방어)
   const wrap = document.getElementById('canvasWrap');
-  c.width  = wrap.offsetWidth  || W;
-  c.height = wrap.offsetHeight || H;
+  const ww = wrap.offsetWidth  || (typeof _fixedW !== 'undefined' && _fixedW) || W || window.innerWidth  || 430;
+  const wh = wrap.offsetHeight || (typeof _fixedH !== 'undefined' && _fixedH) || H || window.innerHeight || 932;
+  c.width  = ww;
+  c.height = wh;
   c.style.width  = '100%';
   c.style.height = '100%';
   c.style.position = 'absolute';
@@ -5507,14 +5552,40 @@ function closeGalViewer(){
   document.getElementById('galViewer').classList.remove('open');
   _galViewerItem = null;
 }
-// 뷰어에서 저장 (다운로드 / Web Share API)
+// 뷰어에서 저장 (직접 다운로드만 — Web Share API 제거)
 async function gvDownload(){
   if(!_galViewerItem) return;
   await _saveOrShareDataUrl(_galViewerItem.url, 'RainyNote_'+_galViewerItem.id+'.png', false);
 }
+// 공유 버튼: 모바일에서 다운로드 후 앱으로 직접 공유 안내
 async function gvShare(){
   if(!_galViewerItem) return;
-  await _saveOrShareDataUrl(_galViewerItem.url, 'RainyNote_'+_galViewerItem.id+'.png', true);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isAndroid = /Android/.test(navigator.userAgent);
+  // Web Share API 시도 (지원 및 files canShare 확인)
+  try {
+    if(navigator.share && navigator.canShare) {
+      const res  = await fetch(_galViewerItem.url);
+      const blob = await res.blob();
+      const file = new File([blob], 'RainyNote_'+_galViewerItem.id+'.png', {type:'image/png'});
+      if(navigator.canShare({files:[file]})) {
+        await navigator.share({files:[file], title:'Rainy Note', text:'Rainy Note로 만든 이미지 💧'});
+        return;
+      }
+    }
+  } catch(e){
+    if(e.name === 'AbortError') return; // 사용자가 취소
+    // 그 외 오류는 다운로드 fallback
+  }
+  // fallback: 직접 다운로드
+  await _saveOrShareDataUrl(_galViewerItem.url, 'RainyNote_'+_galViewerItem.id+'.png', false);
+  if(isIOS){
+    showToast('📥 이미지를 꾹 눌러 "사진에 추가"를 선택하세요.');
+  } else if(isAndroid){
+    showToast('💾 다운로드 후 원하는 앱으로 공유하세요!');
+  } else {
+    showToast('💾 이미지를 다운로드했습니다!');
+  }
 }
 function gvDelete(){
   if(!_galViewerItem) return;
@@ -5526,27 +5597,13 @@ function gvDelete(){
   showToast('이미지가 삭제되었습니다.');
 }
 
-// dataUrl → 파일 저장 or Web Share
+// dataUrl → 파일 저장 (직접 다운로드, Web Share API 미사용)
 async function _saveOrShareDataUrl(dataUrl, filename, preferShare){
   // Blob 변환
   const res  = await fetch(dataUrl);
   const blob = await res.blob();
 
-  // ① Web Share API (Android Chrome, iOS Safari 지원)
-  if(preferShare && navigator.share && navigator.canShare) {
-    const file = new File([blob], filename, {type: blob.type || 'image/png'});
-    if(navigator.canShare({files:[file]})) {
-      try {
-        await navigator.share({files:[file], title:'Rainy Note', text:'Rainy Note로 만든 이미지'});
-        return;
-      } catch(e){
-        if(e.name !== 'AbortError') showToast('공유에 실패했습니다.');
-        return;
-      }
-    }
-  }
-
-  // ② Android Chrome / Desktop: a.download 다운로드
+  // 직접 다운로드 (시스템 공유창 표시하지 않음)
   const url = URL.createObjectURL(blob);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const a = document.createElement('a');

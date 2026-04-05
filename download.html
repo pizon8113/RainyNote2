@@ -133,16 +133,16 @@ body{
       <div class="logo">🌧️</div>
       <div class="logo-info">
         <h1>Rainy Note</h1>
-        <div class="version-badge">v2.6.1 · 2026-04-05</div>
+        <div class="version-badge">v2.6.2 · 2026-04-05</div>
       </div>
     </div>
     <p class="sub">구글 플레이 등록 & VS Code 로컬 실행용 전체 프로젝트 ZIP 다운로드<br>
-      카메라·갤러리 연동, 저장/공유, Density 등 모든 기능 점검 완료.</p>
+      카메라·갤러리 연동, 저장/공유, Density, Droplets 이미지 등 모든 기능 점검 완료.</p>
   </div>
 
   <!-- ① 기능 점검 결과 -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-shield-check"></i> 기능 점검 결과 (v2.6.1)</div>
+    <div class="card-title"><i class="fas fa-shield-check"></i> 기능 점검 결과 (v2.6.2)</div>
     <div class="check-list">
 
       <div class="check-item">
@@ -212,12 +212,36 @@ body{
       </div>
 
       <div class="check-item">
+        <div class="check-icon">📲</div>
+        <div class="check-body">
+          <div class="check-title">갤러리 저장소 공유 버튼 → 다운로드 안내창 문제<span class="badge fix">🔧 수정됨</span></div>
+          <div class="check-desc">
+            이미지저장소에서 <strong>공유</strong> 버튼 클릭 시 OS 파일다운로드 안내창이 뜨던 문제 해결.<br>
+            Web Share API 지원 기기는 시스템 공유, 미지원 시 직접 다운로드 + 안내 토스트로 처리.
+          </div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <div class="check-icon">📷</div>
+        <div class="check-body">
+          <div class="check-title">모바일 카메라 뷰파인더 좁게 표시 / 플래시 미연동<span class="badge fix">🔧 수정됨</span></div>
+          <div class="check-desc">
+            해상도 제약을 가로형(1920×1080) → <strong>세로형(1080×1920)</strong>으로 변경하여 전체화면 파인더 보장.<br>
+            플래시: <code>torch</code> capability 확인 후 미지원 기기엔 안내 토스트, 실패 시 상태 롤백.<br>
+            카메라 전환 시 플래시 상태 초기화 + torch 지원 여부 UI 반영(dimmed).
+          </div>
+        </div>
+      </div>
+
+      <div class="check-item">
         <div class="check-icon">💧</div>
         <div class="check-body">
-          <div class="check-title">Natural Drops 이미지 (droplet-tex1)<span class="badge fix">🔧 수정됨</span></div>
+          <div class="check-title">데스크탑 Droplets 이미지 9장 미노출<span class="badge fix">🔧 수정됨</span></div>
           <div class="check-desc">
-            핸드폰 프레임 없는 순수 유리창 물방울 이미지로 교체.<br>
-            SW 캐시 버전 v3으로 업데이트 + <code>?v=3</code> 쿼리로 캐시 버스팅 적용.
+            <code>loading="lazy"</code> → <code>loading="eager"</code>로 변경 (off-screen 피커 lazy 미로드 방지).<br>
+            <code>crossOrigin</code> 제거로 CORS 오류 원인 차단. SW 캐시 v3 → <strong>v4</strong> 업데이트.<br>
+            모든 텍스처 URL에 <code>?v=4</code> 캐시버스팅 적용. 피커 오픈 시 이미지 강제 재로드.
           </div>
         </div>
       </div>
@@ -401,16 +425,17 @@ const FILE_SECTIONS = [
   {
     label: '핵심 앱 파일',
     files: [
-      {path:'index.html',    icon:'📱', label:'index.html   (메인 앱 — 전체 기능)'},
+      {path:'index.html',    icon:'📱', label:'index.html   (메인 앱 — v2.6.2 전체 기능)'},
       {path:'admin.html',    icon:'📊', label:'admin.html   (관리자 대시보드)'},
-      {path:'download.html', icon:'⬇️', label:'download.html (이 페이지)'},
+      {path:'privacy.html',  icon:'🔒', label:'privacy.html  (개인정보처리방침)'},
+      {path:'download.html', icon:'⬇️', label:'download.html (이 페이지 — 프로젝트 ZIP)'},
     ]
   },
   {
     label: 'PWA / 배포 설정',
     files: [
       {path:'manifest.json', icon:'📋', label:'manifest.json  (PWA 매니페스트)'},
-      {path:'sw.js',         icon:'⚙️', label:'sw.js          (Service Worker v3)'},
+      {path:'sw.js',         icon:'⚙️', label:'sw.js          (Service Worker v4)'},
       {path:'netlify.toml',  icon:'🚀', label:'netlify.toml   (Netlify 배포)'},
       {path:'vercel.json',   icon:'▲',  label:'vercel.json    (Vercel 배포)'},
       {path:'_redirects',    icon:'🔀', label:'_redirects     (SPA 리다이렉트)'},
@@ -423,6 +448,9 @@ const FILE_SECTIONS = [
     label: '아이콘 리소스',
     files: [
       {path:'icons/icon.svg',              icon:'🎨', label:'icons/icon.svg'},
+      {path:'icons/icon-192.png',          icon:'📱', label:'icons/icon-192.png  (PWA 아이콘 192px)'},
+      {path:'icons/icon-512.png',          icon:'📱', label:'icons/icon-512.png  (PWA 아이콘 512px)'},
+      {path:'icons/icon-logo.png',         icon:'🖼️', label:'icons/icon-logo.png'},
       {path:'icons/generate-icons.html',   icon:'🖼️', label:'icons/generate-icons.html  (아이콘 생성기)'},
       {path:'icons/generate-icons.js',     icon:'🔧', label:'icons/generate-icons.js'},
     ]
@@ -430,7 +458,7 @@ const FILE_SECTIONS = [
   {
     label: '이미지 에셋 (droplet textures)',
     files: [
-      {path:'images/droplet-tex1.png', icon:'🖼️', label:'droplet-tex1.png  (Natural — 핸드폰 테두리 없음 v3)'},
+      {path:'images/droplet-tex1.png', icon:'🖼️', label:'droplet-tex1.png  (Natural — 핸드폰 테두리 없음 v4)'},
       {path:'images/droplet-tex2.png', icon:'🖼️', label:'droplet-tex2.png  (Rain Trails)'},
       {path:'images/droplet-tex3.png', icon:'🖼️', label:'droplet-tex3.png  (Micro Mist)'},
       {path:'images/droplet-tex4.png', icon:'🖼️', label:'droplet-tex4.png  (Crystal Drops)'},
