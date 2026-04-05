@@ -140,6 +140,8 @@ html,body { width:100%; height:100%; overflow:hidden; font-family:'Inter','Noto 
   transform-origin:center center;
   pointer-events:none; user-select:none;
   background:transparent;
+  transition:filter 0.2s ease;
+  -webkit-transition:-webkit-filter 0.2s ease;
 }
 #weatherCanvas  { position:absolute; inset:0; z-index:2; }
 #particleCanvas { position:absolute; inset:0; z-index:3; pointer-events:none; }
@@ -178,14 +180,20 @@ html,body { width:100%; height:100%; overflow:hidden; font-family:'Inter','Noto 
 
 /* ── CONTROL PANEL ── */
 #controlPanel {
-  position:absolute; left:0; right:0; bottom:0; z-index:50;
+  position:absolute; left:0; right:0;
+  /* ★ bottomNav 높이(~72px)만큼 위에 위치시켜 네비바를 절대 가리지 않음 */
+  bottom:72px; z-index:49;
   background:linear-gradient(to bottom,#0d1824,#0a1018);
   border-radius:20px 20px 0 0;
   border-top:1px solid rgba(100,180,255,0.15);
   transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
-  max-height:75vh; overflow-y:auto;
+  max-height:calc(75vh - 72px); overflow-y:auto;
 }
-#controlPanel.collapsed { transform:translateY(calc(100% - 56px)); }
+/* collapsed: 핸들(56px)만 위로 노출 */
+#controlPanel.collapsed { transform:translateY(calc(100% - 56px)); pointer-events:none; }
+#controlPanel.collapsed .panel-handle-row { pointer-events:auto; }
+/* 열린 상태에서는 bottomNav보다 항상 아래에 z-index 유지 */
+#controlPanel:not(.collapsed) { pointer-events:auto; }
 .panel-handle-row { display:flex; align-items:center; justify-content:space-between; padding:10px 16px 6px; cursor:pointer; }
 .panel-handle { width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:4px; margin:0 auto 4px; }
 .panel-toggle-row { display:flex; align-items:center; gap:8px; padding:0 16px 10px; cursor:pointer; }
@@ -234,7 +242,7 @@ input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:
 input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:linear-gradient(135deg,#7ec8e3,#4a90d9); box-shadow:0 2px 8px rgba(78,144,217,0.5); cursor:pointer; }
 
 /* ── BOTTOM NAV ── */
-#bottomNav { position:absolute; left:0; right:0; bottom:0; z-index:51; padding:10px 12px 16px; background:linear-gradient(to bottom,#0a1018,#060c12); border-top:1px solid rgba(100,180,255,0.08); }
+#bottomNav { position:absolute; left:0; right:0; bottom:0; z-index:70; padding:10px 12px 16px; background:linear-gradient(to bottom,#0a1018,#060c12); border-top:1px solid rgba(100,180,255,0.08); pointer-events:auto; }
 .nav-btns { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
 .nav-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:10px 4px; border-radius:14px; cursor:pointer; border:1px solid rgba(100,180,255,0.2); background:rgba(255,255,255,0.04); transition:all 0.18s; }
 .nav-btn:active { transform:scale(0.94); background:rgba(100,180,255,0.1); }
@@ -357,73 +365,258 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 #cameraBg.open { display:block; }
 #cameraScreen {
   display:none; position:fixed; inset:0; z-index:700;
-  background:#000; flex-direction:column; align-items:center; justify-content:center;
+  background:#000;
   max-width:430px; left:50%; transform:translateX(-50%);
+  overflow:hidden;
+  /* flex 레이아웃 유지: open 상태에서도 column으로 채움 */
 }
-#cameraScreen.open { display:flex; }
-#camVideo { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; background:#000; }
+#cameraScreen.open { display:flex; flex-direction:column; }
+
+/* ── 비디오: 화면 전체를 커버, 비율 유지 (앵글 싱크 핵심) ── */
+#camVideo {
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:cover;          /* 비율 유지하며 꽉 채움 */
+  object-position:center center;
+  background:#000;
+  display:block;
+  z-index:0;                 /* 비디오는 최하층 */
+}
+/* 전면 카메라: 좌우 반전 (셀피 미러) */
 #cameraScreen.front #camVideo { transform:scaleX(-1); }
-#camOverlay { position:absolute; inset:0; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; }
-#camTopBar { display:flex; justify-content:space-between; align-items:center; padding-top:calc(env(safe-area-inset-top,0px) + 14px); padding-left:16px; padding-right:16px; padding-bottom:14px; pointer-events:all; background:linear-gradient(to bottom,rgba(0,0,0,0.6),transparent); }
-.cam-top-btn { width:42px; height:42px; border-radius:50%; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; font-size:16px; backdrop-filter:blur(4px); transition:all 0.18s; }
-.cam-top-btn:active { background:rgba(255,255,255,0.2); transform:scale(0.93); }
-#camTitle { font-size:15px; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.6); }
-#camViewfinder,#camVF2 { position:absolute; inset:0; pointer-events:none; }
-#camViewfinder::before,#camViewfinder::after,#camVF2::before,#camVF2::after { content:''; position:absolute; width:26px; height:26px; border-color:rgba(255,255,255,0.75); border-style:solid; }
-#camViewfinder::before { top:18%; left:10%; border-width:2.5px 0 0 2.5px; border-radius:3px 0 0 0; }
-#camViewfinder::after  { top:18%; right:10%; border-width:2.5px 2.5px 0 0; border-radius:0 3px 0 0; }
-#camVF2::before { bottom:28%; left:10%; border-width:0 0 2.5px 2.5px; border-radius:0 0 0 3px; }
-#camVF2::after  { bottom:28%; right:10%; border-width:0 2.5px 2.5px 0; border-radius:0 0 3px 0; }
-#camBottomBar { display:flex; justify-content:space-around; align-items:center; padding:24px 20px calc(env(safe-area-inset-bottom,20px) + 20px); pointer-events:all; background:linear-gradient(to top,rgba(0,0,0,0.75),transparent); }
-#shutterBtn { width:74px; height:74px; border-radius:50%; background:rgba(255,255,255,0.92); border:4px solid rgba(255,255,255,0.5); box-shadow:0 0 0 3px rgba(255,255,255,0.25),0 4px 20px rgba(0,0,0,0.5); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
-#shutterBtn:active { transform:scale(0.88); background:rgba(200,200,200,0.9); }
-#shutterBtn::after { content:''; width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,0.95); display:block; }
-.cam-side-btn { width:50px; height:50px; border-radius:50%; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.25); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; color:#fff; font-size:17px; gap:3px; backdrop-filter:blur(4px); transition:all 0.18s; }
-.cam-side-btn:active { background:rgba(255,255,255,0.2); transform:scale(0.92); }
-.cam-side-btn span { font-size:9px; color:rgba(255,255,255,0.8); font-weight:600; }
-#camFlash { position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity 0.05s; }
+
+/* ── 오버레이: 비디오 위에 완전히 올라가며 flex 레이아웃 ── */
+#camOverlay {
+  position:absolute; inset:0; z-index:10;
+  display:flex; flex-direction:column; justify-content:space-between;
+  pointer-events:none;       /* 오버레이 자체는 투과 */
+}
+
+/* ── 상단 바 ── */
+#camTopBar {
+  display:flex; justify-content:space-between; align-items:center;
+  padding: calc(env(safe-area-inset-top,0px) + 14px) 16px 14px;
+  pointer-events:all;        /* 버튼만 클릭 가능 */
+  background:linear-gradient(to bottom,rgba(0,0,0,0.65),transparent);
+}
+.cam-top-btn {
+  width:44px; height:44px; border-radius:50%;
+  background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.25);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; color:#fff; font-size:17px;
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  transition:all 0.18s; touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.cam-top-btn:active { background:rgba(255,255,255,0.25); transform:scale(0.92); }
+#camTitle { font-size:15px; font-weight:700; color:#fff; text-shadow:0 1px 8px rgba(0,0,0,0.7); }
+
+/* ── 뷰파인더: 화면 중앙 기준, 카메라 실제 앵글에 맞춤 ── */
+#camViewfinder, #camVF2 {
+  position:absolute; inset:0; pointer-events:none; z-index:5;
+}
+#camViewfinder::before,#camViewfinder::after,
+#camVF2::before,#camVF2::after {
+  content:''; position:absolute;
+  width:28px; height:28px;
+  border-color:rgba(255,255,255,0.8); border-style:solid;
+}
+/* 뷰파인더 코너: 화면 중앙 기준 20% 여백 */
+#camViewfinder::before { top:20%; left:12%;  border-width:2.5px 0 0 2.5px; border-radius:3px 0 0 0; }
+#camViewfinder::after  { top:20%; right:12%; border-width:2.5px 2.5px 0 0; border-radius:0 3px 0 0; }
+#camVF2::before { bottom:22%; left:12%;  border-width:0 0 2.5px 2.5px; border-radius:0 0 0 3px; }
+#camVF2::after  { bottom:22%; right:12%; border-width:0 2.5px 2.5px 0; border-radius:0 0 3px 0; }
+
+/* ── 하단 버튼 바: pointer-events:all로 클릭 보장 ── */
+#camBottomBar {
+  display:flex; justify-content:space-around; align-items:center;
+  padding: 20px 24px calc(env(safe-area-inset-bottom,0px) + 36px);
+  pointer-events:all;        /* ★ 갤러리·플래시 버튼 클릭 보장 */
+  background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);
+  position:relative; z-index:15; /* 뷰파인더보다 위 */
+  min-height:140px;          /* 버튼 영역 최소 높이 보장 */
+}
+
+/* ── 셔터 버튼 ── */
+#shutterBtn {
+  width:76px; height:76px; border-radius:50%;
+  background:rgba(255,255,255,0.93);
+  border:4px solid rgba(255,255,255,0.55);
+  box-shadow:0 0 0 3px rgba(255,255,255,0.28), 0 4px 20px rgba(0,0,0,0.55);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all 0.12s; touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  flex-shrink:0;
+}
+#shutterBtn:active { transform:scale(0.87); background:rgba(200,200,200,0.92); }
+#shutterBtn::after {
+  content:''; width:60px; height:60px; border-radius:50%;
+  background:rgba(255,255,255,0.96); display:block;
+}
+
+/* ── 사이드 버튼 (갤러리·플래시): 충분한 터치 영역 ── */
+.cam-side-btn {
+  width:60px; height:60px; border-radius:50%;
+  background:rgba(0,0,0,0.5); border:1.5px solid rgba(255,255,255,0.35);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; color:#fff; font-size:20px; gap:3px;
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  transition:all 0.18s; touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  pointer-events:all;  /* ★ 명시적으로 클릭 허용 */
+  position:relative; z-index:16; /* 하단바보다 위 */
+  /* 터치 영역 확장 */
+  -webkit-touch-callout:none;
+}
+.cam-side-btn:active { background:rgba(255,255,255,0.25); transform:scale(0.91); }
+.cam-side-btn span { font-size:9px; color:rgba(255,255,255,0.85); font-weight:600; }
+
+/* ── 플래시 효과 ── */
+#camFlash { position:absolute; inset:0; z-index:5; background:#fff; opacity:0; pointer-events:none; transition:opacity 0.05s; }
 #camFlash.flash { opacity:1; }
-#camPreview { display:none; position:fixed; inset:0; z-index:710; background:#000; flex-direction:column; max-width:430px; left:50%; transform:translateX(-50%); }
+
+/* ── 촬영 미리보기 ── */
+#camPreview {
+  display:none; position:fixed; inset:0; z-index:710; background:#000;
+  flex-direction:column; max-width:430px; left:50%; transform:translateX(-50%);
+  overflow:hidden;
+}
 #camPreview.open { display:flex; }
-#previewImg { flex:1; width:100%; object-fit:cover; }
-#previewBar { display:flex; gap:12px; padding:16px 20px calc(env(safe-area-inset-bottom,20px) + 20px); background:rgba(0,0,0,0.88); }
+#previewImg {
+  flex:1; width:100%; object-fit:contain; background:#111;
+  min-height:0; /* flex 자식이 넘치지 않도록 */
+}
+#previewBar {
+  display:flex; gap:12px;
+  /* 안드로이드 네비게이션 바(홈·백 버튼)까지 완전히 피하는 패딩 */
+  padding: 16px 20px calc(env(safe-area-inset-bottom,0px) + 28px);
+  background:rgba(0,0,0,0.95);
+  position:relative; z-index:711; /* camPreview(710)보다 위 */
+  flex-shrink:0;
+}
 .preview-btn { flex:1; padding:14px; border-radius:16px; border:none; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.18s; display:flex; align-items:center; justify-content:center; gap:8px; }
 .preview-btn:active { transform:scale(0.96); }
 .preview-btn.retake { background:rgba(255,255,255,0.12); color:#fff; }
 .preview-btn.use    { background:linear-gradient(135deg,#2d6a9f,#4a90d9); color:#fff; }
 
 /* ── GALLERY VIEWER ── */
-#galleryModal { display:none; position:fixed; inset:0; z-index:800; background:#000; flex-direction:column; max-width:430px; left:50%; transform:translateX(-50%); }
+#galleryModal {
+  display:none; position:fixed; inset:0; z-index:800;
+  background:#060d16;
+  flex-direction:column;
+  /* 전체화면: max-width/left/transform 제거 → 진짜 fullscreen */
+  left:0; right:0; top:0; bottom:0;
+  transform:none;
+  max-width:none;
+}
 #galleryModal.open { display:flex; }
-#galleryTopBar { display:flex; align-items:center; padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); gap:12px; }
-#galleryTopBar h3 { flex:1; font-size:16px; font-weight:700; color:#fff; }
-.gal-top-btn { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#7ec8e3; font-size:15px; background:rgba(255,255,255,0.07); border:1px solid rgba(100,180,255,0.2); transition:background 0.18s; }
+#galleryTopBar {
+  display:flex; align-items:center;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px;
+  background:rgba(6,13,22,0.96); backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(100,180,255,0.12);
+  gap:12px; flex-shrink:0;
+}
+#galleryTopBar h3 { flex:1; font-size:16px; font-weight:700; color:#fff; text-align:center; }
+.gal-top-btn {
+  width:38px; height:38px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; color:#7ec8e3; font-size:16px;
+  background:rgba(255,255,255,0.07); border:1px solid rgba(100,180,255,0.2);
+  transition:background 0.18s; flex-shrink:0;
+}
 .gal-top-btn:active,.gal-top-btn:hover { background:rgba(126,200,227,0.18); }
-#galleryGrid { flex:1; overflow-y:auto; padding:12px; display:grid; grid-template-columns:repeat(3,1fr); gap:3px; }
-.gal-item { aspect-ratio:1; border-radius:4px; overflow:hidden; cursor:pointer; position:relative; }
-.gal-item img { width:100%; height:100%; object-fit:cover; }
-.gal-item .gal-del { position:absolute; top:4px; right:4px; width:22px; height:22px; border-radius:50%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; cursor:pointer; }
-#galleryEmpty { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; color:rgba(255,255,255,0.35); gap:10px; }
-#galleryEmpty i { font-size:48px; opacity:0.3; }
+/* 갤러리 그리드: 3열 */
+#galleryGrid {
+  flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:8px; display:grid;
+  grid-template-columns:repeat(3,1fr); gap:4px;
+  align-content:start;
+}
+.gal-item {
+  aspect-ratio:1; border-radius:6px; overflow:hidden;
+  cursor:pointer; position:relative;
+  background:#0e1d2e;
+  transition:transform 0.12s;
+}
+.gal-item:active { transform:scale(0.95); }
+.gal-item img { width:100%; height:100%; object-fit:cover; display:block; }
+.gal-item .gal-del {
+  position:absolute; top:5px; right:5px;
+  width:24px; height:24px; border-radius:50%;
+  background:rgba(0,0,0,0.72); border:1px solid rgba(255,255,255,0.3);
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:11px; cursor:pointer;
+  z-index:2;
+}
+.gal-item .gal-del:active { background:rgba(220,50,50,0.8); }
+#galleryEmpty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  flex:1; color:rgba(255,255,255,0.35); gap:12px;
+}
+#galleryEmpty i { font-size:56px; opacity:0.25; }
 #galleryEmpty p { font-size:14px; }
 
-/* ── PRIVACY MODAL ── */
+/* ── 이미지 확대 뷰어 (갤러리 내부) ── */
+#galViewer {
+  display:none; position:fixed; inset:0; z-index:820;
+  background:rgba(0,0,0,0.96);
+  flex-direction:column;
+  align-items:center; justify-content:center;
+}
+#galViewer.open { display:flex; }
+#galViewerTopBar {
+  position:absolute; top:0; left:0; right:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px;
+  background:linear-gradient(to bottom,rgba(0,0,0,0.85),transparent);
+  z-index:2;
+}
+#galViewerImg {
+  max-width:100%; max-height:100%;
+  object-fit:contain;
+  border-radius:4px;
+  /* 핀치줌 허용 */
+  touch-action:pinch-zoom;
+}
+#galViewerBottomBar {
+  position:absolute; bottom:0; left:0; right:0;
+  display:flex; gap:10px; justify-content:center;
+  padding:16px 20px calc(env(safe-area-inset-bottom,0px) + 20px);
+  background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);
+  z-index:2;
+}
+.gv-btn {
+  flex:1; max-width:160px; padding:13px 0; border-radius:14px; border:none;
+  font-size:13px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+}
+.gv-btn.download { background:linear-gradient(135deg,#2d6a9f,#4a90d9); color:#fff; }
+.gv-btn.share    { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; }
+.gv-btn.del      { background:rgba(220,50,50,0.18); border:1px solid rgba(220,80,80,0.35); color:#ff6b6b; }
+.gv-btn:active   { filter:brightness(0.85); transform:scale(0.97); }
+
+/* ── PRIVACY MODAL (전체화면) ── */
 #privacyModal {
   position:fixed; inset:0; z-index:900;
   display:none; flex-direction:column;
-  background:#0d1b2a; max-width:430px; left:50%; transform:translateX(-50%);
+  background:#0d1b2a;
+  /* ★ 전체화면: max-width/left/transform 제거 */
+  left:0; right:0; top:0; bottom:0;
+  transform:none; max-width:none;
 }
 #privacyModal.open { display:flex; }
 #privacyTopBar {
   display:flex; align-items:center; gap:12px;
   padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px;
-  background:rgba(8,18,32,0.95); backdrop-filter:blur(16px);
-  border-bottom:1px solid rgba(100,180,255,0.12);
+  background:rgba(8,18,32,0.98); backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(100,180,255,0.15);
   flex-shrink:0;
 }
 #privacyTopBar h3 { flex:1; font-size:16px; font-weight:700; color:#fff; }
 #privacyFrame {
   flex:1; width:100%; border:none; background:#0d1b2a;
+  display:block; min-height:0;
 }
 
 /* ── BG ADJUST MODAL ── */
@@ -660,6 +853,62 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 
 /* ── TOAST ── */
 #toast { position:fixed; bottom:130px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(14,29,46,0.95); border:1px solid rgba(100,180,255,0.25); color:#fff; padding:10px 20px; border-radius:20px; font-size:13px; opacity:0; transition:all 0.3s; z-index:999; white-space:nowrap; pointer-events:none; max-width:85vw; text-align:center; }
+
+/* ── 커스텀 공유 바텀시트 ── */
+#shareSheet {
+  display:none; position:fixed; inset:0; z-index:800; background:rgba(0,0,0,0.65);
+  backdrop-filter:blur(6px); align-items:flex-end; justify-content:center;
+}
+#shareSheet.open { display:flex; }
+#shareSheetBox {
+  width:100%; max-width:430px;
+  background:linear-gradient(to bottom,#0d1a28,#08111c);
+  border-radius:22px 22px 0 0; padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid rgba(100,180,255,0.2);
+  animation:slideUpSheet 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes slideUpSheet { from{transform:translateY(100%);} to{transform:translateY(0);} }
+#shareSheetHandle { width:40px; height:4px; background:rgba(255,255,255,0.18); border-radius:4px; margin:0 auto 14px; }
+#shareSheetTitle { font-size:13px; font-weight:700; color:rgba(255,255,255,0.85); margin-bottom:6px; }
+#shareSheetPreview {
+  display:flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(100,180,255,0.15);
+  border-radius:12px; padding:10px 12px; margin-bottom:14px;
+}
+#shareSheetPreview img { width:44px; height:44px; border-radius:8px; object-fit:cover; }
+#shareSheetPreview .ss-info { flex:1; min-width:0; }
+#shareSheetPreview .ss-fname { font-size:11px; font-weight:600; color:#e8f4ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#shareSheetPreview .ss-fsize { font-size:10px; color:rgba(255,255,255,0.4); margin-top:2px; }
+.share-grid {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px;
+}
+.share-item {
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  cursor:pointer; padding:8px 4px; border-radius:14px;
+  transition:background 0.15s;
+}
+.share-item:active { background:rgba(100,180,255,0.1); }
+.share-item .si-icon {
+  width:50px; height:50px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+  font-size:22px; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+.share-item .si-label { font-size:10px; font-weight:600; color:rgba(255,255,255,0.75); text-align:center; line-height:1.2; }
+.si-gallery   { background:linear-gradient(135deg,#1a8a4a,#27ae60); }
+.si-kakao     { background:#FAE100; }
+.si-kakao i   { color:#3A1D1D !important; }
+.si-email     { background:linear-gradient(135deg,#1a6fa8,#2a9fd6); }
+.si-instagram { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
+.si-copy      { background:linear-gradient(135deg,#2d3a4a,#3d5068); border:1px solid rgba(100,180,255,0.25); }
+.si-download  { background:linear-gradient(135deg,#2d4a6a,#3d70a8); }
+.si-more      { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); }
+.si-facebook  { background:linear-gradient(135deg,#1877f2,#0a5ad4); }
+.share-divider { height:1px; background:rgba(255,255,255,0.07); margin:0 0 12px; }
+#shareSheetCancelBtn {
+  width:100%; padding:13px; border-radius:14px; border:1px solid rgba(100,180,255,0.2);
+  background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.7);
+  font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;
+}
+#shareSheetCancelBtn:active { background:rgba(255,255,255,0.1); }
 #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
 /* ── PWA 설치 배너 ── */
@@ -692,6 +941,234 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 /* ── safe-area 패딩 (노치 대응) ── */
 #topbar { padding-top: max(0px, env(safe-area-inset-top, 0px)); height: calc(58px + env(safe-area-inset-top, 0px)); }
 #bottomNav { padding-bottom: max(16px, calc(10px + env(safe-area-inset-bottom, 0px))); }
+
+/* ── 앱 시작 권한 안내 배너 ── */
+#permBanner {
+  display:none; position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:430px; z-index:995;
+  background:linear-gradient(to top,#091520,#0d1e30);
+  border-top:2px solid rgba(100,180,255,0.35);
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
+  box-shadow:0 -6px 28px rgba(0,0,0,0.6);
+  animation: slideUp 0.4s ease;
+  flex-direction:column; gap:10px;
+}
+#permBanner.show { display:flex; }
+#permBanner .pb-title {
+  display:flex; align-items:center; gap:8px;
+  font-size:14px; font-weight:700; color:#e8f4ff;
+}
+#permBanner .pb-title i { color:#7ec8e3; font-size:16px; }
+#permBanner .pb-desc { font-size:12px; color:rgba(255,255,255,0.55); line-height:1.55; }
+#permBanner .pb-btns { display:flex; gap:8px; margin-top:2px; }
+#permBanner .pb-btn-allow {
+  flex:1; padding:11px 0; border-radius:12px; border:none;
+  background:linear-gradient(135deg,#2d6a9f,#4a90d9); color:#fff;
+  font-size:13px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+#permBanner .pb-btn-allow:active { filter:brightness(0.88); }
+#permBanner .pb-btn-later {
+  padding:11px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.6);
+  font-size:13px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+#permBanner .pb-btn-later:active { background:rgba(255,255,255,0.12); }
+
+/* ══════════════════════════════════════════════
+   DROPLET TEXTURE OVERLAY LAYER (1차 물방울 레이어)
+   ══════════════════════════════════════════════ */
+/* 1차 물방울 캔버스: 화면 전체를 꽉 채우는 고정 레이어 */
+#dropletOverlay {
+  position:absolute; inset:0; z-index:4;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.4s ease;
+  /* 배경 없음 — Canvas 태그로 교체 */
+}
+#dropletOverlay.visible { opacity:1; }
+/* 내부 캔버스가 꽉 채우도록 */
+#dropletOverlay canvas {
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  display:block;
+}
+
+/* 2차 배경 레이어: dropletOverlay 아래, bgImage보다 위 */
+#dropletBgLayer {
+  position:absolute; inset:0; z-index:1;
+  pointer-events:none; overflow:hidden;
+  display:none;
+}
+#dropletBgLayer.active { display:block; }
+#dropletBgImg {
+  position:absolute;
+  /* JS로 left/top/width/height 직접 제어 */
+  transform-origin:center center;
+  user-select:none; pointer-events:none;
+  will-change:left,top,width,height;
+  display:block;
+}
+
+/* 배경 조절 버튼 오버레이 (droplet 모드 전용) */
+#dropletBgEditBar {
+  display:none;
+  position:absolute; bottom:0; left:0; right:0; z-index:9;
+  padding:10px 14px calc(env(safe-area-inset-bottom,0px) + 10px);
+  background:linear-gradient(to top,rgba(0,0,10,0.7),transparent);
+  justify-content:center; gap:10px;
+  pointer-events:all;
+}
+#dropletBgEditBar.show { display:flex; }
+.dbe-btn {
+  padding:9px 18px; border-radius:12px; border:none;
+  font-size:12px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; gap:6px;
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  touch-action:manipulation;
+}
+.dbe-btn.adjust { background:rgba(126,200,227,0.18); border:1px solid rgba(126,200,227,0.4); color:#7ec8e3; }
+.dbe-btn.remove  { background:rgba(255,80,80,0.15);  border:1px solid rgba(255,80,80,0.35);  color:#ff8080; }
+.dbe-btn:active  { filter:brightness(0.8); transform:scale(0.96); }
+
+/* ══════════════════════════════════════════════
+   DROPLET TEXTURE PICKER SHEET
+   ══════════════════════════════════════════════ */
+#dropletPickerBackdrop {
+  display:none; position:fixed; inset:0; z-index:410;
+  background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+}
+#dropletPickerBackdrop.open { display:block; }
+
+#dropletPickerSheet {
+  position:fixed; left:50%; bottom:0; z-index:411;
+  width:100%; max-width:430px;
+  transform:translateX(-50%) translateY(100%);
+  background:linear-gradient(to top,#0a1420,#0d1e30);
+  border-radius:24px 24px 0 0;
+  border-top:1px solid rgba(100,180,255,0.25);
+  padding:14px 16px calc(28px + env(safe-area-inset-bottom,0px));
+  transition:transform 0.35s cubic-bezier(.32,.72,0,1);
+  box-shadow:0 -8px 40px rgba(0,0,0,0.6);
+  max-height:88vh; overflow-y:auto;
+}
+#dropletPickerSheet.open { transform:translateX(-50%) translateY(0); }
+
+.dtex-handle {
+  width:36px; height:4px; background:rgba(255,255,255,0.2);
+  border-radius:4px; margin:0 auto 16px;
+}
+.dtex-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px;
+}
+.dtex-header h3 {
+  font-size:15px; font-weight:700; color:#e8f4ff;
+  display:flex; align-items:center; gap:8px;
+}
+.dtex-close {
+  width:30px; height:30px; border-radius:50%;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  display:flex; align-items:center; justify-content:center;
+  color:rgba(255,255,255,0.6); cursor:pointer; font-size:14px;
+}
+.dtex-close:active { background:rgba(255,255,255,0.18); }
+
+/* 텍스처 그리드 — 기본 2열 / 3열 변형 */
+.dtex-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  margin-bottom:14px;
+}
+/* 3열 그리드 */
+.dtex-grid-3col {
+  grid-template-columns:1fr 1fr 1fr; gap:8px;
+}
+/* "없음(Off)" 카드는 1열 전체 */
+.dtex-grid .dtex-card-off { grid-column:1/-1; }
+
+.dtex-card {
+  border-radius:16px; overflow:hidden; cursor:pointer;
+  border:2px solid rgba(255,255,255,0.1);
+  background:#060d16; position:relative;
+  transition:all 0.2s; aspect-ratio:9/16;
+}
+.dtex-card:active { transform:scale(0.96); }
+.dtex-card.active {
+  border-color:#7ec8e3;
+  box-shadow:0 0 0 3px rgba(126,200,227,0.3), 0 4px 20px rgba(0,0,0,0.5);
+}
+.dtex-card img {
+  width:100%; height:100%; object-fit:cover; display:block;
+  transition:transform 0.3s;
+}
+.dtex-card:active img { transform:scale(1.04); }
+.dtex-card-label {
+  position:absolute; bottom:0; left:0; right:0;
+  background:linear-gradient(to top,rgba(0,0,0,0.82),transparent);
+  padding:16px 7px 8px;
+  display:flex; flex-direction:column; gap:1px;
+}
+.dtex-card-label strong {
+  font-size:11px; font-weight:700; color:#fff;
+  text-shadow:0 1px 4px rgba(0,0,0,0.8);
+  line-height:1.2;
+}
+.dtex-card-label span {
+  font-size:9px; color:rgba(255,255,255,0.65);
+  text-shadow:0 1px 3px rgba(0,0,0,0.7);
+  line-height:1.2;
+}
+.dtex-card.active .dtex-card-label strong { color:#7ec8e3; }
+/* 체크 배지 */
+.dtex-check {
+  position:absolute; top:8px; right:8px;
+  width:24px; height:24px; border-radius:50%;
+  background:#7ec8e3; color:#0a1420;
+  display:none; align-items:center; justify-content:center;
+  font-size:12px; font-weight:900;
+  box-shadow:0 2px 8px rgba(0,0,0,0.4);
+}
+.dtex-card.active .dtex-check { display:flex; }
+
+/* Off 카드 */
+.dtex-card-off {
+  border-radius:14px; padding:14px 16px;
+  background:rgba(255,255,255,0.04);
+  border:1.5px solid rgba(255,255,255,0.1);
+  cursor:pointer; transition:all 0.18s;
+  display:flex; align-items:center; gap:12px;
+}
+.dtex-card-off:active { background:rgba(255,255,255,0.1); }
+.dtex-card-off.active {
+  border-color:#7ec8e3;
+  background:rgba(126,200,227,0.08);
+}
+.dtex-card-off-icon {
+  width:40px; height:40px; border-radius:10px;
+  background:rgba(255,255,255,0.07);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0;
+}
+.dtex-card-off-txt strong {
+  font-size:13px; font-weight:700; color:#fff; display:block;
+}
+.dtex-card-off-txt span {
+  font-size:11px; color:rgba(255,255,255,0.45);
+}
+
+/* 불투명도 슬라이더 */
+.dtex-opacity-row {
+  margin-top:4px; padding:12px 14px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08); border-radius:12px;
+}
+.dtex-opacity-hdr {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:8px;
+}
+.dtex-opacity-hdr span { font-size:12px; color:rgba(255,255,255,0.6); font-weight:600; }
+.dtex-opacity-hdr strong { font-size:12px; color:#7ec8e3; font-variant-numeric:tabular-nums; }
 </style>
 </head>
 <body>
@@ -699,11 +1176,31 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 
   <!-- Canvas layers -->
   <div id="canvasWrap">
+    <!-- z:0 기본 배경 (그라데이션 tint) -->
     <div id="bgImage"><img id="bgPhoto" src="" alt=""></div>
+    <!-- z:1 2차 배경: Droplet 모드 전용 배경 사진 레이어 -->
+    <div id="dropletBgLayer">
+      <img id="dropletBgImg" src="" alt="bg" draggable="false">
+    </div>
+    <!-- z:2 성에·안개 캔버스 -->
     <canvas id="weatherCanvas"></canvas>
+    <!-- z:3 파티클 캔버스 -->
     <canvas id="particleCanvas"></canvas>
+    <!-- z:4 1차 물방울 유리창 텍스처 오버레이 (Canvas로 배경 제거 처리) -->
+    <div id="dropletOverlay"></div>
+    <!-- z:5 텍스트 레이어 -->
     <canvas id="textLayerCanvas"></canvas>
+    <!-- z:6 드로잉/터치 수신 -->
     <canvas id="drawCanvas"></canvas>
+    <!-- 배경 조절 버튼 (droplet 모드 전용) -->
+    <div id="dropletBgEditBar">
+      <button class="dbe-btn adjust" onclick="openDropletBgAdjust()">
+        <i class="fas fa-arrows-up-down-left-right"></i> 배경 조절
+      </button>
+      <button class="dbe-btn remove" onclick="removeDropletBg()">
+        <i class="fas fa-xmark"></i> 배경 제거
+      </button>
+    </div>
   </div>
 
   <!-- TOP BAR -->
@@ -739,7 +1236,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         <div class="tex-card active" onclick="setTexture('rainy',this)"><span class="tex-icon">🌧️</span><span class="tex-name">Rainy</span><span class="tex-sub">Streaks</span></div>
         <div class="tex-card" onclick="setTexture('frosty',this)"><span class="tex-icon">❄️</span><span class="tex-name">Frosty</span><span class="tex-sub">Ice</span></div>
         <div class="tex-card" onclick="setTexture('foggy',this)"><span class="tex-icon">🌫️</span><span class="tex-name">Foggy</span><span class="tex-sub">Mist</span></div>
-        <div class="tex-card" onclick="setTexture('droplets',this)"><span class="tex-icon">💧</span><span class="tex-name">Droplets</span><span class="tex-sub">Beads</span></div>
+        <div class="tex-card" id="dropletTexCard" onclick="openDropletPicker(this)"><span class="tex-icon">💧</span><span class="tex-name">Droplets</span><span class="tex-sub" id="dropletSubLabel">Beads</span></div>
       </div>
       <div class="sec-title">Message</div>
       <div class="msg-row">
@@ -763,8 +1260,14 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
           <input type="range" id="densitySlider" min="0" max="100" value="60" oninput="updateDensity(this.value)">
         </div>
         <div class="slider-item">
-          <div class="slider-hdr"><span>Background Blur</span><span class="val" id="blurVal">0px</span></div>
-          <input type="range" id="blurSlider" min="0" max="20" value="0" oninput="updateBgBlur(this.value)">
+          <div class="slider-hdr">
+            <span>Background Blur</span>
+            <span class="val" id="blurVal">0px</span>
+          </div>
+          <input type="range" id="blurSlider" min="0" max="20" step="1" value="0" oninput="updateBgBlur(this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.28);margin-top:2px;">
+            <span>0px</span><span>max 20px</span>
+          </div>
         </div>
       </div>
     </div>
@@ -833,6 +1336,138 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
   </div>
   <div id="styleBackdrop" onclick="closeStylePopup()"></div>
 
+  <!-- ══ DROPLET TEXTURE PICKER SHEET ══ -->
+  <div id="dropletPickerBackdrop" onclick="closeDropletPicker()"></div>
+  <div id="dropletPickerSheet">
+    <div class="dtex-handle"></div>
+    <div class="dtex-header">
+      <h3>💧 물방울 유리창 선택</h3>
+      <div class="dtex-close" onclick="closeDropletPicker()">✕</div>
+    </div>
+
+    <!-- Off 카드 -->
+    <div class="dtex-card-off active" id="dtexOff" onclick="selectDropletTex(0)">
+      <div class="dtex-card-off-icon">🚫</div>
+      <div class="dtex-card-off-txt">
+        <strong>사용 안 함</strong>
+        <span>기본 물방울 파티클 모드</span>
+      </div>
+    </div>
+
+    <!-- 9종 텍스처 그리드 (3열) -->
+    <div class="dtex-grid dtex-grid-3col" style="margin-top:10px;">
+      <div class="dtex-card" id="dtex1" onclick="selectDropletTex(1)">
+        <img src="images/droplet-tex1.png?v=3" alt="Natural Drops" loading="lazy">
+        <div class="dtex-check">✓</div>
+        <div class="dtex-card-label">
+          <strong>Natural</strong>
+          <span>자연 물방울</span>
+        </div>
+      </div>
+      <div class="dtex-card" id="dtex2" onclick="selectDropletTex(2)">
+        <img src="images/droplet-tex2.png" alt="Rain Trails" loading="lazy">
+        <div class="dtex-check">✓</div>
+        <div class="dtex-card-label">
+          <strong>Rain Trail</strong>
+          <span>빗물 흘러내림</span>
+        </div>
+      </div>
+      <div class="dtex-card" id="dtex3" onclick="selectDropletTex(3)">
+        <img src="images/droplet-tex3.png" alt="Micro Mist" loading="lazy">
+        <div class="dtex-check">✓</div>
+        <div class="dtex-card-label">
+          <strong>Micro Mist</strong>
+          <span>미세 응결</span>
+        </div>
+      </div>
+      <div class="dtex-card" id="dtex4" onclick="selectDropletTex(4)">
+        <img src="images/droplet-tex4.png" alt="Crystal Drops" loading="lazy">
+        <div class="dtex-check">✓</div>
+        <div class="dtex-card-label">
+          <strong>Crystal</strong>
+          <span>대형 크리스탈</span>
+        </div>
+      </div>
+      <div class="dtex-card" id="dtex5" onclick="selectDropletTex(5)">
+        <img src="images/droplet-tex5.png" alt="Frosted Glass" loading="lazy">
+        <div class="dtex-check">✓</div>
+        <div class="dtex-card-label">
+          <strong>Frosted</strong>
+          <span>서리+물방울</span>
+        </div>
+      </div>
+      <div class="dtex-card" id="dtex6" onclick="selectDropletTex(6)">
+        <img src="images/droplet-tex6.png" alt="Scatter Drops" loading="lazy">
+        <div class="dtex-check">✓</div>
+        <div class="dtex-card-label">
+          <strong>Scatter</strong>
+          <span>흩뿌려진 방울</span>
+        </div>
+      </div>
+      <div class="dtex-card" id="dtex7" onclick="selectDropletTex(7)">
+        <img src="images/droplet-tex7.png" alt="Morning Dew" loading="lazy">
+        <div class="dtex-check">✓</div>
+        <div class="dtex-card-label">
+          <strong>Morning Dew</strong>
+          <span>아침 이슬</span>
+        </div>
+      </div>
+      <div class="dtex-card" id="dtex8" onclick="selectDropletTex(8)">
+        <img src="images/droplet-tex8.png" alt="Heavy Rain" loading="lazy">
+        <div class="dtex-check">✓</div>
+        <div class="dtex-card-label">
+          <strong>Heavy Rain</strong>
+          <span>폭우 줄기</span>
+        </div>
+      </div>
+      <div class="dtex-card" id="dtex9" onclick="selectDropletTex(9)">
+        <img src="images/droplet-tex9.png" alt="Winter Frost" loading="lazy">
+        <div class="dtex-check">✓</div>
+        <div class="dtex-card-label">
+          <strong>Winter Frost</strong>
+          <span>겨울 성에+방울</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 불투명도 슬라이더 -->
+    <div class="dtex-opacity-row" id="dtexOpacityRow" style="display:none;">
+      <div class="dtex-opacity-hdr">
+        <span>🔆 오버레이 불투명도</span>
+        <strong id="dtexOpacityVal">85%</strong>
+      </div>
+      <input type="range" class="adj-slider" id="dtexOpacitySlider"
+             min="20" max="100" value="85"
+             oninput="onDropletOpacityChange(this.value)">
+    </div>
+
+    <!-- 2차 배경 안내 -->
+    <div style="margin-top:12px;padding:12px 14px;background:rgba(126,200,227,0.06);border:1px solid rgba(126,200,227,0.18);border-radius:12px;">
+      <div style="font-size:12px;color:#7ec8e3;font-weight:700;margin-bottom:5px;">📸 배경 사진 합성 방법</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.55);line-height:1.7;">
+        <strong style="color:#e8f4ff;">① 텍스처 선택</strong> → 물방울 유리창이 1차 레이어로 고정됩니다<br>
+        <strong style="color:#e8f4ff;">② 하단 Photo 버튼</strong> → 갤러리/카메라로 배경 사진 업로드<br>
+        <strong style="color:#e8f4ff;">③ 드래그·핀치</strong>로 배경 사진 위치·크기 자유 조절<br>
+        물방울 유리창 너머로 배경 사진이 겹쳐 보입니다 ✨
+      </div>
+    </div>
+  </div>
+
+  <!-- 앱 시작 시 권한 안내 배너 (카메라 + 갤러리) -->
+  <div id="permBanner">
+    <div class="pb-title"><i class="fas fa-camera"></i> 사진 기능을 사용하시겠어요?</div>
+    <div class="pb-desc">
+      유리창 배경 사진 촬영 및 갤러리 선택을 위해 카메라·저장소 권한이 필요합니다.<br>
+      지금 허용하면 더 편하게 사용할 수 있어요.
+    </div>
+    <div class="pb-btns">
+      <button class="pb-btn-allow" onclick="requestPermissions()">
+        <i class="fas fa-check"></i> 권한 허용하기
+      </button>
+      <button class="pb-btn-later" onclick="dismissPermBanner()">나중에</button>
+    </div>
+  </div>
+
   <!-- PHOTO BACKDROP & SHEET -->
   <div id="photoBackdrop" onclick="closePhotoSheet()"></div>
   <div id="photoSheet">
@@ -849,8 +1484,12 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
   </div>
 
   <!-- Hidden inputs -->
-  <!-- capture 속성 제거 → Android에서 갤러리/파일 선택창이 정상 열림 -->
-  <input type="file" id="fileGallery" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/*" onchange="handlePhotoUpload(event)">
+  <!-- ★ label 기반 트리거: Android WebView에서 input.click()보다 label.click()이 더 안정적 -->
+  <label id="fileGalleryLabel" style="display:none;">
+    <input type="file" id="fileGallery"
+           accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/*"
+           onchange="handlePhotoUpload(event)">
+  </label>
   <canvas id="snapCanvas" style="display:none;"></canvas>
 
   <!-- BG ADJUST MODAL -->
@@ -979,6 +1618,23 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
     <div id="galleryEmpty" style="display:none;">
       <i class="fas fa-images"></i>
       <p>저장된 이미지가 없습니다.</p>
+    </div>
+  </div>
+
+  <!-- 갤러리 이미지 확대 뷰어 -->
+  <div id="galViewer">
+    <div id="galViewerTopBar">
+      <div class="gal-top-btn" onclick="closeGalViewer()" title="닫기">
+        <i class="fas fa-xmark" style="font-size:18px;"></i>
+      </div>
+      <span id="galViewerDate" style="font-size:12px;color:rgba(255,255,255,0.55);flex:1;text-align:center;margin:0 8px;"></span>
+      <div style="width:38px;"></div>
+    </div>
+    <img id="galViewerImg" src="" alt="이미지 확대">
+    <div id="galViewerBottomBar">
+      <button class="gv-btn download" onclick="gvDownload()"><i class="fas fa-download"></i> 저장</button>
+      <button class="gv-btn share" onclick="gvShare()"><i class="fas fa-share-nodes"></i> 공유</button>
+      <button class="gv-btn del" onclick="gvDelete()"><i class="fas fa-trash"></i> 삭제</button>
     </div>
   </div>
 
@@ -1177,8 +1833,13 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
       </div>
 
       <!-- 포인트 안내 -->
-      <div style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:12px;">
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:6px;">
         💧 저장하기 클릭 시 <strong style="color:#7ec8e3;">1P</strong> 차감 (잔여: <span id="saveModalPts">0P</span>)
+      </div>
+      <!-- 저장 안내 -->
+      <div style="font-size:11px;color:rgba(126,200,227,0.6);text-align:center;margin-bottom:10px;line-height:1.5;">
+        📱 저장 후 <strong style="color:#7ec8e3;">갤러리·카카오톡·이메일</strong> 등<br>
+        원하는 방식으로 바로 공유할 수 있습니다
       </div>
 
       <!-- 버튼 -->
@@ -1186,7 +1847,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         <button class="modal-btn cancel" id="saveCancelBtn" onclick="closeSaveModal()">취소</button>
         <button class="modal-btn primary" id="confirmSaveBtn" onclick="confirmSave()">
           <i class="fas fa-image" id="confirmSaveIcon" style="font-size:12px;margin-right:5px;"></i>
-          <span id="confirmSaveTxt">이미지 저장</span>
+          <span id="confirmSaveTxt">저장 &amp; 공유</span>
         </button>
       </div>
     </div>
@@ -1196,7 +1857,67 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
   <canvas id="savePreviewCanvas" style="display:none;"></canvas>
 
   <div id="toast"></div>
+
+
 </div><!-- /app -->
+
+<!-- ── 커스텀 공유 바텀시트 (앱 컨테이너 밖 — fixed 레이아웃 정확) ── -->
+<div id="shareSheet" onclick="if(event.target===this)closeShareSheet()">
+  <div id="shareSheetBox">
+    <div id="shareSheetHandle"></div>
+    <div id="shareSheetTitle">💾 저장 &amp; 공유</div>
+    <!-- 파일 미리보기 -->
+    <div id="shareSheetPreview">
+      <img id="ssPreviewImg" src="" alt="preview">
+      <div class="ss-info">
+        <div class="ss-fname" id="ssFname">RainyNote.jpg</div>
+        <div class="ss-fsize" id="ssFsize">저장 준비 완료</div>
+      </div>
+    </div>
+    <!-- 공유 옵션 그리드 -->
+    <div class="share-grid">
+      <!-- 갤러리 저장 -->
+      <div class="share-item" onclick="ssAction('gallery')">
+        <div class="si-icon si-gallery"><i class="fas fa-images" style="color:#fff;"></i></div>
+        <div class="si-label">내 폰<br>갤러리</div>
+      </div>
+      <!-- 카카오톡 -->
+      <div class="share-item" onclick="ssAction('kakao')">
+        <div class="si-icon si-kakao">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="#3A1D1D"><path d="M12 3C6.48 3 2 6.79 2 11.46c0 2.95 1.87 5.55 4.72 7.07l-.88 3.24a.3.3 0 0 0 .44.33l3.79-2.51c.61.09 1.24.14 1.93.14 5.52 0 10-3.79 10-8.27C22 6.79 17.52 3 12 3z"/></svg>
+        </div>
+        <div class="si-label">카카오톡</div>
+      </div>
+      <!-- 이메일 -->
+      <div class="share-item" onclick="ssAction('email')">
+        <div class="si-icon si-email"><i class="fas fa-envelope" style="color:#fff;"></i></div>
+        <div class="si-label">이메일</div>
+      </div>
+      <!-- 인스타그램 -->
+      <div class="share-item" onclick="ssAction('instagram')">
+        <div class="si-icon si-instagram"><i class="fab fa-instagram" style="color:#fff;"></i></div>
+        <div class="si-label">Instagram</div>
+      </div>
+      <!-- 클립보드 복사 -->
+      <div class="share-item" onclick="ssAction('copy')">
+        <div class="si-icon si-copy"><i class="fas fa-copy" style="color:#7ec8e3;"></i></div>
+        <div class="si-label">이미지<br>복사</div>
+      </div>
+      <!-- PC 다운로드 -->
+      <div class="share-item" onclick="ssAction('download')">
+        <div class="si-icon si-download"><i class="fas fa-download" style="color:#fff;"></i></div>
+        <div class="si-label">PC<br>다운로드</div>
+      </div>
+      <!-- 페이스북 -->
+      <div class="share-item" onclick="ssAction('facebook')">
+        <div class="si-icon si-facebook"><i class="fab fa-facebook-f" style="color:#fff;"></i></div>
+        <div class="si-label">Facebook</div>
+      </div>
+    </div>
+    <div class="share-divider"></div>
+    <button id="shareSheetCancelBtn" onclick="closeShareSheet()">닫기</button>
+  </div>
+</div>
 
 <!-- PWA 설치 배너 (앱 컨테이너 밖) -->
 <div id="pwaInstallBanner">
@@ -1252,10 +1973,20 @@ let undoStack = [];
 let points    = parseInt(localStorage.getItem('rn_points')    ?? '10');
 let adsToday  = parseInt(localStorage.getItem('rn_ads_today') ?? '0');
 let adsDate   =          localStorage.getItem('rn_ads_date')  ?? '';
-const MAX_ADS_DAY = 5;
-const AD_DURATION_SHORT = 15;  // 15초 → +3P
-const AD_DURATION_LONG  = 30;  // 30초 → +6P
-let adTimer=null, adElapsed=0, _adEarnedPoints=3;
+
+// ── 광고 설정 (admin에서 localStorage로 제어 가능) ──
+// rn_ad_config = { maxAdsDay, shortSec, longSec, shortPts, longPts }
+function _loadAdConfig() {
+  try { return JSON.parse(localStorage.getItem('rn_ad_config') || '{}'); } catch(e){ return {}; }
+}
+const _adCfg = _loadAdConfig();
+const MAX_ADS_DAY       = (_adCfg.maxAdsDay  >= 1 && _adCfg.maxAdsDay  <= 20) ? _adCfg.maxAdsDay  : 5;
+const AD_DURATION_SHORT = (_adCfg.shortSec   >= 5 && _adCfg.shortSec   <= 60) ? _adCfg.shortSec   : 15;
+const AD_DURATION_LONG  = (_adCfg.longSec    >= 5 && _adCfg.longSec    <= 120)? _adCfg.longSec    : 30;
+const AD_PTS_SHORT      = (_adCfg.shortPts   >= 1 && _adCfg.shortPts   <= 30) ? _adCfg.shortPts   : 3;
+const AD_PTS_LONG       = (_adCfg.longPts    >= 1 && _adCfg.longPts    <= 30) ? _adCfg.longPts    : 6;
+
+let adTimer=null, adElapsed=0, _adEarnedPoints=AD_PTS_SHORT;
 
 // ── PARTICLES ──
 let particles=[];
@@ -1325,48 +2056,44 @@ const AdManager = {
   loadAd() { return new Promise(resolve => setTimeout(resolve, 300)); },
   showAd(onComplete, onFail) {
     adElapsed = 0;
-    _adEarnedPoints = 3; // 기본값 3P
+    _adEarnedPoints = AD_PTS_SHORT; // 기본값 (설정값)
 
     const fillEl = document.getElementById('adProgressFill');
     const timeTxt = document.getElementById('adTimeTxt');
     const bonusTxt = document.getElementById('adBonusTxt');
 
     fillEl.style.width = '0%';
-    fillEl.style.background = 'linear-gradient(90deg,#4fc3f7,#7ec8e3)'; // 기본 파란색
+    fillEl.style.background = 'linear-gradient(90deg,#4fc3f7,#7ec8e3)';
     timeTxt.textContent = `${AD_DURATION_LONG}초 남음`;
-    if(bonusTxt) bonusTxt.textContent = '15초 이상 시청 시 +3P · 30초 완주 시 +6P';
+    if(bonusTxt) bonusTxt.textContent = `${AD_DURATION_SHORT}초 이상 시청 시 +${AD_PTS_SHORT}P · ${AD_DURATION_LONG}초 완주 시 +${AD_PTS_LONG}P`;
 
     adTimer = setInterval(()=>{
       adElapsed++;
-      // 30초 기준으로 진행바 계산
       const pct = Math.min((adElapsed / AD_DURATION_LONG) * 100, 100);
       fillEl.style.width = pct + '%';
 
       const remaining = AD_DURATION_LONG - adElapsed;
 
-      // 15초 도달 시 → 3P 보상 해금 + 색상 변화
       if(adElapsed === AD_DURATION_SHORT) {
-        _adEarnedPoints = 3;
-        fillEl.style.background = 'linear-gradient(90deg,#43e97b,#38f9d7)'; // 초록색
-        if(bonusTxt) bonusTxt.textContent = '🎉 +3P 달성! 30초 완주하면 +6P';
-        timeTxt.textContent = `${remaining}초 남음 (+6P 도전 중)`;
+        _adEarnedPoints = AD_PTS_SHORT;
+        fillEl.style.background = 'linear-gradient(90deg,#43e97b,#38f9d7)';
+        if(bonusTxt) bonusTxt.textContent = `🎉 +${AD_PTS_SHORT}P 달성! ${AD_DURATION_LONG}초 완주하면 +${AD_PTS_LONG}P`;
+        timeTxt.textContent = `${remaining}초 남음 (+${AD_PTS_LONG}P 도전 중)`;
       } else if(adElapsed > AD_DURATION_SHORT && adElapsed < AD_DURATION_LONG) {
-        timeTxt.textContent = `${remaining}초 남음 (+6P 도전 중)`;
+        timeTxt.textContent = `${remaining}초 남음 (+${AD_PTS_LONG}P 도전 중)`;
       }
 
-      // 30초 완료 → 6P 보상
       if(adElapsed >= AD_DURATION_LONG) {
         clearInterval(adTimer);
-        _adEarnedPoints = 6;
-        fillEl.style.background = 'linear-gradient(90deg,#f7971e,#ffd200)'; // 골드색
-        if(bonusTxt) bonusTxt.textContent = '🏆 30초 완주! +6P 획득!';
+        _adEarnedPoints = AD_PTS_LONG;
+        fillEl.style.background = 'linear-gradient(90deg,#f7971e,#ffd200)';
+        if(bonusTxt) bonusTxt.textContent = `🏆 ${AD_DURATION_LONG}초 완주! +${AD_PTS_LONG}P 획득!`;
         onComplete();
       }
     }, 1000);
   },
   cancelAd() {
     clearInterval(adTimer);
-    // 15초 이상 시청했으면 3P는 유지, 미달이면 0P
     if(adElapsed < AD_DURATION_SHORT) _adEarnedPoints = 0;
     adElapsed = 0;
   }
@@ -1421,6 +2148,66 @@ function init() {
   buildWeather();
   renderParticles();
   repositionUI();
+  // 권한 배너: 이전에 "나중에" 또는 허용 기록 없으면 3초 후 표시
+  setTimeout(checkAndShowPermBanner, 3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PERMISSION BANNER (앱 시작 시 카메라/저장소 권한 유도)
+// ═══════════════════════════════════════════════════════════
+function checkAndShowPermBanner() {
+  // 이미 "나중에" 클릭한 경우 → 7일 간 표시 안 함
+  const dismissed = parseInt(localStorage.getItem('rn_perm_dismissed') || '0');
+  if(Date.now() - dismissed < 7 * 24 * 3600 * 1000) return;
+
+  // Permission API로 현재 상태 확인
+  if(navigator.permissions) {
+    navigator.permissions.query({name:'camera'}).then(status => {
+      if(status.state === 'granted') {
+        // 이미 허용됨 → 배너 불필요
+        localStorage.setItem('rn_perm_dismissed', Date.now().toString());
+      } else {
+        // prompt(미결정) 또는 denied → 배너 표시
+        document.getElementById('permBanner').classList.add('show');
+      }
+    }).catch(() => {
+      // Permission API 미지원 (iOS 등) → 배너 표시
+      document.getElementById('permBanner').classList.add('show');
+    });
+  } else {
+    // Permission API 자체가 없으면 배너 표시
+    document.getElementById('permBanner').classList.add('show');
+  }
+}
+
+function dismissPermBanner() {
+  document.getElementById('permBanner').classList.remove('show');
+  localStorage.setItem('rn_perm_dismissed', Date.now().toString());
+}
+
+async function requestPermissions() {
+  document.getElementById('permBanner').classList.remove('show');
+  // 카메라 권한 직접 요청
+  if(navigator.mediaDevices?.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:false});
+      stream.getTracks().forEach(t => t.stop()); // 테스트 스트림 즉시 해제
+      showToast('✅ 카메라 권한이 허용되었습니다!');
+      localStorage.setItem('rn_perm_dismissed', Date.now().toString());
+    } catch(err) {
+      if(err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        openCamPermModal('카메라 권한이 차단되어 있습니다.\n아래 안내에 따라 수동으로 허용해 주세요.');
+      } else {
+        showToast('카메라를 시작할 수 없습니다: ' + (err.message || err.name));
+      }
+    }
+  } else {
+    // 구형 브라우저 — 갤러리 input 클릭으로 저장소 권한 유도
+    const inp = document.getElementById('fileGallery');
+    inp.value = '';
+    inp.click();
+    showToast('갤러리에서 사진을 선택하면 권한이 허용됩니다.');
+  }
 }
 
 // ── resize 핸들러: 화면 회전만 처리, 키보드/패널 완전 무시 ──
@@ -1476,6 +2263,8 @@ function _restoreBgPhoto() {
   photo.style.transform       = 'none';
   bgImage.style.background      = '#000';
   bgImage.style.backgroundImage = 'none';
+  // 블러 필터 유지
+  applyBgBlur();
 }
 
 function resize() {
@@ -1587,7 +2376,7 @@ function showAdModal() {
     btn.innerHTML='<i class="fas fa-ban" style="font-size:12px;margin-right:4px;"></i> 오늘 광고 소진됨';
   } else {
     btn.disabled=false; btn.style.opacity='1';
-    btn.innerHTML='<i class="fas fa-play" style="font-size:12px;margin-right:4px;"></i> 광고 보기 (+3P &nbsp;·&nbsp; 남은 횟수: '+(MAX_ADS_DAY-adsToday)+'회)';
+    btn.innerHTML=`<i class="fas fa-play" style="font-size:12px;margin-right:4px;"></i> 광고 보기 (+${AD_PTS_SHORT}P&nbsp;·&nbsp;남은 횟수: ${MAX_ADS_DAY-adsToday}회)`;
   }
   document.getElementById('adModal1').classList.add('open');
 }
@@ -1598,12 +2387,11 @@ function cancelAd() {
   document.getElementById('adModal2').classList.remove('open');
 
   if(watchedSec >= AD_DURATION_SHORT) {
-    // 15초 이상 시청 후 취소 → 보상 지급 후 닫기
-    _adEarnedPoints = 3;
-    openAdModal3(3);
-    showToast('15초 이상 시청하여 +3P를 받을 수 있어요!');
+    _adEarnedPoints = AD_PTS_SHORT;
+    openAdModal3(AD_PTS_SHORT);
+    showToast(`${AD_DURATION_SHORT}초 이상 시청하여 +${AD_PTS_SHORT}P를 받을 수 있어요!`);
   } else {
-    showToast(`광고가 취소되었습니다. (${watchedSec}초 시청 · 15초 이상 시 +3P)`);
+    showToast(`광고가 취소되었습니다. (${watchedSec}초 시청 · ${AD_DURATION_SHORT}초 이상 시 +${AD_PTS_SHORT}P)`);
   }
 }
 function closeAdModal3() { document.getElementById('adModal3').classList.remove('open'); }
@@ -1656,7 +2444,7 @@ function openAdModal3(earnedP) {
 }
 
 function claimPoints() {
-  const earned = _adEarnedPoints > 0 ? _adEarnedPoints : 3;
+  const earned = _adEarnedPoints > 0 ? _adEarnedPoints : AD_PTS_SHORT;
   points   += earned;
   adsToday += 1;           // ★ 시청 시간(3P/6P)에 상관없이 항상 1회 차감
   savePoints(); updatePointDisplay();
@@ -1678,12 +2466,15 @@ function closePhotoSheet() {
 }
 function triggerGallery() {
   closePhotoSheet();
-  // Android에서 바로 .click()이 실패하는 경우를 대비해 짧은 지연 후 트리거
+  // Android WebView: label.click()이 input.click()보다 갤러리 연동이 안정적
+  // 짧은 지연으로 sheet 닫힘 애니메이션 이후 트리거
   setTimeout(() => {
     const inp = document.getElementById('fileGallery');
     inp.value = ''; // 같은 파일 재선택 가능하도록 초기화
-    inp.click();
-  }, 80);
+    // label 클릭 우선, 실패 시 input 직접 클릭 fallback
+    const lbl = document.getElementById('fileGalleryLabel');
+    if(lbl) { lbl.click(); } else { inp.click(); }
+  }, 120);
 }
 function handlePhotoUpload(e) {
   const file=e.target.files[0]; if(!file)return;
@@ -1694,8 +2485,13 @@ function handlePhotoUpload(e) {
 }
 // ─── 배경 적용 (transform 값 반영) ───────────────────────────────
 function applyBackground(dataUrl) {
+  // ★ droplet 모드이면 2차 배경 레이어에 적용
+  if(_currentDropletTex > 0) {
+    applyDropletBackground(dataUrl);
+    return;
+  }
+  // 기존 경로: 성에 배경 모달
   bgDataUrl = dataUrl;
-  // 새 사진이면 조절 모달 열기
   bgTransform = { scale:1, x:0, y:0 };
   openBgAdjust(dataUrl);
 }
@@ -1768,8 +2564,10 @@ function commitBackground() {
 
 function applyBgBlur() {
   const photo = document.getElementById('bgPhoto');
-  const f = bgBlur>0 ? `blur(${bgBlur}px)` : 'none';
-  if(photo) photo.style.filter = f;
+  if (!photo) return;
+  const f = bgBlur > 0 ? `blur(${bgBlur}px)` : 'none';
+  photo.style.filter       = f;
+  photo.style.webkitFilter = f;
 }
 
 // ─── BG ADJUST MODAL ─────────────────────────────────────────────
@@ -1825,9 +2623,26 @@ function openBgAdjust(dataUrl) {
   bindAdjEvents();
 }
 
-function closeBgAdjust(confirm) {
-  if (confirm && bgDataUrl) {
-    // ★ 모달이 열려 있는 동안 vpW/vpH를 읽어 저장 후 commitBackground 호출
+// droplet 배경 조절 모드 플래그 (closeBgAdjust에서 사용)
+let _adjForDroplet = false;
+
+function closeBgAdjust(apply) {
+  document.getElementById('bgAdjustModal').classList.remove('open');
+  unbindAdjEvents();
+  // ★ droplet 배경 조절 모드
+  if(apply && _adjForDroplet) {
+    _dbl.x = adj.tx;
+    _dbl.y = adj.ty;
+    _dbl.w = Math.round(_dbl.natW * adj.scale);
+    _dbl.h = Math.round(_dbl.natH * adj.scale);
+    _applyDropletBgTransform();
+    showToast('✅ 배경 위치·크기가 적용됐습니다!');
+    _adjForDroplet = false;
+    return;
+  }
+  _adjForDroplet = false;
+  // ★ 일반 배경 조절 모드
+  if (apply && bgDataUrl) {
     const vp = document.getElementById('bgAdjustViewport');
     if (vp.clientWidth  > 0) adj.vpW = vp.clientWidth;
     if (vp.clientHeight > 0) adj.vpH = vp.clientHeight;
@@ -1835,9 +2650,6 @@ function closeBgAdjust(confirm) {
     buildWeather();
     showToast('배경 사진이 적용되었습니다!');
   }
-  // commit 완료 후 모달 닫기
-  document.getElementById('bgAdjustModal').classList.remove('open');
-  unbindAdjEvents();
 }
 
 function applyAdjTransform() {
@@ -2153,8 +2965,10 @@ function openGalleryFromCamera(){
   setTimeout(() => {
     const inp = document.getElementById('fileGallery');
     inp.value = '';
-    inp.click();
-  }, 80);
+    // label 클릭 우선 (Android WebView 갤러리 연동 강화)
+    const lbl = document.getElementById('fileGalleryLabel');
+    if(lbl) { lbl.click(); } else { inp.click(); }
+  }, 150);
 }
 function fallbackCamera() {
   const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.capture='environment';
@@ -2167,51 +2981,381 @@ function fallbackCamera() {
 // ═══════════════════════════════════════════════════════════
 function updateBrush(v)   { brushSize=parseInt(v); document.getElementById('brushVal').textContent=v+'px'; }
 function updateDensity(v) {
-  density=v/100;
-  document.getElementById('densityVal').textContent=v+'%';
+  density = v / 100;
+  document.getElementById('densityVal').textContent = v + '%';
 
-  if(currentTexture==='rainy'){
-    // Density Bar → 빗줄기 개수 실시간 조절 (20~250개)
-    const targetN = Math.floor(20 + density * 230);
-    if(particles.length < targetN){
-      while(particles.length < targetN) particles.push(mkParticle(true));
-    } else if(particles.length > targetN){
+  if (currentTexture === 'foggy') {
+    // Foggy: weatherCanvas 재보이고 + 파티클 수 조절
+    const targetN = Math.floor(density * 70);
+    if (particles.length < targetN) {
+      while (particles.length < targetN) particles.push(mkParticle(true));
+    } else if (particles.length > targetN) {
       particles.splice(targetN);
     }
-  } else if(currentTexture==='droplets'){
-    // Density Bar → 물방울 개수 실시간 조절 (20~100개, Slow Glass Drops)
-    const targetN = Math.floor(20 + density * 80);
-    if(particles.length < targetN){
-      while(particles.length < targetN) particles.push(mkParticle(true));
-    } else if(particles.length > targetN){
-      particles.splice(targetN);
-    }
-  } else if(currentTexture==='frosty'){
-    // Frosty: 눈송이 개수 실시간 조절 (20~200개)
-    const targetN = Math.floor(20 + density * 180);
-    if(particles.length < targetN){
-      while(particles.length < targetN) particles.push(mkParticle(true));
-    } else if(particles.length > targetN){
-      particles.splice(targetN);
-    }
+    buildWeather();
   } else {
+    // Rainy / Frosty / Droplets: initParticles()로 개수 증력 재초기화
+    // (렌더러가 배열 크기를 고정 유지하므로 splice만으로는 작동 안함)
     initParticles();
   }
 }
-function updateBgBlur(v)  { bgBlur=parseInt(v);  document.getElementById('blurVal').textContent=v+'px'; applyBgBlur(); }
+function updateBgBlur(v) {
+  // 슬라이더 0~20 → blur 0~20px 직접 사용 (이전 방식 복원)
+  bgBlur = parseInt(v);
+  document.getElementById('blurVal').textContent = bgBlur + 'px';
+  applyBgBlur();
+}
 
 // ═══════════════════════════════════════════════════════════
 //  TEXTURE
 // ═══════════════════════════════════════════════════════════
 function setTexture(name,el) {
+  const prevTexture = currentTexture;
   currentTexture=name;
   document.querySelectorAll('.tex-card').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
   particleCanvas.style.zIndex = (name === 'droplets') ? '1' : '3';
+
+  // ── Droplets → 다른 텍스처 전환 시 cleanup ──
+  if(prevTexture === 'droplets' && name !== 'droplets') {
+    // ① weatherCanvas 가시성 완전 복원
+    const wc = document.getElementById('weatherCanvas');
+    if(wc) { wc.style.display = ''; wc.style.opacity = ''; wc.style.visibility = ''; }
+    // ② dropletOverlay 완전 숨기기
+    const overlay = document.getElementById('dropletOverlay');
+    if(overlay) { overlay.classList.remove('visible'); overlay.style.opacity = '0'; overlay.innerHTML = ''; }
+    // ③ dropletBgLayer / 편집 바 숨기기
+    document.getElementById('dropletBgEditBar').classList.remove('show');
+    const dbl = document.getElementById('dropletBgLayer');
+    if(dbl) dbl.classList.remove('active');
+    // ④ Droplets 전용 내부 2차 배경 초기화 (_dropletBgDataUrl)
+    _dropletBgDataUrl = null;
+    const dropBgImg = document.getElementById('dropletBgImg');
+    if(dropBgImg) dropBgImg.src = '';
+  }
+
+  // buildWeather 호출 전에 bgPhoto 위치 보존 (전환 후 재복원 보장)
+  const hadBg = !!(bgDataUrl && _bgCommit);
+
   // buildWeather 내부에서 _applyEraseCanvas()가 자동으로 닦아낸 모양 복원
   buildWeather(); initParticles();
-  // 텍스처 전환 후 bgPhoto 항상 복원 (모바일에서 사라지는 버그 수정)
-  if(bgDataUrl && _bgCommit) _restoreBgPhoto();
+
+  // 텍스처 전환 후 weatherCanvas 가시성 재확인
+  if(name !== 'droplets') {
+    const wc = document.getElementById('weatherCanvas');
+    if(wc) { wc.style.display = ''; wc.style.opacity = ''; }
+  }
+
+  // ★ 배경 이미지 즉시 복원 (RAF 없이 동기로 처리하여 깜빡임 방지)
+  if(hadBg) {
+    _restoreBgPhoto();
+    // 한 프레임 뒤 재확인 (렌더링 엔진이 display:none으로 되돌리는 경우 방어)
+    requestAnimationFrame(() => {
+      if(bgDataUrl && _bgCommit) _restoreBgPhoto();
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DROPLET TEXTURE OVERLAY — 완전 재설계 v2
+//  ┌ 1차 레이어: 물방울 유리창 이미지 (배경 자동 제거 → Canvas 렌더링)
+//  └ 2차 레이어: 사용자 업로드 사진 (핀치/드래그 위치·크기 조절)
+// ═══════════════════════════════════════════════════════════
+const DROPLET_TEXTURES = [
+  null,
+  'images/droplet-tex1.png?v=3',
+  'images/droplet-tex2.png',
+  'images/droplet-tex3.png',
+  'images/droplet-tex4.png',
+  'images/droplet-tex5.png',
+  'images/droplet-tex6.png',
+  'images/droplet-tex7.png',
+  'images/droplet-tex8.png',
+  'images/droplet-tex9.png',
+];
+const DROPLET_NAMES = [
+  '없음','Natural Drops','Rain Trails','Micro Mist','Crystal Drops','Frosted Glass',
+  'Scatter Drops','Morning Dew','Heavy Rain','Winter Frost'
+];
+
+let _currentDropletTex = 0;
+let _dropletOpacity    = 0.90;
+// 캐싱된 처리 Canvas (배경 제거 완료)
+const _dtexCache = {};
+
+// ── Droplets 카드 클릭 ──
+function openDropletPicker(el) {
+  setTexture('droplets', el);
+  document.getElementById('dropletPickerBackdrop').classList.add('open');
+  document.getElementById('dropletPickerSheet').classList.add('open');
+  _refreshDropletPickerUI();
+}
+function closeDropletPicker() {
+  document.getElementById('dropletPickerBackdrop').classList.remove('open');
+  document.getElementById('dropletPickerSheet').classList.remove('open');
+}
+
+// ── 텍스처 선택 ──
+function selectDropletTex(idx) {
+  _currentDropletTex = idx;
+  _applyDropletOverlay();
+  _refreshDropletPickerUI();
+  // 항상 Droplet 모드 유지 (currentTexture='droplets')
+  // idx>0: 텍스처 오버레이 표시, weatherCanvas 숨김
+  // idx=0: 파티클만, weatherCanvas 표시
+  _enterDropletMode();
+}
+
+// ── 불투명도 슬라이더 ──
+function onDropletOpacityChange(val) {
+  _dropletOpacity = val / 100;
+  document.getElementById('dtexOpacityVal').textContent = val + '%';
+  const overlay = document.getElementById('dropletOverlay');
+  overlay.style.opacity = _dropletOpacity;
+}
+
+/* ════════════════════════════════════════════
+   1차 레이어: 배경 제거 후 Canvas 렌더링
+   ════════════════════════════════════════════ */
+function _applyDropletOverlay() {
+  const overlay = document.getElementById('dropletOverlay');
+  if(_currentDropletTex === 0) {
+    overlay.classList.remove('visible');
+    overlay.innerHTML = '';
+    return;
+  }
+  const src = DROPLET_TEXTURES[_currentDropletTex];
+  overlay.style.opacity = '0';
+  overlay.classList.remove('visible');
+
+  // 캐시 있으면 바로 사용
+  if(_dtexCache[_currentDropletTex]) {
+    _renderDropletCanvas(overlay, _dtexCache[_currentDropletTex]);
+    return;
+  }
+
+  // 이미지 로드 → Canvas로 배경 제거
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const offC = document.createElement('canvas');
+    offC.width  = img.naturalWidth;
+    offC.height = img.naturalHeight;
+    const offCtx = offC.getContext('2d', {willReadFrequently:true});
+    offCtx.drawImage(img, 0, 0);
+
+    // ── 배경 제거 알고리즘 (개선판) ──
+    // JPEG는 흰/회색 배경이고 물방울은 투명한 렌즈 형태 (어두운 테두리 + 밝은 반사)
+    // 전략: 밝기+채도 기반 스크리닝 → 스크린 블렌드 방식으로 배경 제거
+    const data = offCtx.getImageData(0, 0, offC.width, offC.height);
+    const d = data.data;
+    for(let i = 0; i < d.length; i += 4) {
+      const r = d[i], g = d[i+1], b = d[i+2];
+      // 밝기 (0~255)
+      const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+      // 채도
+      const maxC = Math.max(r,g,b), minC = Math.min(r,g,b);
+      const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
+      // 색온도 (파란빛 = 물방울 반사광, 흰빛 = 배경)
+      const blueBias = b - Math.max(r, g);
+
+      if(brightness > 230 && saturation < 0.08) {
+        // 완전히 밝은 흰 배경 → 완전 투명
+        d[i+3] = 0;
+      } else if(brightness > 200 && saturation < 0.12 && blueBias < 15) {
+        // 밝은 회백색 배경 → 거의 투명
+        const alpha = (255 - brightness) / 55;
+        d[i+3] = Math.round(Math.min(1, alpha * 2.5) * 255);
+      } else if(brightness > 180 && saturation < 0.15 && blueBias < 20) {
+        // 중간 회색 배경 → 반투명
+        const alpha = (255 - brightness) / 75;
+        d[i+3] = Math.round(Math.min(1, alpha * 2.0) * 255);
+      } else if(brightness > 160 && saturation < 0.18) {
+        // 약한 회색 → 약간 투명
+        const alpha = 1 - ((brightness - 130) / 130);
+        d[i+3] = Math.round(Math.max(0.25, alpha) * 255);
+      }
+      // 어두운 픽셀 / 높은 채도 / 파란 반사 → 물방울 테두리 유지
+    }
+    offCtx.putImageData(data, 0, 0);
+    _dtexCache[_currentDropletTex] = offC;
+    _renderDropletCanvas(overlay, offC);
+  };
+  img.onerror = () => {
+    // 로드 실패 시 원본 이미지 그대로 배경으로 사용
+    overlay.style.backgroundImage = `url('${src}')`;
+    overlay.style.backgroundSize  = 'cover';
+    overlay.style.backgroundPosition = 'center';
+    overlay.style.opacity = _dropletOpacity;
+    overlay.classList.add('visible');
+  };
+  img.src = src;
+}
+
+function _renderDropletCanvas(overlay, offC) {
+  overlay.innerHTML = '';
+  const c = document.createElement('canvas');
+  // canvasWrap의 실제 크기에 맞춤
+  const wrap = document.getElementById('canvasWrap');
+  c.width  = wrap.offsetWidth  || W;
+  c.height = wrap.offsetHeight || H;
+  c.style.width  = '100%';
+  c.style.height = '100%';
+  c.style.position = 'absolute';
+  c.style.inset = '0';
+  const ctx = c.getContext('2d');
+  // 처리된 offC를 화면 전체에 cover 방식으로 그리기
+  const srcAR = offC.width  / offC.height;
+  const dstAR = c.width     / c.height;
+  let sx=0, sy=0, sw=offC.width, sh=offC.height;
+  if(srcAR > dstAR){
+    sw = Math.round(offC.height * dstAR);
+    sx = Math.round((offC.width - sw) / 2);
+  } else {
+    sh = Math.round(offC.width / dstAR);
+    sy = Math.round((offC.height - sh) / 2);
+  }
+  ctx.drawImage(offC, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  overlay.appendChild(c);
+  overlay.style.opacity = _dropletOpacity;
+  overlay.classList.add('visible');
+}
+
+/* ════════════════════════════════════════════
+   Droplet 모드 진입 / 해제
+   ════════════════════════════════════════════ */
+function _enterDropletMode() {
+  // 텍스처가 선택됐을 때: weatherCanvas를 절반 투명도로 표시 (물기배인 유리창 느낌 유지)
+  // 텍스처 없을 때(idx=0): weatherCanvas 그대로 표시 (파티클만 동작)
+  const wc = document.getElementById('weatherCanvas');
+  if(_currentDropletTex > 0) {
+    // 1차 물방울 텍스처 레이어가 있으므로 weatherCanvas는 완전히 숨김
+    wc.style.display = 'none';
+  } else {
+    wc.style.display = '';
+  }
+  // 배경 편집 바 표시 (dropletBgDataUrl 있을 때만)
+  if(_dropletBgDataUrl) {
+    document.getElementById('dropletBgEditBar').classList.add('show');
+  }
+}
+function _exitDropletMode() {
+  document.getElementById('weatherCanvas').style.display = '';
+  document.getElementById('dropletBgEditBar').classList.remove('show');
+  document.getElementById('dropletBgLayer').classList.remove('active');
+  _dropletBgDataUrl = null;
+  document.getElementById('dropletBgImg').src = '';
+  // 기존 배경 복원
+  buildWeather();
+}
+
+/* ════════════════════════════════════════════
+   2차 배경 레이어: 업로드 사진 + 드래그/핀치 조절
+   ════════════════════════════════════════════ */
+let _dropletBgDataUrl = null;
+let _dbl = {   // droplet bg layout
+  natW:1, natH:1,   // 원본 이미지 크기
+  x:0, y:0,         // 현재 위치 (px)
+  w:0, h:0,         // 현재 크기 (px)
+  dragging:false,
+  startX:0, startY:0,
+  startImgX:0, startImgY:0,
+  pinching:false,
+  lastDist:0,
+  lastW:0, lastH:0,
+};
+
+// Photo 버튼에서 오는 이미지를 가로채기 — droplet 모드일 때
+function applyDropletBackground(dataUrl) {
+  _dropletBgDataUrl = dataUrl;
+  const bgLayer = document.getElementById('dropletBgLayer');
+  const bgImg   = document.getElementById('dropletBgImg');
+  bgLayer.classList.add('active');
+
+  const img = new Image();
+  img.onload = () => {
+    _dbl.natW = img.naturalWidth;
+    _dbl.natH = img.naturalHeight;
+    // 초기 위치: contain 방식으로 canvasWrap에 맞춤
+    const wrap = document.getElementById('canvasWrap');
+    const ww = wrap.offsetWidth  || W;
+    const wh = wrap.offsetHeight || H;
+    const scale = Math.min(ww / _dbl.natW, wh / _dbl.natH);
+    _dbl.w = Math.round(_dbl.natW * scale);
+    _dbl.h = Math.round(_dbl.natH * scale);
+    _dbl.x = Math.round((ww - _dbl.w) / 2);
+    _dbl.y = Math.round((wh - _dbl.h) / 2);
+    _applyDropletBgTransform();
+    document.getElementById('dropletBgEditBar').classList.add('show');
+    showToast('💧 배경 사진이 설정됐습니다! 드래그/핀치로 위치·크기를 조절하세요.');
+    // 배경 조절 모달 자동 열기
+    openDropletBgAdjust();
+  };
+  bgImg.src = dataUrl;
+  img.src   = dataUrl;
+}
+
+function _applyDropletBgTransform() {
+  const bgImg = document.getElementById('dropletBgImg');
+  bgImg.style.left   = _dbl.x + 'px';
+  bgImg.style.top    = _dbl.y + 'px';
+  bgImg.style.width  = _dbl.w + 'px';
+  bgImg.style.height = _dbl.h + 'px';
+}
+
+// 배경 제거
+function removeDropletBg() {
+  _dropletBgDataUrl = null;
+  document.getElementById('dropletBgImg').src = '';
+  document.getElementById('dropletBgLayer').classList.remove('active');
+  document.getElementById('dropletBgEditBar').classList.remove('show');
+  showToast('배경 사진이 제거됐습니다.');
+}
+
+/* ── Droplet 배경 조절 모달 열기 (bgAdjustModal 재활용) ── */
+function openDropletBgAdjust() {
+  if(!_dropletBgDataUrl){ showToast('먼저 배경 사진을 업로드하세요.'); return; }
+  // bgAdjustModal을 droplet 배경 조절용으로 재활용
+  const adjImg = document.getElementById('bgAdjustImg');
+  adjImg.src = _dropletBgDataUrl;
+  // adj 초기값을 dropletBg 현재 값에서 계산
+  const wrap = document.getElementById('canvasWrap');
+  const vw = wrap.offsetWidth || W, vh = wrap.offsetHeight || H;
+  const baseS = Math.min(vw / _dbl.natW, vh / _dbl.natH);
+  adj.natW   = _dbl.natW;  adj.natH  = _dbl.natH;
+  adj.vpW    = vw;         adj.vpH   = vh;
+  adj.scale  = _dbl.w / _dbl.natW;
+  adj.tx     = _dbl.x;    adj.ty    = _dbl.y;
+  adj.baseScale = baseS;
+  adj.minScale  = baseS * 0.2;
+  adj.maxScale  = baseS * 8;
+  applyAdjTransform();
+  updateAdjSlider();
+  // 모달 열기 (헤더 텍스트 변경)
+  const titleEl = document.querySelector('#bgAdjustTopBar .adj-title');
+  if(titleEl) titleEl.textContent = '💧 배경 위치 · 크기 조절';
+  document.getElementById('bgAdjustModal').classList.add('open');
+  // 확인 시 droplet bg에 적용하도록 콜백 플래그
+  _adjForDroplet = true;
+  bindAdjEvents();
+}
+
+// (closeBgAdjust는 위 통합 버전에서 처리됨)
+
+/* ── UI 상태 동기화 ── */
+function _refreshDropletPickerUI() {
+  const offCard = document.getElementById('dtexOff');
+  if(offCard) offCard.classList.toggle('active', _currentDropletTex === 0);
+  for(let i=1; i<=9; i++){
+    const card = document.getElementById('dtex'+i);
+    if(card) card.classList.toggle('active', _currentDropletTex === i);
+  }
+  const opRow = document.getElementById('dtexOpacityRow');
+  if(opRow) opRow.style.display = _currentDropletTex > 0 ? 'block' : 'none';
+  const subLabel = document.getElementById('dropletSubLabel');
+  if(subLabel) subLabel.textContent = _currentDropletTex > 0 ? DROPLET_NAMES[_currentDropletTex] : 'Beads';
+  const dtexCard = document.getElementById('dropletTexCard');
+  if(dtexCard && _currentDropletTex > 0) dtexCard.classList.add('active');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2230,16 +3374,32 @@ function buildWeather() {
     bgImage.style.background=tints[currentTexture]||tints.rainy;
     bgImage.style.backgroundImage='';
     const ph=document.getElementById('bgPhoto');
-    if(ph){ ph.style.display='none'; ph.src=''; }
+    if(ph){ ph.style.display='none'; }
   } else {
-    // 배경 사진 있음 → 검정 배경 + bgPhoto 항상 표시
+    // 배경 사진 있음 → bgPhoto 즉시 복원 (buildWeather에서 직접 처리)
     bgImage.style.background      = '#000';
     bgImage.style.backgroundImage = 'none';
-    const ph = document.getElementById('bgPhoto');
-    if(ph){
-      // src 재설정 (비어있거나 텍스처 전환으로 초기화된 경우 복원)
-      if(!ph.src || ph.src === window.location.href) ph.src = bgDataUrl;
-      ph.style.display = 'block';  // 항상 표시 (조건 없음)
+    if(_bgCommit) {
+      // _restoreBgPhoto() 인라인 처리 — RAF 없이 즉시 적용
+      const ph = document.getElementById('bgPhoto');
+      if(ph) {
+        if(!ph.src || ph.src === window.location.href) ph.src = bgDataUrl;
+        ph.style.display         = 'block';
+        ph.style.position        = 'absolute';
+        ph.style.objectFit       = 'fill';
+        ph.style.objectPosition  = 'center center';
+        ph.style.width           = _bgCommit.dispW   + 'px';
+        ph.style.height          = _bgCommit.dispH   + 'px';
+        ph.style.left            = _bgCommit.imgLeft + 'px';
+        ph.style.top             = _bgCommit.imgTop  + 'px';
+        ph.style.maxWidth        = 'none';
+        ph.style.maxHeight       = 'none';
+        ph.style.transform       = 'none';
+        // ★ 블러 필터 항상 유지
+        const f = bgBlur > 0 ? `blur(${bgBlur}px)` : 'none';
+        ph.style.filter        = f;
+        ph.style.webkitFilter  = f;
+      }
     }
   }
   if(currentTexture==='rainy')         drawRainyGlass();
@@ -2248,10 +3408,6 @@ function buildWeather() {
   else if(currentTexture==='droplets') drawDropletsGlass();
   // 성에를 다시 그린 후 _eraseCanvas의 닦아낸 모양을 즉시 복원 (모바일 포함)
   _applyEraseCanvas();
-  // buildWeather 후 bgPhoto 항상 복원 보장 (모바일 렌더링 버그 방지)
-  if(bgDataUrl && _bgCommit) {
-    requestAnimationFrame(_restoreBgPhoto);
-  }
 }
 
 // _eraseMask를 wCtx에 적용: 닦인 위치의 wCtx 픽셀을 투명하게 만듦
@@ -2429,17 +3585,25 @@ function drawDropletsGlass() {
 }
 // ── Foggy glass ──
 function drawFoggyGlass() {
-  const g=wCtx.createRadialGradient(W*.5,H*.45,0,W*.5,H*.5,W*.9);
-  g.addColorStop(0,'rgba(175,198,215,0.50)');
-  g.addColorStop(.5,'rgba(148,173,198,0.62)');
-  g.addColorStop(1,'rgba(115,150,182,0.76)');
-  wCtx.fillStyle=g; wCtx.fillRect(0,0,W,H);
-  for(let i=0;i<9;i++){
-    const fy=(i/9)*H+Math.sin(i*.8)*H*.04;
-    const fg=wCtx.createRadialGradient(W*.5,fy,0,W*.5,fy,W*(.5+Math.sin(i)*.15));
-    fg.addColorStop(0,`rgba(215,228,238,${.07+Math.sin(i)*.03})`);
-    fg.addColorStop(1,'rgba(215,228,238,0)');
-    wCtx.fillStyle=fg; wCtx.fillRect(0,fy-H*.2,W,H*.4);
+  // density(0~1)에 따라 안개 진함도 조절: 최소 0.08 ~ 최대 0.78
+  const d = typeof density === 'number' ? density : 0.6;
+  const baseA = 0.08 + d * 0.70;   // 0.08(3%) ~ 0.78(100%) → 밀도 차이 명확
+  const midA  = baseA * 0.82;
+  const edgeA = baseA * 0.98;
+
+  const g = wCtx.createRadialGradient(W*.5, H*.45, 0, W*.5, H*.5, W*.9);
+  g.addColorStop(0,   `rgba(175,198,215,${(baseA*0.65).toFixed(3)})`);
+  g.addColorStop(0.5, `rgba(148,173,198,${(midA*0.82).toFixed(3)})`);
+  g.addColorStop(1,   `rgba(115,150,182,${(edgeA).toFixed(3)})`);
+  wCtx.fillStyle = g; wCtx.fillRect(0, 0, W, H);
+
+  for(let i = 0; i < 9; i++){
+    const fy = (i/9)*H + Math.sin(i*.8)*H*.04;
+    const fg = wCtx.createRadialGradient(W*.5, fy, 0, W*.5, fy, W*(.5+Math.sin(i)*.15));
+    const patchA = (0.07 + Math.sin(i)*.03) * d;
+    fg.addColorStop(0, `rgba(215,228,238,${patchA.toFixed(3)})`);
+    fg.addColorStop(1, 'rgba(215,228,238,0)');
+    wCtx.fillStyle = fg; wCtx.fillRect(0, fy-H*.2, W, H*.4);
   }
 }
 
@@ -2497,12 +3661,19 @@ function mkFog(rand){
     vx:-.12+Math.random()*.24, vy:-.08-Math.random()*.18,
     r:40+Math.random()*90, alpha:.025+Math.random()*.06, pulse:Math.random()*Math.PI*2, type:'fog' };
 }
-// Bead: Slow Glass Drops 기반 — 3~8px, 느리게 맺히고 흘러내리는 유리창 물방울
+// Bead: Slow Glass Drops 기반 — 3~8px, 가로 3열 분산 배치, 느리게 흘러내리는 유리창 물방울
+let _beadColIdx = 0; // 열 인덱스 순환 (0,1,2)
 function mkBead(rand){
   const r = Math.random() * 5 + 3;            // 3~8px (Slow Glass Drops)
+  // 가로 3열 분산: 각 열은 전체 폭의 1/3씩, 열 내에서 랜덤 배치
+  const col = _beadColIdx % 3;
+  _beadColIdx = (_beadColIdx + 1) % 3;
+  const colW = W / 3;
+  const colX = col * colW + Math.random() * colW;
   return {
-    x:                Math.random() * W,
+    x:                rand ? Math.random() * W : colX,  // rand=true(초기)는 전면 랜덤, 이후 3열
     y:                rand ? Math.random() * H : -20,
+    col:              col,                              // 소속 열 (0,1,2)
     r:                r,
     targetR:          r,
     velocity:         0,
@@ -2528,11 +3699,11 @@ function renderParticles(ts=0){
     pCtx.fillRect(0, 0, W, H);
     pCtx.globalCompositeOperation = 'source-over';
 
-    // 스폰레이트: density에 비례한 빈도로 새 방울 생성
+    // 스폰레이트: density에 비례한 빈도로 새 방울 생성 (3열 분산)
     _beadSpawnAcc += 0.03 * density;
     const maxBeads = Math.floor(20 + density * 80);
     while(_beadSpawnAcc >= 1 && particles.length < maxBeads){
-      particles.push(mkBead(false));
+      particles.push(mkBead(false));  // mkBead(false)는 3열 배치 사용
       _beadSpawnAcc -= 1;
     }
     if(_beadSpawnAcc >= 1) _beadSpawnAcc = 0;
@@ -2554,14 +3725,27 @@ function renderParticles(ts=0){
     pCtx.clearRect(0, 0, W, H);
     pCtx.globalCompositeOperation = 'source-over';
 
-    // 일반 파티클 처리
+    // 일반 파티클 처리 (Rainy / Frosty / Foggy)
+    // density 기반 현재 목표 개수 계산 (배열 크기 상한 실시간 유지)
+    let maxP;
+    if(currentTexture==='rainy')       maxP = Math.floor(20 + density * 230);
+    else if(currentTexture==='frosty') maxP = Math.floor(20 + density * 180);
+    else                               maxP = Math.floor(density * 70);
+
+    // 초과분 제거 (density 감소 시 즉시 반영)
+    if(particles.length > maxP) particles.splice(maxP);
+
     for(let i=0;i<particles.length;i++){
       const p=particles[i];
       updateP(p); drawP(p);
       const offscreen = p.type==='snow'
         ? (p.y > H + 10)
         : (p.y>H+60||p.y<-60||p.x<-60||p.x>W+60);
-      if(offscreen) particles[i]=mkParticle(false);
+      if(offscreen){
+        // 배열 크기가 목표치 이내일 때만 재생성 (초과하면 제거)
+        if(particles.length <= maxP) particles[i] = mkParticle(false);
+        else { particles.splice(i,1); i--; }
+      }
     }
   }
   requestAnimationFrame(renderParticles);
@@ -2586,10 +3770,13 @@ function updateP(p){
       p.y += p.velocity;
       p.targetR -= 0.002;                  // 흐르면서 아주 조금씩 작아짐
     }
-    // 리셋
+    // 리셋 (3열 배치 유지)
     if(p.y > H + 20 || p.targetR < 1){
       const nr = Math.random() * 5 + 3;   // 3~8px 재생성
-      p.x = Math.random() * W;  p.y = -20;
+      // 소속 열 내에서 x좌표 재배치
+      const colW2 = W / 3;
+      const colX2 = (p.col !== undefined ? p.col : (Math.floor(Math.random()*3))) * colW2 + Math.random() * colW2;
+      p.x = colX2; p.y = -20;
       p.r = nr;  p.targetR = nr;
       p.velocity = 0;  p.isSliding = false;
       p.slideDelay = Math.random() * 500 + 200;
@@ -2605,9 +3792,11 @@ function updateP(p){
           p.targetR = Math.sqrt(p.r*p.r + o.r*o.r);  // 부피 보존
           p.isSliding = true;
           p.velocity += 0.2;               // 합쳐지면 속도 증가
-          // 작은 방울 리셋
+          // 작은 방울 리셋 (3열 배치 유지)
           const nr = Math.random() * 5 + 3;
-          o.x = Math.random()*W;  o.y = -20;
+          const colW3 = W / 3;
+          const oCol  = o.col !== undefined ? o.col : Math.floor(Math.random()*3);
+          o.x = oCol * colW3 + Math.random() * colW3; o.y = -20;
           o.r = nr;  o.targetR = nr;
           o.velocity = 0;  o.isSliding = false;
           o.slideDelay = Math.random()*500+200;
@@ -2814,30 +4003,93 @@ function hitTextNode(px,py){
   return null;
 }
 
-// ── 진동 헬퍼 ──
-let _vibeLastX=0, _vibeLastY=0, _vibeTick=0;
-function vibeStart(){
-  // 터치 시작: 짧은 탁 느낌 (유리에 손가락 닿는 느낌)
-  if(navigator.vibrate) navigator.vibrate(8);
+// ── 진동 헬퍼 (터치 강도 기반) ──
+let _vibeLastX=0, _vibeLastY=0, _vibeTick=0, _vibePressure=0;
+
+/**
+ * getTouchPressure: 터치 압력/강도를 0~1로 반환
+ *  - iOS Safari: touch.force (0~1, 3D Touch 기기에서 실제 압력)
+ *  - Android Chrome: touch.radiusX/radiusY (접촉 면적으로 간접 추정)
+ *  - 지원 안 되면 0.5(중간값) 반환
+ */
+function getTouchPressure(e) {
+  if(!e || !e.touches || e.touches.length === 0) return 0.5;
+  const t = e.touches[0];
+  // iOS: force 속성 (0~1)
+  if(typeof t.force === 'number' && t.force > 0) {
+    return Math.min(1, t.force);
+  }
+  // Android: radiusX 기반 (보통 5~30px 범위 → 0.2~1.0으로 매핑)
+  if(typeof t.radiusX === 'number' && t.radiusX > 0) {
+    return Math.min(1, Math.max(0.15, (t.radiusX - 3) / 25));
+  }
+  return 0.5;
+}
+
+/**
+ * 압력(0~1)에 따른 진동 패턴:
+ *  약함(0~0.3):  [2]         — 아주 짧고 가벼운 틱
+ *  중간(0.3~0.6):[4]         — 일반 터치감
+ *  강함(0.6~0.8):[6]         — 강한 누름 느낌
+ *  매우강함(0.8+):[8,6,4]    — 굵은 긁힘 느낌
+ */
+function getVibePattern(pressure, isTick) {
+  if(isTick) {
+    // 이동 중 틱 진동 (거리 누적)
+    if(pressure < 0.3)       return [2];
+    else if(pressure < 0.6)  return [4];
+    else if(pressure < 0.8)  return [6];
+    else                     return [8];
+  } else {
+    // 시작/종료 단발 진동
+    if(pressure < 0.3)       return 4;
+    else if(pressure < 0.6)  return 8;
+    else if(pressure < 0.8)  return 12;
+    else                     return [14,8,6];
+  }
+}
+
+function vibeStart(e){
+  // 터치 시작: 압력에 따라 강도 다르게
+  const pressure = getTouchPressure(e);
+  _vibePressure = pressure;
+  if(navigator.vibrate) navigator.vibrate(getVibePattern(pressure, false));
   _vibeLastX=0; _vibeLastY=0; _vibeTick=0;
 }
-function vibeMove(x,y){
-  // 이동 중: 거리 누적 후 일정 픽셀마다 짧게 진동 (유리 긁히는 질감)
+function vibeMove(x, y, e){
+  // 이동 중: 압력 업데이트 + 거리 누적 후 강도별 틱 진동
+  if(e) _vibePressure = getTouchPressure(e);
   const dx=x-_vibeLastX, dy=y-_vibeLastY;
   const dist=Math.sqrt(dx*dx+dy*dy);
   _vibeTick+=dist;
-  if(_vibeTick>=18){
-    if(navigator.vibrate) navigator.vibrate(3);
+  // 압력이 강할수록 틱 간격 짧게 (밀착감)
+  const tickDist = _vibePressure >= 0.6 ? 12 : (_vibePressure >= 0.3 ? 16 : 22);
+  if(_vibeTick >= tickDist){
+    if(navigator.vibrate) navigator.vibrate(getVibePattern(_vibePressure, true));
     _vibeTick=0;
   }
   _vibeLastX=x; _vibeLastY=y;
 }
 function vibeEnd(){
-  // 터치 끝: 살짝 진동 (손가락 떼는 느낌)
-  if(navigator.vibrate) navigator.vibrate([2,10,2]);
+  // 터치 끝: 손가락 떼는 느낌 (짧은 이중 틱)
+  if(navigator.vibrate) navigator.vibrate([2, 10, 2]);
 }
 
 function onTouchStart(e){
+  // ── UI 레이어(bottomNav, topbar) 터치는 drawCanvas가 가로채지 않음 ──
+  const touch = e.touches[0];
+  if(touch) {
+    const nav = document.getElementById('bottomNav');
+    if(nav) {
+      const navRect = nav.getBoundingClientRect();
+      if(touch.clientY >= navRect.top) return; // bottomNav 영역 → 이벤트 통과
+    }
+    const topbar = document.getElementById('topbar');
+    if(topbar) {
+      const tbRect = topbar.getBoundingClientRect();
+      if(touch.clientY <= tbRect.bottom) return; // topbar 영역 → 이벤트 통과
+    }
+  }
   e.preventDefault();
   const pos=getPos(e);
   const hitId=hitTextNode(pos.x,pos.y);
@@ -2859,7 +4111,7 @@ function onTouchStart(e){
   // 유리 닦기 시작 전 undo 스냅샷
   pushUndo();
   isDrawing=true; lastX=pos.x; lastY=pos.y;
-  vibeStart();
+  vibeStart(e);         // ★ 이벤트 전달로 압력 측정
   erase(pos.x,pos.y,pos.x,pos.y);
 }
 function onTouchMove(e){
@@ -2868,7 +4120,7 @@ function onTouchMove(e){
   if(isDraggingText){ moveTextEl(selectedTextId, pos.x-textDragOX, pos.y-textDragOY); return; }
   if(!isDrawing) return;
   erase(lastX,lastY,pos.x,pos.y);
-  vibeMove(pos.x, pos.y);
+  vibeMove(pos.x, pos.y, e); // ★ 이벤트 전달로 압력 실시간 업데이트
   lastX=pos.x; lastY=pos.y;
 }
 function onTouchEnd(){ 
@@ -2877,6 +4129,11 @@ function onTouchEnd(){
 }
 
 function onMouseDown(e){
+  // UI 레이어(bottomNav, topbar) 클릭은 drawCanvas가 가로채지 않음
+  const nav = document.getElementById('bottomNav');
+  if(nav && e.clientY >= nav.getBoundingClientRect().top) return;
+  const topbar = document.getElementById('topbar');
+  if(topbar && e.clientY <= topbar.getBoundingClientRect().bottom) return;
   const pos=getPos(e);
   const hitId=hitTextNode(pos.x,pos.y);
   if(hitId){
@@ -3020,6 +4277,23 @@ function resetGlass(){
   _syncDelBtn(null);
   // textLayerCanvas도 클리어
   if(tCtx) tCtx.clearRect(0,0,W,H);
+
+  // ── drawCanvas(사용자 낙서) 클리어 ──
+  if(dCtx) dCtx.clearRect(0,0,W,H);
+
+  // ── Droplets 모드 완전 초기화 ──
+  _currentDropletTex = 0;
+  _dropletBgDataUrl  = null;
+  const dropOverlay  = document.getElementById('dropletOverlay');
+  if(dropOverlay){ dropOverlay.classList.remove('visible'); dropOverlay.innerHTML=''; dropOverlay.style.opacity='0'; }
+  const dropBgLayer  = document.getElementById('dropletBgLayer');
+  if(dropBgLayer) dropBgLayer.classList.remove('active');
+  const dropEditBar  = document.getElementById('dropletBgEditBar');
+  if(dropEditBar)  dropEditBar.classList.remove('show');
+
+  // ── weatherCanvas 가시성 완전 복원 ──
+  const wc = document.getElementById('weatherCanvas');
+  if(wc){ wc.style.display=''; wc.style.opacity=''; wc.style.visibility=''; }
 
   // ── 유리창·파티클 초기화 ──
   undoStack=[];
@@ -3258,6 +4532,11 @@ function handleBackBtn(){
 //  SAVE — 크롭 트리밍 + 이미지/영상 저장
 // ═══════════════════════════════════════════════════════════
 let _fullSaveCanvas = null;  // 2× 고해상도 전체 합성 스냅샷
+// ── 공유 시트 전역 상태 ──
+let _ssBlob     = null;   // 저장할 이미지 Blob
+let _ssBlobUrl  = null;   // Blob URL
+let _ssMimeType = 'image/jpeg';
+let _ssFilename = 'RainyNote.jpg';
 let _cropRatio  = 'free';    // 이미지 탭 선택 비율
 let _cropRatioV = 'free';    // 영상 탭 선택 비율
 let _crop  = { x:0, y:0, w:0, h:0 };   // 이미지 탭 크롭 (컨테이너 px)
@@ -3330,11 +4609,45 @@ function buildFullCanvas(cb){
   oct.imageSmoothingEnabled=true; oct.imageSmoothingQuality='high';
 
   const compose=()=>{
-    oct.drawImage(weatherCanvas,  0,0,W,H, 0,0,OW,OH);
+    // ① 성에/날씨 레이어 (weatherCanvas — destination-out으로 닦인 모양 포함)
+    // Droplets 모드에서 텍스처가 선택된 경우 weatherCanvas는 화면에서 숨겨져 있으므로 저장에도 제외
+    // Droplets 모드에서 텍스처 없음(idx=0)이거나 다른 모드면 weatherCanvas 포함
+    const _skipWeather = (currentTexture === 'droplets' && _currentDropletTex > 0);
+    if(!_skipWeather) {
+      oct.save();
+      oct.globalCompositeOperation = 'source-over';
+      oct.drawImage(weatherCanvas, 0,0,W,H, 0,0,OW,OH);
+      oct.restore();
+    }
+
+    // ② dropletOverlay (1차 물방울 유리창 텍스처 레이어)
+    if(_currentDropletTex > 0) {
+      const dropOverlay = document.getElementById('dropletOverlay');
+      const dropCanvas  = dropOverlay ? dropOverlay.querySelector('canvas') : null;
+      if(dropCanvas && dropCanvas.width > 0 && dropCanvas.height > 0) {
+        oct.save();
+        oct.globalAlpha = _dropletOpacity;
+        oct.globalCompositeOperation = 'source-over';
+        oct.drawImage(dropCanvas, 0, 0, dropCanvas.width, dropCanvas.height, 0, 0, OW, OH);
+        oct.restore();
+      }
+    }
+
+    // ③ 파티클 (빗줄기/눈송이/물방울 애니메이션 현재 프레임)
     oct.drawImage(particleCanvas, 0,0,W,H, 0,0,OW,OH);
+
+    // ④ 드로잉 레이어 (사용자 낙서 — 저장 시 반드시 포함, 텍스트 아래에 위치)
+    if(drawCanvas && drawCanvas.width > 0) {
+      oct.drawImage(drawCanvas, 0,0,W,H, 0,0,OW,OH);
+    }
+
+    // ⑤ 텍스트 레이어 (드로잉 위에 최종 합성)
     oct.drawImage(textLayerCanvas,0,0,W,H, 0,0,OW,OH);
+
     // 저장용 합성 완료 후 즉시 textLayerCanvas 클리어 (화면 잔상 방지)
     tCtx.clearRect(0,0,W,H);
+
+    // 색감 미세 보정 (선명도 향상)
     const imgData=oct.getImageData(0,0,OW,OH);
     const d=imgData.data;
     for(let j=0;j<d.length;j+=4){
@@ -3344,6 +4657,24 @@ function buildFullCanvas(cb){
     }
     oct.putImageData(imgData,0,0);
     cb(out);
+  };
+
+  // ── droplet 배경(2차 레이어) 그리기 헬퍼 ──
+  const drawDropletBg = (cb2) => {
+    if(_dropletBgDataUrl && _currentDropletTex > 0) {
+      const dbImg = new Image();
+      dbImg.onload = () => {
+        oct.drawImage(dbImg,
+          _dbl.x * SCALE, _dbl.y * SCALE,
+          _dbl.w * SCALE, _dbl.h * SCALE
+        );
+        cb2();
+      };
+      dbImg.onerror = cb2;
+      dbImg.src = _dropletBgDataUrl;
+    } else {
+      cb2();
+    }
   };
 
   if(bgDataUrl){
@@ -3391,6 +4722,11 @@ function buildFullCanvas(cb){
       compose();
     };
     img.src=bgDataUrl;
+  } else if(_dropletBgDataUrl && _currentDropletTex > 0) {
+    // Droplet 모드 전용 배경 사진
+    oct.fillStyle = '#0d1b2a';
+    oct.fillRect(0, 0, OW, OH);
+    drawDropletBg(compose);
   } else {
     const bgG=oct.createRadialGradient(OW*.35,OH*.45,0,OW*.5,OH*.52,OW*.9);
     bgG.addColorStop(0,'#1a2d45'); bgG.addColorStop(.55,'#0d1b2e'); bgG.addColorStop(1,'#060d16');
@@ -3664,24 +5000,124 @@ function confirmImageSave(){
   const extImg  = isJpeg ? 'jpg' : 'png';
   const qualImg = isJpeg ? 0.92 : 1;
 
-  const link=document.createElement('a');
-  link.download='RainyNote_'+Date.now()+'.'+extImg;
-  link.href=cropOut.toDataURL(mimeImg, qualImg); link.click();
-
-  // 갤러리 썸네일
+  // ── 갤러리 썸네일 저장 (앱 내 저장소) ──
   const gallery=loadGallery();
   if(gallery.length>=50)gallery.shift();
   const thumbW=Math.min(300,sw), thumbH=Math.round(sh*thumbW/sw);
   const thumbC=document.createElement('canvas');
   thumbC.width=thumbW; thumbC.height=thumbH;
   thumbC.getContext('2d').drawImage(cropOut,0,0,sw,sh,0,0,thumbW,thumbH);
-  gallery.push({id:Date.now(),url:thumbC.toDataURL('image/jpeg',0.82),date:new Date().toLocaleString('ko-KR')});
+  const thumbId = Date.now();
+  gallery.push({id:thumbId,url:thumbC.toDataURL('image/jpeg',0.82),date:new Date().toLocaleString('ko-KR')});
   saveGallery(gallery);
 
   points--; savePoints(); updatePointDisplay(); statsRecordSave();
   closeSaveModal();
-  showToast('💾 이미지 저장 완료! 잔여: '+points+'P');
+
+  const imgFilename = 'RainyNote_'+thumbId+'.'+extImg;
+
+  // ── 커스텀 공유 시트 표시 ──
+  cropOut.toBlob((blob)=>{
+    _ssBlob     = blob;
+    _ssBlobUrl  = URL.createObjectURL(blob);
+    _ssMimeType = mimeImg;
+    _ssFilename = imgFilename;
+
+    // 미리보기 설정
+    const ssImg = document.getElementById('ssPreviewImg');
+    if(ssImg) ssImg.src = _ssBlobUrl;
+    const ssFname = document.getElementById('ssFname');
+    if(ssFname) ssFname.textContent = imgFilename;
+    const ssFsize = document.getElementById('ssFsize');
+    if(ssFsize) ssFsize.textContent = Math.round(blob.size/1024)+'KB · '+extImg.toUpperCase()+' 이미지';
+
+    document.getElementById('shareSheet').classList.add('open');
+    showToast('✅ 이미지 준비 완료! 저장 방법을 선택하세요.');
+  }, mimeImg, qualImg);
+
   if(points<=0) setTimeout(()=>showAdModal(),700);
+}
+
+// ══ 커스텀 공유 시트 ════════════════════════════════════════════════
+function closeShareSheet(){
+  document.getElementById('shareSheet').classList.remove('open');
+  // BlobURL 정리 (닫힐 때)
+  if(_ssBlobUrl){ setTimeout(()=>{ URL.revokeObjectURL(_ssBlobUrl); _ssBlobUrl=null; }, 1000); }
+}
+
+async function ssAction(type){
+  if(!_ssBlob && type !== 'download') { showToast('⚠️ 파일을 준비 중입니다. 잠시 후 다시 시도하세요.'); return; }
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const file  = _ssBlob ? new File([_ssBlob], _ssFilename, {type: _ssMimeType}) : null;
+
+  if(type === 'gallery'){
+    // ── 갤러리 저장: 직접 다운로드 (시스템 공유창 없음) ──
+    _ssDownload();
+    showToast(isIOS ? '📥 이미지를 꾹 눌러 "사진에 추가"를 선택하세요.' : '💾 다운로드가 시작되었습니다!');
+    closeShareSheet();
+
+  } else if(type === 'kakao'){
+    // ── 카카오톡: 이미지 저장 후 카카오에서 첨부 안내 ──
+    _ssDownload();
+    showToast('📥 이미지 저장 후 카카오톡에서 첨부하세요.');
+    closeShareSheet();
+
+  } else if(type === 'email'){
+    // ── 이메일: 이미지 저장 + mailto 열기 ──
+    _ssDownload();
+    const mailto = `mailto:?subject=Rainy Note 작품&body=Rainy Note로 만든 작품입니다.%0A(이미지가 다운로드되었습니다)`;
+    window.open(mailto, '_blank');
+    closeShareSheet();
+
+  } else if(type === 'instagram'){
+    // ── 인스타그램: 직접 연동 불가, 이미지 저장 후 안내 ──
+    _ssDownload();
+    showToast('📸 이미지 저장 후 Instagram 앱에서 업로드하세요!');
+    closeShareSheet();
+
+  } else if(type === 'copy'){
+    // ── 클립보드 복사 (이미지) ──
+    try {
+      if(navigator.clipboard && window.ClipboardItem && _ssBlob){
+        await navigator.clipboard.write([new ClipboardItem({[_ssMimeType]: _ssBlob})]);
+        showToast('📋 이미지가 클립보드에 복사되었습니다!');
+        closeShareSheet();
+        return;
+      }
+    } catch(e){}
+    showToast('⚠️ 이 브라우저는 이미지 복사를 지원하지 않습니다.');
+
+  } else if(type === 'download'){
+    // ── PC 직접 다운로드 ──
+    _ssDownload();
+    showToast('💾 다운로드가 시작되었습니다!');
+    closeShareSheet();
+
+  } else if(type === 'facebook'){
+    // ── 페이스북: 파일 직접 첨부 불가 → 이미지 저장 후 Facebook 앱/웹 안내 ──
+    // (Facebook Web Share API는 파일 첨부 미지원, URL만 가능)
+    _ssDownload();
+    showToast('📥 이미지 저장 후 Facebook 앱에서 "사진 업로드"로 공유하세요!');
+    closeShareSheet();
+    // 모바일: 짧은 딜레이 후 Facebook 앱 열기 시도
+    setTimeout(()=>{
+      const isMobile = /Android|iPhone|iPad/.test(navigator.userAgent);
+      if(isMobile){
+        // Facebook 앱 딥링크 시도 (실패하면 무시)
+        try { window.location.href = 'fb://'; } catch(e){}
+      }
+    }, 1200);
+  }
+}
+
+function _ssDownload(){
+  if(!_ssBlob) return;
+  const url = _ssBlobUrl || URL.createObjectURL(_ssBlob);
+  const a = document.createElement('a');
+  a.href = url; a.download = _ssFilename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  if(!_ssBlobUrl) setTimeout(()=>URL.revokeObjectURL(url), 8000);
 }
 
 // ══ 영상 저장 (WebM: MediaRecorder / GIF: canvas frame capture) ════
@@ -3759,13 +5195,69 @@ function startVideoRecord(){
     ctx.fillStyle=bg; ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
   }
 
-  // 매 프레임: 앱 레이어 전체를 recCanvas에 크롭 합성
+  // Droplet 배경 이미지 (2차 레이어) 미리 로드
+  let _dropBgVideoImg = null;
+  if(_dropletBgDataUrl && _currentDropletTex > 0) {
+    _dropBgVideoImg = new Image();
+    _dropBgVideoImg.src = _dropletBgDataUrl;
+  }
+
+  // 매 프레임: 앱 레이어 전체를 recCanvas에 크롭 합성 (buildFullCanvas와 동일한 순서)
   function drawFrame(){
     recCtx.clearRect(0,0,sw,sh);
-    drawBgToCtx(recCtx, W, H, sx, sy);
-    recCtx.drawImage(weatherCanvas, sx,sy,sw,sh, 0,0,sw,sh);
-    recCtx.drawImage(particleCanvas,sx,sy,sw,sh, 0,0,sw,sh);
-    recCtx.drawImage(textLayerCanvas,sx,sy,sw,sh,0,0,sw,sh);
+
+    // ① 배경 (bgPhoto 또는 droplet 배경 또는 그라데이션)
+    if(bgDataUrl) {
+      drawBgToCtx(recCtx, W, H, sx, sy);
+    } else if(_dropletBgDataUrl && _currentDropletTex > 0 && _dropBgVideoImg && _dropBgVideoImg.complete) {
+      // Droplet 전용 배경
+      recCtx.fillStyle = '#0d1b2a';
+      recCtx.fillRect(0, 0, sw, sh);
+      recCtx.save();
+      recCtx.translate(-sx, -sy);
+      recCtx.drawImage(_dropBgVideoImg, _dbl.x, _dbl.y, _dbl.w, _dbl.h);
+      recCtx.restore();
+    } else {
+      // 기본 그라데이션
+      const bg = recCtx.createRadialGradient(sw*.35,sh*.45,0, sw*.5,sh*.5,sw*.9);
+      bg.addColorStop(0,'#1a2d45'); bg.addColorStop(.55,'#0d1b2e'); bg.addColorStop(1,'#060d16');
+      recCtx.fillStyle = bg; recCtx.fillRect(0,0,sw,sh);
+    }
+
+    // ② 성애/날씨 레이어 (Droplets+텍스처 모드에서는 제외 — buildFullCanvas와 동일)
+    const _skipWeatherV = (currentTexture === 'droplets' && _currentDropletTex > 0);
+    if(!_skipWeatherV) {
+      recCtx.drawImage(weatherCanvas, sx,sy,sw,sh, 0,0,sw,sh);
+    }
+
+    // ③ dropletOverlay (물방울 유리창 텍스처)
+    if(_currentDropletTex > 0) {
+      const dropOverlay = document.getElementById('dropletOverlay');
+      const dropCanvas  = dropOverlay ? dropOverlay.querySelector('canvas') : null;
+      if(dropCanvas && dropCanvas.width > 0) {
+        recCtx.save();
+        recCtx.globalAlpha = _dropletOpacity;
+        // dropCanvas는 화면 전체 크기 → 크롭 영역(sx,sy) 기준으로 그리기
+        const dScaleX = dropCanvas.width  / W;
+        const dScaleY = dropCanvas.height / H;
+        recCtx.drawImage(dropCanvas,
+          sx * dScaleX, sy * dScaleY,
+          sw * dScaleX, sh * dScaleY,
+          0, 0, sw, sh);
+        recCtx.restore();
+      }
+    }
+
+    // ④ 파티클 (빗줄기/눈/물방울)
+    recCtx.drawImage(particleCanvas, sx,sy,sw,sh, 0,0,sw,sh);
+
+    // ⑤ 낙서 레이어
+    if(drawCanvas && drawCanvas.width > 0) {
+      recCtx.drawImage(drawCanvas, sx,sy,sw,sh, 0,0,sw,sh);
+    }
+
+    // ⑥ 텍스트 레이어
+    recCtx.drawImage(textLayerCanvas, sx,sy,sw,sh, 0,0,sw,sh);
   }
 
   // UI: 설정 패널 숨기고 진행 바 표시
@@ -3910,22 +5402,28 @@ function _updateRecProgress(elapsed, total){
   if(bar && !bar.classList.contains('show')) bar.classList.add('show');
 }
 
-function _downloadBlob(blob, filename){
-  const url = URL.createObjectURL(blob);
-  // iOS Safari는 a.click() download 속성을 무시하므로 새 탭으로 열기
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  if(isIOS){
-    // iOS: 새 탭으로 열어 사용자가 직접 저장 (꾹 누르기 → 저장)
-    const a = document.createElement('a');
-    a.href = url; a.target = '_blank'; a.rel = 'noopener';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    showToast('📥 파일을 꾹 눌러 저장하세요');
-  } else {
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+async function _downloadBlob(blob, filename){
+  // 영상/GIF 저장: 커스텀 공유 시트 표시
+  _ssBlob     = blob;
+  _ssBlobUrl  = URL.createObjectURL(blob);
+  _ssMimeType = blob.type || (filename.endsWith('.gif') ? 'image/gif' : filename.endsWith('.webm') ? 'video/webm' : 'video/mp4');
+  _ssFilename = filename;
+
+  // 영상은 미리보기 대신 아이콘 표시
+  const ssImg = document.getElementById('ssPreviewImg');
+  if(ssImg){
+    const isGif = filename.endsWith('.gif');
+    ssImg.src = isGif ? _ssBlobUrl : ''; // GIF는 미리보기 가능
+    if(!isGif) ssImg.style.display='none';
+    else ssImg.style.display='';
   }
-  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+  const ssFname = document.getElementById('ssFname');
+  if(ssFname) ssFname.textContent = filename;
+  const ssFsize = document.getElementById('ssFsize');
+  if(ssFsize) ssFsize.textContent = Math.round(blob.size/1024)+'KB · '+filename.split('.').pop().toUpperCase()+' 영상';
+
+  document.getElementById('shareSheet').classList.add('open');
+  showToast('🎬 영상 준비 완료! 저장 방법을 선택하세요.');
 }
 
 function _afterVideoSave(){
@@ -3935,7 +5433,7 @@ function _afterVideoSave(){
   document.getElementById('saveCancelBtn').textContent='취소';
   points--; savePoints(); updatePointDisplay(); statsRecordSave();
   closeSaveModal();
-  showToast('🎬 영상 저장 완료! 잔여: '+points+'P');
+  // 공유 시트는 _downloadBlob에서 이미 열렸음
   if(points<=0) setTimeout(()=>showAdModal(),700);
 }
 
@@ -3981,9 +5479,10 @@ function refreshGallery(){
   [...gallery].reverse().forEach(item=>{
     const div=document.createElement('div');
     div.className='gal-item';
-    div.innerHTML=`<img src="${item.url}" alt="${item.date}" loading="lazy">
-      <div class="gal-del" onclick="deleteGalleryItem(${item.id},event)"><i class="fas fa-xmark"></i></div>`;
-    div.querySelector('img').onclick=()=>downloadGalleryItem(item);
+    div.innerHTML=`<img src="${item.url}" alt="${item.date||''}" loading="lazy">
+      <div class="gal-del" onclick="deleteGalleryItem(${item.id},event)" title="삭제"><i class="fas fa-xmark"></i></div>`;
+    // 썸네일 클릭 → 확대 뷰어 열기
+    div.querySelector('img').onclick=()=>openGalViewer(item);
     grid.appendChild(div);
   });
 }
@@ -3993,10 +5492,76 @@ function deleteGalleryItem(id,e){
   saveGallery(gallery); refreshGallery();
   showToast('이미지가 삭제되었습니다.');
 }
-function downloadGalleryItem(item){
-  const a=document.createElement('a');
-  a.download='RainyNote_'+item.id+'.png';
-  a.href=item.url; a.click();
+
+// ── 갤러리 이미지 확대 뷰어 ──
+let _galViewerItem = null;
+function openGalViewer(item){
+  _galViewerItem = item;
+  const img = document.getElementById('galViewerImg');
+  img.src = item.url;
+  const dateEl = document.getElementById('galViewerDate');
+  if(dateEl) dateEl.textContent = item.date || '';
+  document.getElementById('galViewer').classList.add('open');
+}
+function closeGalViewer(){
+  document.getElementById('galViewer').classList.remove('open');
+  _galViewerItem = null;
+}
+// 뷰어에서 저장 (다운로드 / Web Share API)
+async function gvDownload(){
+  if(!_galViewerItem) return;
+  await _saveOrShareDataUrl(_galViewerItem.url, 'RainyNote_'+_galViewerItem.id+'.png', false);
+}
+async function gvShare(){
+  if(!_galViewerItem) return;
+  await _saveOrShareDataUrl(_galViewerItem.url, 'RainyNote_'+_galViewerItem.id+'.png', true);
+}
+function gvDelete(){
+  if(!_galViewerItem) return;
+  const id = _galViewerItem.id;
+  const gallery = loadGallery().filter(i=>i.id!==id);
+  saveGallery(gallery);
+  closeGalViewer();
+  refreshGallery();
+  showToast('이미지가 삭제되었습니다.');
+}
+
+// dataUrl → 파일 저장 or Web Share
+async function _saveOrShareDataUrl(dataUrl, filename, preferShare){
+  // Blob 변환
+  const res  = await fetch(dataUrl);
+  const blob = await res.blob();
+
+  // ① Web Share API (Android Chrome, iOS Safari 지원)
+  if(preferShare && navigator.share && navigator.canShare) {
+    const file = new File([blob], filename, {type: blob.type || 'image/png'});
+    if(navigator.canShare({files:[file]})) {
+      try {
+        await navigator.share({files:[file], title:'Rainy Note', text:'Rainy Note로 만든 이미지'});
+        return;
+      } catch(e){
+        if(e.name !== 'AbortError') showToast('공유에 실패했습니다.');
+        return;
+      }
+    }
+  }
+
+  // ② Android Chrome / Desktop: a.download 다운로드
+  const url = URL.createObjectURL(blob);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const a = document.createElement('a');
+  a.href = url;
+  if(isIOS){
+    // iOS: 새 탭 열기 + 안내
+    a.target = '_blank'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    showToast('📥 이미지를 꾹 눌러 "사진에 추가"를 선택하세요.');
+  } else {
+    a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    showToast('💾 이미지 다운로드 완료!');
+  }
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
 }
 
 // ═══════════════════════════════════════════════════════════

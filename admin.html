@@ -642,19 +642,68 @@ html,body{ width:100%; min-height:100%; font-family:'Inter','Noto Sans KR',sans-
           </div>
           <div class="setting-row">
             <div class="setting-info">
-              <p>하루 최대 광고 횟수</p>
-              <span>현재 앱 설정값 (참고용)</span>
-            </div>
-            <input type="number" class="setting-input" value="3" disabled style="opacity:0.5;">
-          </div>
-          <div class="setting-row">
-            <div class="setting-info">
               <p>데이터 보관 기간</p>
               <span>일별 로그 최대 보관 일수</span>
             </div>
             <input type="number" class="setting-input" id="retentionDays" min="7" max="365" placeholder="90">
           </div>
-          <button class="save-settings-btn" onclick="saveAllSettings()"><i class="fas fa-save" style="margin-right:6px;"></i>설정 저장</button>
+          <button class="save-settings-btn" onclick="saveAllSettings()"><i class="fas fa-save" style="margin-right:6px;"></i>단가/보관 저장</button>
+        </div>
+
+        <!-- ── 광고 포인트 & 횟수 설정 카드 (NEW) ── -->
+        <div class="card" id="adConfigCard">
+          <div class="card-title" style="display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-sliders" style="color:#7ec8e3;"></i> 광고 포인트 & 시청 횟수 설정
+          </div>
+          <p style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:14px;line-height:1.6;">
+            저장 후 앱(index.html)을 새로고침하면 즉시 반영됩니다.
+          </p>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <p>하루 최대 광고 시청 횟수</p>
+              <span>1~20회 (기본값: 5회)</span>
+            </div>
+            <input type="number" class="setting-input" id="cfgMaxAdsDay" min="1" max="20" placeholder="5">
+          </div>
+
+          <div style="border-top:1px solid rgba(255,255,255,0.07);margin:12px 0 14px;"></div>
+          <p style="font-size:11px;font-weight:700;color:rgba(100,180,255,0.8);margin-bottom:10px;letter-spacing:0.6px;text-transform:uppercase;">단계별 포인트 보상</p>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <p>1단계 최소 시청 시간 (초)</p>
+              <span>이 시간 이상 보면 포인트 지급 (기본: 15초)</span>
+            </div>
+            <input type="number" class="setting-input" id="cfgShortSec" min="5" max="60" placeholder="15">
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <p>1단계 지급 포인트</p>
+              <span>1단계 시청 완료 시 지급 P (기본: 3P)</span>
+            </div>
+            <input type="number" class="setting-input" id="cfgShortPts" min="1" max="30" placeholder="3">
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <p>2단계(완주) 시청 시간 (초)</p>
+              <span>완주 기준 시간 (기본: 30초)</span>
+            </div>
+            <input type="number" class="setting-input" id="cfgLongSec" min="5" max="120" placeholder="30">
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <p>2단계 지급 포인트</p>
+              <span>완주 시 지급 P (기본: 6P)</span>
+            </div>
+            <input type="number" class="setting-input" id="cfgLongPts" min="1" max="30" placeholder="6">
+          </div>
+
+          <div id="adCfgPreview" style="background:rgba(126,200,227,0.07);border:1px solid rgba(126,200,227,0.18);border-radius:12px;padding:12px 14px;margin-top:14px;font-size:12px;color:rgba(255,255,255,0.7);line-height:1.8;display:none;"></div>
+
+          <button class="save-settings-btn" style="margin-top:14px;background:linear-gradient(135deg,#1e5a82,#3a9fd5);" onclick="saveAdConfig()">
+            <i class="fas fa-bolt" style="margin-right:6px;"></i>광고 설정 저장 &amp; 앱 적용
+          </button>
         </div>
         <div class="card">
           <div class="card-title">앱 바로가기</div>
@@ -849,6 +898,7 @@ function initDashboard(){
 
   renderTodayBanner();
   renderOverview();
+  loadAdConfigToUI(); // 광고 설정 현재값 로드
 }
 
 function refreshData(){
@@ -873,6 +923,7 @@ function showPage(name){
   if(name==='revenue')  renderRevenuePage();
   if(name==='saves')    renderSavesPage();
   if(name==='log')      renderLogPage();
+  if(name==='settings') loadAdConfigToUI();
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('open');
 }
@@ -1062,6 +1113,68 @@ function saveAllSettings(){
   const el = document.getElementById('revenuePerAd');
   if(el) el.value = rpa||50;
   renderTodayBanner();
+}
+
+// ── 광고 포인트 & 횟수 설정 저장 ──
+function saveAdConfig(){
+  const maxAdsDay = parseInt(document.getElementById('cfgMaxAdsDay').value);
+  const shortSec  = parseInt(document.getElementById('cfgShortSec').value);
+  const shortPts  = parseInt(document.getElementById('cfgShortPts').value);
+  const longSec   = parseInt(document.getElementById('cfgLongSec').value);
+  const longPts   = parseInt(document.getElementById('cfgLongPts').value);
+
+  const errs = [];
+  if(isNaN(maxAdsDay)||maxAdsDay<1||maxAdsDay>20) errs.push('하루 최대 횟수: 1~20');
+  if(isNaN(shortSec) ||shortSec<5 ||shortSec>60)  errs.push('1단계 시간: 5~60초');
+  if(isNaN(shortPts) ||shortPts<1 ||shortPts>30)  errs.push('1단계 포인트: 1~30');
+  if(isNaN(longSec)  ||longSec<5  ||longSec>120)  errs.push('2단계 시간: 5~120초');
+  if(isNaN(longPts)  ||longPts<1  ||longPts>30)   errs.push('2단계 포인트: 1~30');
+  if(!isNaN(shortSec)&&!isNaN(longSec)&&shortSec>=longSec) errs.push('1단계 시간은 2단계보다 짧아야 합니다');
+  if(!isNaN(shortPts)&&!isNaN(longPts)&&shortPts>=longPts) errs.push('1단계 포인트는 2단계보다 적어야 합니다');
+
+  if(errs.length){
+    showAdminToast('⚠️ ' + errs.join(' / '));
+    return;
+  }
+
+  const cfg = { maxAdsDay, shortSec, shortPts, longSec, longPts };
+  localStorage.setItem('rn_ad_config', JSON.stringify(cfg));
+
+  // 미리보기 업데이트
+  const prev = document.getElementById('adCfgPreview');
+  prev.style.display = 'block';
+  prev.innerHTML = `
+    <strong style="color:#7ec8e3;">✅ 저장 완료 — 앱에 즉시 반영됩니다</strong><br>
+    📅 하루 최대 <strong>${maxAdsDay}회</strong> 시청 가능<br>
+    ⏱ ${shortSec}초 이상 시청 → <strong style="color:#43e97b;">+${shortPts}P</strong><br>
+    🏆 ${longSec}초 완주 → <strong style="color:#ffd200;">+${longPts}P</strong>
+  `;
+
+  showAdminToast(`✅ 광고 설정 저장! 하루 ${maxAdsDay}회 / ${shortSec}초+${shortPts}P / ${longSec}초+${longPts}P`);
+}
+
+// ── 설정 탭 진입 시 현재 값 불러오기 ──
+function loadAdConfigToUI(){
+  try {
+    const cfg = JSON.parse(localStorage.getItem('rn_ad_config') || '{}');
+    document.getElementById('cfgMaxAdsDay').value = cfg.maxAdsDay ?? 5;
+    document.getElementById('cfgShortSec').value  = cfg.shortSec  ?? 15;
+    document.getElementById('cfgShortPts').value  = cfg.shortPts  ?? 3;
+    document.getElementById('cfgLongSec').value   = cfg.longSec   ?? 30;
+    document.getElementById('cfgLongPts').value   = cfg.longPts   ?? 6;
+
+    // 저장된 값이 있으면 미리보기 표시
+    if(cfg.maxAdsDay){
+      const prev = document.getElementById('adCfgPreview');
+      prev.style.display = 'block';
+      prev.innerHTML = `
+        <strong style="color:rgba(255,255,255,0.6);">현재 앱 설정값</strong><br>
+        📅 하루 최대 <strong>${cfg.maxAdsDay}회</strong><br>
+        ⏱ ${cfg.shortSec}초 이상 → <strong style="color:#43e97b;">+${cfg.shortPts}P</strong><br>
+        🏆 ${cfg.longSec}초 완주 → <strong style="color:#ffd200;">+${cfg.longPts}P</strong>
+      `;
+    }
+  } catch(e){}
 }
 
 function changePassword(){
