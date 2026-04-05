@@ -2,117 +2,374 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rainy Note — 아이콘 생성기</title>
 <style>
-body { margin:0; padding:20px; background:#060d16; color:#e8f4ff; font-family:'Inter',sans-serif; }
-h2   { color:#7ec8e3; margin-bottom:16px; }
-p    { font-size:13px; color:rgba(255,255,255,0.55); margin-bottom:20px; line-height:1.6; }
-.grid { display:flex; flex-wrap:wrap; gap:16px; margin-bottom:24px; }
-.icon-card { text-align:center; }
-.icon-card span { display:block; font-size:11px; color:rgba(255,255,255,0.5); margin-top:6px; }
-canvas { border-radius:16px; display:block; }
-.btn-row { display:flex; gap:12px; flex-wrap:wrap; }
-button {
-  padding:10px 20px; border-radius:12px; border:none; cursor:pointer;
-  font-size:13px; font-weight:700; background:linear-gradient(135deg,#2d6a9f,#4a90d9);
-  color:#fff; transition:all 0.18s;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  padding: 28px 22px 60px;
+  background: #060d16;
+  color: #e8f4ff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
 }
-button:hover { opacity:0.88; }
-button.dl { background:linear-gradient(135deg,#2e7d32,#4caf50); }
-#status { margin-top:16px; font-size:12px; color:#81c784; min-height:20px; }
+
+.header {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+}
+.header-thumb {
+  width: 56px; height: 56px; border-radius: 14px;
+  overflow: hidden; flex-shrink: 0;
+  border: 1.5px solid rgba(126,200,227,0.3);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+  background: #0d1b2a;
+}
+.header-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.header-text h2   { font-size: 18px; color: #7ec8e3; margin-bottom: 3px; }
+.header-text p    { font-size: 12px; color: rgba(255,255,255,0.4); }
+
+/* 안내 박스 */
+.info {
+  font-size: 12.5px; color: rgba(255,255,255,0.55); line-height: 1.75;
+  background: rgba(126,200,227,0.06);
+  border: 1px solid rgba(126,200,227,0.15);
+  border-left: 3px solid #7ec8e3;
+  border-radius: 0 10px 10px 0;
+  padding: 11px 15px; margin-bottom: 24px;
+}
+.info code { color: #ffd200; font-family: monospace; font-size: 11px; }
+
+/* 그리드 */
+.grid {
+  display: flex; flex-wrap: wrap; gap: 18px;
+  margin-bottom: 26px; align-items: flex-end;
+}
+.card {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+  opacity: 0; transform: translateY(6px);
+  transition: opacity .3s, transform .3s;
+}
+.card.show { opacity: 1; transform: translateY(0); }
+.card canvas {
+  display: block;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.55);
+  border: 1.5px solid rgba(126,200,227,0.18);
+  /* border-radius는 JS로 설정 */
+}
+.card .lbl  { font-size: 10.5px; color: rgba(255,255,255,0.4); }
+.card .fname{ font-size: 10px; color: rgba(126,200,227,0.55); font-family: monospace; }
+.card .dl1  {
+  font-size: 10px; padding: 4px 10px; border-radius: 6px;
+  cursor: pointer; border: 1px solid rgba(126,200,227,0.25);
+  background: rgba(126,200,227,0.1); color: #7ec8e3;
+  transition: all .18s;
+}
+.card .dl1:hover { background: rgba(126,200,227,0.22); }
+.card .dl1.done  { background: rgba(67,233,123,0.15); border-color: rgba(67,233,123,0.3); color: #43e97b; }
+
+/* 버튼 줄 */
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+button {
+  padding: 11px 20px; border-radius: 12px; border: none;
+  cursor: pointer; font-size: 13px; font-weight: 700;
+  transition: all .18s; display: inline-flex; align-items: center; gap: 7px;
+}
+.btn-gen { background: linear-gradient(135deg,#2d6a9f,#4a90d9); color:#fff; }
+.btn-gen:hover { opacity:.88; transform:translateY(-1px); }
+.btn-dl  { background: linear-gradient(135deg,#2e7d32,#4caf50); color:#fff; }
+.btn-dl:hover  { opacity:.88; transform:translateY(-1px); }
+.btn-svg { background: rgba(255,210,0,.12); border:1px solid rgba(255,210,0,.3); color:#ffd200; }
+.btn-svg:hover { background: rgba(255,210,0,.22); }
+
+/* 진행바 */
+#prog { display:none; margin-bottom:16px; }
+#progBar { height:5px; border-radius:3px; background:rgba(255,255,255,.1); overflow:hidden; margin-top:5px; }
+#progFill{ height:100%; border-radius:3px; background:linear-gradient(90deg,#7ec8e3,#43e97b); transition:width .25s; }
+#progTxt { font-size:12px; color:rgba(255,255,255,.55); }
+
+/* 상태 */
+#status {
+  font-size:13px; min-height:20px;
+  padding:10px 14px; border-radius:9px; display:none;
+}
+#status.ok  { display:block; color:#81c784; background:rgba(67,233,123,.06); border:1px solid rgba(67,233,123,.18); }
+#status.err { display:block; color:#ef9a9a; background:rgba(239,83,80,.06); border:1px solid rgba(239,83,80,.2); }
+
+.note {
+  margin-top:20px; padding:12px 15px; font-size:12px;
+  color:rgba(255,255,255,.5); line-height:1.75;
+  background:rgba(255,210,0,.05); border:1px solid rgba(255,210,0,.18);
+  border-left:3px solid #ffd200; border-radius:0 10px 10px 0;
+}
+.note b { color:#ffd200; }
+.note code { color:#7ec8e3; font-family:monospace; font-size:11px; }
 </style>
 </head>
 <body>
-<h2>💧 Rainy Note — PWA 아이콘 생성기</h2>
-<p>
-  이 페이지에서 <code>icons/icon.svg</code>를 기반으로 모든 PNG 아이콘을 생성할 수 있습니다.<br>
-  생성된 파일을 <b>icons/</b> 폴더에 저장하세요.
-</p>
 
-<div class="grid" id="canvasGrid"></div>
+<div class="header">
+  <div class="header-thumb"><img id="hThumb" src="../images/icon-source.png" alt="icon"></div>
+  <div class="header-text">
+    <h2>💧 Rainy Note — 아이콘 생성기</h2>
+    <p>PWA · Android Studio · Google Play</p>
+  </div>
+</div>
+
+<div class="info">
+  소스: <code>images/icon-source.png</code> (정사각형 PNG)<br>
+  생성: <b style="color:#fff;">8가지 PNG</b> (72 ~ 512px) + <b style="color:#fff;">icon.svg</b><br>
+  저장 후 <code>icons/</code> 폴더에 덮어쓰세요.
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div id="prog">
+  <div id="progTxt">생성 중...</div>
+  <div id="progBar"><div id="progFill" style="width:0%"></div></div>
+</div>
 
 <div class="btn-row">
-  <button onclick="generateAll()">🎨 모든 아이콘 생성</button>
-  <button class="dl" onclick="downloadAll()">⬇️ 모두 다운로드</button>
+  <button class="btn-gen" onclick="generateAll()">🎨 모든 아이콘 생성</button>
+  <button class="btn-dl"  onclick="downloadAll()">⬇️ 모두 다운로드 (PNG 8개)</button>
+  <button class="btn-svg" onclick="downloadSVG()">📄 icon.svg 다운로드</button>
 </div>
 <div id="status"></div>
 
+<div class="note">
+  📌 <b>Google Play Store</b> 등록 아이콘: <code>icon-512.png</code> (512×512, PNG, 불투명 배경)<br>
+  📌 <b>Android Studio</b>: File → New → Image Asset → <code>icon-512.png</code> 선택<br>
+  📌 <b>icon.svg</b>: PNG를 내장한 벡터 파일 — 브라우저 파비콘·PWA 홈화면 아이콘용
+</div>
+
 <script>
-const SIZES = [72, 96, 128, 144, 152, 192, 384, 512];
-const SVG_URL = 'icon.svg';
-let canvases = {};
+/* ═══════════════════════════════════════════════════
+   설정
+═══════════════════════════════════════════════════ */
+const SIZES  = [72, 96, 128, 144, 152, 192, 384, 512];
+const SOURCE = '../images/icon-source.png';
+const RADIUS_RATIO = 0.20;   // 둥근 모서리 비율 (size * 0.20)
 
-function setStatus(msg) {
-  document.getElementById('status').textContent = msg;
+let srcImg   = null;
+let canvases = {};   // { size → HTMLCanvasElement }
+
+/* ── 유틸 ── */
+const $  = id => document.getElementById(id);
+const st = (msg, cls) => {
+  const el = $('status');
+  el.textContent = msg;
+  el.className = cls; // 'ok' | 'err' | ''
+};
+function setProg(cur, total, label) {
+  $('prog').style.display = 'block';
+  $('progTxt').textContent = label || `${cur} / ${total}`;
+  $('progFill').style.width = (cur / total * 100) + '%';
+}
+function hideProg() { $('prog').style.display = 'none'; }
+
+/* ══════════════════════════════════════════════════
+   핵심 드로우 함수
+   ─ 원본의 가로·세로 비율을 무조건 유지하면서
+     정사각형 캔버스에 꽉 차도록 Center-Crop
+   ─ 둥근 모서리 클리핑 적용
+══════════════════════════════════════════════════ */
+function drawSquareIcon(canvas, img, size) {
+  canvas.width  = size;
+  canvas.height = size;   // ← 반드시 정사각형
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, size, size);
+
+  /* 1. 둥근 모서리 클리핑 패스 */
+  const r = Math.round(size * RADIUS_RATIO);
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(size - r, 0);
+  ctx.arcTo(size, 0,    size, r,      r);
+  ctx.lineTo(size, size - r);
+  ctx.arcTo(size, size, size - r, size, r);
+  ctx.lineTo(r, size);
+  ctx.arcTo(0, size,    0, size - r, r);
+  ctx.lineTo(0, r);
+  ctx.arcTo(0, 0,       r, 0,        r);
+  ctx.closePath();
+  ctx.clip();
+
+  /* 2. Center-Crop: 원본 비율 유지하며 정사각형에 꽉 채우기 */
+  const iw = img.naturalWidth  || img.width;
+  const ih = img.naturalHeight || img.height;
+
+  // 더 짧은 변을 size에 맞추고, 긴 변은 crop
+  const scale = Math.max(size / iw, size / ih);
+  const dw    = iw * scale;
+  const dh    = ih * scale;
+  const dx    = (size - dw) / 2;   // 중앙 정렬
+  const dy    = (size - dh) / 2;
+
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.restore();
 }
 
-async function loadSVG() {
-  const res  = await fetch(SVG_URL);
-  const text = await res.text();
-  const blob = new Blob([text], { type: 'image/svg+xml' });
-  return URL.createObjectURL(blob);
+/* ── 소스 이미지 로드 ── */
+function loadSrc() {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      // 로드된 이미지가 실제로 정사각형인지 로그
+      console.log(`[icon-gen] 소스 로드 완료: ${img.naturalWidth}×${img.naturalHeight}px`);
+      resolve(img);
+    };
+    img.onerror = () => reject(new Error(
+      'images/icon-source.png 로드 실패\n' +
+      '→ VS Code Live Server 또는 배포 URL에서 열어주세요.'
+    ));
+    img.src = SOURCE + '?_=' + Date.now();
+  });
 }
 
+/* ── 전체 생성 ── */
 async function generateAll() {
-  setStatus('⏳ SVG 로딩 중...');
-  const grid = document.getElementById('canvasGrid');
-  grid.innerHTML = '';
+  $('grid').innerHTML = '';
   canvases = {};
+  st('', '');
+  setProg(0, SIZES.length, '⏳ 소스 이미지 로딩 중...');
 
-  let objUrl;
-  try { objUrl = await loadSVG(); } catch(e) {
-    setStatus('❌ icon.svg 로드 실패. 같은 폴더에 있는지 확인하세요.');
+  try {
+    srcImg = await loadSrc();
+  } catch(e) {
+    hideProg();
+    st('❌ ' + e.message, 'err');
     return;
   }
 
-  for (const size of SIZES) {
-    await new Promise(resolve => {
-      const img = new Image();
-      img.onload = () => {
-        const c = document.createElement('canvas');
-        c.width = c.height = size;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(img, 0, 0, size, size);
-        canvases[size] = c;
+  for (let i = 0; i < SIZES.length; i++) {
+    const size = SIZES[i];
+    setProg(i + 1, SIZES.length, `🎨 ${size}×${size} 생성 중... (${i+1}/${SIZES.length})`);
 
-        // 미리보기
-        const preview = document.createElement('canvas');
-        const ps = Math.min(size, 96);
-        preview.width = preview.height = ps;
-        preview.getContext('2d').drawImage(c, 0, 0, size, size, 0, 0, ps, ps);
-        const card = document.createElement('div');
-        card.className = 'icon-card';
-        card.appendChild(preview);
-        card.innerHTML += `<span>${size}×${size}</span>`;
-        grid.appendChild(card);
-        resolve();
-      };
-      img.onerror = () => { setStatus(`❌ ${size}px 생성 실패`); resolve(); };
-      img.src = objUrl;
+    await new Promise(resolve => requestAnimationFrame(() => {
+
+      /* 실제 사이즈 캔버스 */
+      const c = document.createElement('canvas');
+      drawSquareIcon(c, srcImg, size);
+      canvases[size] = c;
+
+      /* 미리보기 (최대 80px) */
+      const ps = Math.min(size, 80);
+      const pv = document.createElement('canvas');
+      drawSquareIcon(pv, srcImg, ps);
+      pv.style.width        = ps + 'px';
+      pv.style.height       = ps + 'px';
+      pv.style.borderRadius = Math.round(ps * RADIUS_RATIO) + 'px';
+
+      /* 카드 */
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const dlBtn = document.createElement('button');
+      dlBtn.className = 'dl1';
+      dlBtn.textContent = '⬇ 저장';
+      dlBtn.onclick = () => downloadOne(size, dlBtn);
+
+      card.appendChild(pv);
+      card.innerHTML += `<span class="lbl">${size}×${size}</span><span class="fname">icon-${size}.png</span>`;
+      card.appendChild(dlBtn);
+      $('grid').appendChild(card);
+
+      requestAnimationFrame(() => card.classList.add('show'));
+      resolve();
+    }));
+  }
+
+  hideProg();
+  st(`✅ ${SIZES.length}개 생성 완료! "모두 다운로드" 버튼을 클릭하세요.`, 'ok');
+}
+
+/* ── 단일 다운로드 ── */
+function downloadOne(size, btn) {
+  const c = canvases[size];
+  if (!c) { st('먼저 생성을 클릭하세요.', 'err'); return; }
+  c.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a   = Object.assign(document.createElement('a'), { href: url, download: `icon-${size}.png` });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    if (btn) {
+      btn.classList.add('done'); btn.textContent = '✓ 완료';
+      setTimeout(() => { btn.classList.remove('done'); btn.textContent = '⬇ 저장'; }, 2200);
+    }
+  }, 'image/png');
+}
+
+/* ── 전체 다운로드 ── */
+async function downloadAll() {
+  if (!Object.keys(canvases).length) {
+    st('⚠️ 먼저 "모든 아이콘 생성"을 클릭하세요.', 'err'); return;
+  }
+  st('', '');
+  for (let i = 0; i < SIZES.length; i++) {
+    const size = SIZES[i];
+    setProg(i + 1, SIZES.length, `⬇️ icon-${size}.png (${i+1}/${SIZES.length})`);
+    await new Promise(resolve => {
+      canvases[size].toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a   = Object.assign(document.createElement('a'), { href: url, download: `icon-${size}.png` });
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setTimeout(resolve, 260);
+      }, 'image/png');
     });
   }
-
-  URL.revokeObjectURL(objUrl);
-  setStatus(`✅ ${SIZES.length}개 아이콘 생성 완료! "모두 다운로드" 버튼을 클릭하세요.`);
+  hideProg();
+  st(`✅ ${SIZES.length}개 PNG 다운로드 완료! icons/ 폴더에 덮어쓰세요.`, 'ok');
 }
 
-function downloadAll() {
-  if (Object.keys(canvases).length === 0) {
-    setStatus('⚠️ 먼저 "모든 아이콘 생성"을 클릭하세요.');
-    return;
-  }
-  SIZES.forEach(size => {
-    const c = canvases[size];
-    if (!c) return;
-    const a = document.createElement('a');
-    a.download = `icon-${size}.png`;
-    a.href = c.toDataURL('image/png');
-    a.click();
-  });
-  setStatus('⬇️ 다운로드 시작됨! icons/ 폴더에 저장하세요.');
+/* ── SVG 다운로드 ──
+   512px 캔버스를 base64 PNG로 변환 후 SVG <image>에 내장
+   → 외부 파일 의존 없이 단독으로 파비콘으로 동작        */
+function downloadSVG() {
+  if (!srcImg) { st('⚠️ 먼저 "모든 아이콘 생성"을 클릭하세요.', 'err'); return; }
+
+  // 512px 캔버스 확보
+  const c512 = canvases[512] || (() => {
+    const tmp = document.createElement('canvas');
+    drawSquareIcon(tmp, srcImg, 512);
+    return tmp;
+  })();
+
+  c512.toBlob(blob => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const b64 = e.target.result;   // data:image/png;base64,...
+      const rx  = Math.round(512 * RADIUS_RATIO);
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 512 512" width="512" height="512">
+  <!-- Rainy Note App Icon — auto-generated -->
+  <defs>
+    <clipPath id="rc">
+      <rect x="0" y="0" width="512" height="512" rx="${rx}" ry="${rx}"/>
+    </clipPath>
+  </defs>
+  <rect width="512" height="512" rx="${rx}" fill="#0d1b2a"/>
+  <image href="${b64}"
+         x="0" y="0" width="512" height="512"
+         clip-path="url(#rc)"
+         preserveAspectRatio="xMidYMid slice"/>
+</svg>`;
+      const svgBlob = new Blob([svg], { type: 'image/svg+xml' });
+      const url     = URL.createObjectURL(svgBlob);
+      const a       = Object.assign(document.createElement('a'), { href: url, download: 'icon.svg' });
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      st('📄 icon.svg 다운로드 완료! icons/ 폴더에 저장하세요.', 'ok');
+    };
+    reader.readAsDataURL(blob);
+  }, 'image/png');
 }
 
-// 페이지 로드 시 자동 생성
+/* ── 자동 실행 ── */
 window.addEventListener('load', generateAll);
 </script>
 <script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>

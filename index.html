@@ -20,7 +20,7 @@
 <meta property="og:type"        content="website">
 <meta property="og:title"       content="Rainy Note — 유리창 감성 낙서 앱">
 <meta property="og:description" content="유리창에 빗방울 낙서를 남기는 감성 모바일 웹앱">
-<meta property="og:image"       content="/icons/icon.svg">
+<meta property="og:image"       content="icons/icon-512.png">
 <meta property="og:url"         content="https://your-domain.com/">
 <meta property="og:locale"      content="ko_KR">
 
@@ -28,10 +28,10 @@
 <meta name="twitter:card"        content="summary_large_image">
 <meta name="twitter:title"       content="Rainy Note">
 <meta name="twitter:description" content="유리창에 빗방울 낙서를 남기는 감성 모바일 웹앱">
-<meta name="twitter:image"       content="/icons/icon.svg">
+<meta name="twitter:image"       content="icons/icon-512.png">
 
 <!-- ── PWA ── -->
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -39,12 +39,13 @@
 <meta name="application-name" content="Rainy Note">
 <meta name="msapplication-TileColor" content="#0d1b2a">
 
-<!-- ── 파비콘 / 아이콘 ── -->
-<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
-<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
-<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
-<meta name="msapplication-TileImage" content="/icons/icon-192.png">
+<!-- ── 파비콘 / 아이콘 (Rainy Note 앱 아이콘) ── -->
+<link rel="icon" type="image/svg+xml"      href="icons/icon.svg">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192"  href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180"  href="icons/icon-192.png">
+<meta name="msapplication-TileImage" content="icons/icon-192.png">
 
 <!-- ── 외부 라이브러리 ── -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -335,6 +336,23 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 .sheet-opt-text p  { font-size:12px; color:rgba(255,255,255,0.45); }
 
 /* ── IN-APP CAMERA ── */
+/* ── 카메라 권한 모달 단계 안내 ── */
+.perm-step {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:9px 12px; margin-bottom:6px;
+  background:rgba(126,200,227,0.06);
+  border:1px solid rgba(126,200,227,0.15);
+  border-radius:10px;
+}
+.perm-step-num {
+  width:22px; height:22px; border-radius:50%; flex-shrink:0;
+  background:rgba(126,200,227,0.2); color:#7ec8e3;
+  font-size:11px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  margin-top:1px;
+}
+.perm-step-txt { font-size:12px; color:rgba(255,255,255,0.7); line-height:1.55; }
+#camPermSteps { margin:14px 0 4px; display:flex; flex-direction:column; gap:0; }
 #cameraBg { display:none; position:fixed; inset:0; z-index:699; background:#000; }
 #cameraBg.open { display:block; }
 #cameraScreen {
@@ -831,7 +849,8 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
   </div>
 
   <!-- Hidden inputs -->
-  <input type="file" id="fileGallery" accept="image/*" onchange="handlePhotoUpload(event)">
+  <!-- capture 속성 제거 → Android에서 갤러리/파일 선택창이 정상 열림 -->
+  <input type="file" id="fileGallery" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/*" onchange="handlePhotoUpload(event)">
   <canvas id="snapCanvas" style="display:none;"></canvas>
 
   <!-- BG ADJUST MODAL -->
@@ -895,6 +914,48 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
     <div id="previewBar">
       <button class="preview-btn retake" onclick="retakePhoto()"><i class="fas fa-rotate-left"></i> Retake</button>
       <button class="preview-btn use" onclick="usePhoto()"><i class="fas fa-check"></i> Use Photo</button>
+    </div>
+  </div>
+
+  <!-- CAMERA PERMISSION MODAL -->
+  <div class="modal-backdrop" id="camPermModal">
+    <div class="modal-box" style="max-width:320px;">
+      <div class="modal-drop-icon">📷</div>
+      <div class="modal-title">카메라 권한이 필요해요</div>
+      <div class="modal-sub" id="camPermDesc">
+        카메라를 사용하려면 브라우저에서 권한을 허용해야 합니다.
+      </div>
+
+      <!-- 단계 안내 카드 -->
+      <div id="camPermSteps">
+        <div class="perm-step">
+          <div class="perm-step-num">1</div>
+          <div class="perm-step-txt">주소창 왼쪽 🔒 자물쇠(또는 ⓘ) 아이콘을 탭하세요</div>
+        </div>
+        <div class="perm-step">
+          <div class="perm-step-num">2</div>
+          <div class="perm-step-txt"><strong>권한</strong> 또는 <strong>사이트 설정</strong>을 선택하세요</div>
+        </div>
+        <div class="perm-step">
+          <div class="perm-step-num">3</div>
+          <div class="perm-step-txt"><strong>카메라</strong>를 <strong style="color:#43e97b;">허용</strong>으로 변경하세요</div>
+        </div>
+        <div class="perm-step">
+          <div class="perm-step-num">4</div>
+          <div class="perm-step-txt">아래 <strong>재시도</strong> 버튼을 누르세요</div>
+        </div>
+      </div>
+
+      <hr class="modal-divider">
+      <div class="modal-btns" style="flex-direction:column;gap:8px;">
+        <button class="modal-btn primary" style="width:100%;" onclick="retryCamera()">
+          <i class="fas fa-rotate-right" style="font-size:12px;margin-right:5px;"></i> 재시도 (권한 허용 후 클릭)
+        </button>
+        <button class="modal-btn" style="width:100%;background:rgba(126,200,227,0.12);color:#7ec8e3;border:1px solid rgba(126,200,227,0.3);" onclick="openBrowserCamSetting()">
+          <i class="fas fa-gear" style="font-size:12px;margin-right:5px;"></i> 브라우저 카메라 설정 열기
+        </button>
+        <button class="modal-btn cancel" style="width:100%;" onclick="closeCamPermModal()">닫기</button>
+      </div>
     </div>
   </div>
 
@@ -1615,7 +1676,15 @@ function closePhotoSheet() {
   document.getElementById('photoSheet').classList.remove('open');
   document.getElementById('photoBackdrop').classList.remove('open');
 }
-function triggerGallery() { closePhotoSheet(); document.getElementById('fileGallery').click(); }
+function triggerGallery() {
+  closePhotoSheet();
+  // Android에서 바로 .click()이 실패하는 경우를 대비해 짧은 지연 후 트리거
+  setTimeout(() => {
+    const inp = document.getElementById('fileGallery');
+    inp.value = ''; // 같은 파일 재선택 가능하도록 초기화
+    inp.click();
+  }, 80);
+}
 function handlePhotoUpload(e) {
   const file=e.target.files[0]; if(!file)return;
   const reader=new FileReader();
@@ -1943,14 +2012,85 @@ function getTouchDist(e) {
 
 // Camera
 let camStream=null, camFacingMode='environment', flashOn=false, capturedDataUrl=null;
+
+/* ── 카메라 권한 모달 제어 ── */
+function openCamPermModal(msg) {
+  if(msg) document.getElementById('camPermDesc').textContent = msg;
+  document.getElementById('camPermModal').classList.add('open');
+}
+function closeCamPermModal() {
+  document.getElementById('camPermModal').classList.remove('open');
+}
+// 브라우저 카메라 설정 페이지 열기 (Android Chrome 전용 scheme 우선, 실패 시 일반 URL)
+function openBrowserCamSetting() {
+  // Android Chrome: intent로 앱 설정 페이지 직접 열기
+  const schemes = [
+    'googlechrome://settings/content/camera',       // Chrome Android 설정
+    'chrome://settings/content/camera',             // PC Chrome (작동 안 할 수 있음)
+  ];
+  // 실제로 intent: scheme은 브라우저에서 열 수 없으므로
+  // — Permission API로 상태를 체크하고 prompt 상태면 바로 권한 요청 재시도
+  if(navigator.permissions) {
+    navigator.permissions.query({name:'camera'}).then(status => {
+      if(status.state === 'prompt') {
+        // 아직 한 번도 결정 안 했으면 → 바로 권한 요청 트리거
+        closeCamPermModal();
+        retryCamera();
+      } else {
+        // denied → 사용자에게 수동 안내
+        showToast('주소창 🔒 아이콘 → 권한 → 카메라 → 허용 후 재시도 버튼을 눌러주세요.');
+      }
+    }).catch(()=>{
+      showToast('주소창 🔒 아이콘 → 권한 → 카메라 → 허용 후 재시도 버튼을 눌러주세요.');
+    });
+  } else {
+    showToast('주소창 🔒 아이콘 → 권한 → 카메라 → 허용 후 재시도 버튼을 눌러주세요.');
+  }
+}
+// 권한 허용 후 재시도
+async function retryCamera() {
+  closeCamPermModal();
+  try {
+    // 권한 재요청 — 이미 denied면 브라우저가 자동으로 거부
+    const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:false});
+    stream.getTracks().forEach(t=>t.stop()); // 테스트용 스트림 정리
+    await startCamera(camFacingMode);
+  } catch(err) {
+    if(err.name==='NotAllowedError'||err.name==='PermissionDeniedError') {
+      openCamPermModal('권한이 여전히 거부되어 있습니다.\n주소창 🔒 → 권한 → 카메라 → 허용 후 재시도해 주세요.');
+    } else {
+      showToast('카메라를 시작할 수 없습니다: ' + (err.message||err.name));
+    }
+  }
+}
+
 async function triggerCamera() {
   closePhotoSheet();
+  // mediaDevices 자체가 없으면 (구형 브라우저) → 파일 input fallback
   if(!navigator.mediaDevices?.getUserMedia){ fallbackCamera(); return; }
-  try { await startCamera(camFacingMode); }
-  catch(err){
-    if(err.name==='NotAllowedError'||err.name==='PermissionDeniedError')
-      showToast('카메라 권한이 필요합니다. 브라우저 설정에서 허용해 주세요.');
-    else fallbackCamera();
+
+  // 권한 사전 체크 (지원 시)
+  if(navigator.permissions) {
+    try {
+      const status = await navigator.permissions.query({name:'camera'});
+      if(status.state === 'denied') {
+        // 이미 거부된 상태 → 안내 모달 바로 표시
+        openCamPermModal('카메라 권한이 차단되어 있습니다.\n아래 안내에 따라 권한을 허용해 주세요.');
+        return;
+      }
+    } catch(e) { /* 쿼리 미지원 시 무시하고 직접 시도 */ }
+  }
+
+  try {
+    await startCamera(camFacingMode);
+  } catch(err) {
+    if(err.name==='NotAllowedError'||err.name==='PermissionDeniedError') {
+      openCamPermModal('카메라 권한이 필요합니다.\n아래 단계를 따라 권한을 허용해 주세요.');
+    } else if(err.name==='NotFoundError'||err.name==='DevicesNotFoundError') {
+      showToast('카메라를 찾을 수 없습니다. 기기에 카메라가 있는지 확인해 주세요.');
+    } else {
+      fallbackCamera();
+    }
   }
 }
 async function startCamera(facingMode) {
@@ -2008,7 +2148,14 @@ function capturePhoto() {
 }
 function retakePhoto(){ capturedDataUrl=null; document.getElementById('camPreview').classList.remove('open'); }
 function usePhoto(){ if(!capturedDataUrl)return; document.getElementById('camPreview').classList.remove('open'); closeCamera(); applyBackground(capturedDataUrl); capturedDataUrl=null; }
-function openGalleryFromCamera(){ closeCamera(); document.getElementById('fileGallery').click(); }
+function openGalleryFromCamera(){
+  closeCamera();
+  setTimeout(() => {
+    const inp = document.getElementById('fileGallery');
+    inp.value = '';
+    inp.click();
+  }, 80);
+}
 function fallbackCamera() {
   const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.capture='environment';
   i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>applyBackground(ev.target.result);r.readAsDataURL(f);};
