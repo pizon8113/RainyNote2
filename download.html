@@ -47,11 +47,12 @@ body{
 .check-body{flex:1;}
 .check-title{font-size:13px;font-weight:600;color:#e8f4ff;line-height:1.4;}
 .check-desc{font-size:11.5px;color:rgba(200,220,240,0.65);margin-top:3px;line-height:1.55;}
+.check-desc code{background:rgba(100,180,255,0.12);border-radius:3px;padding:1px 5px;font-size:11px;color:#a8d8f0;font-family:monospace;}
 .badge{
   display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;
   border-radius:10px;margin-left:6px;vertical-align:middle;
 }
-.ok {background:rgba(76,175,80,0.2);border:1px solid rgba(76,175,80,0.4);color:#81c784;}
+.ok  {background:rgba(76,175,80,0.2);border:1px solid rgba(76,175,80,0.4);color:#81c784;}
 .warn{background:rgba(255,167,38,0.2);border:1px solid rgba(255,167,38,0.4);color:#ffb74d;}
 .info{background:rgba(100,180,255,0.2);border:1px solid rgba(100,180,255,0.4);color:#7ec8e3;}
 .new {background:rgba(126,200,227,0.15);border:1px solid rgba(126,200,227,0.35);color:#7ec8e3;}
@@ -61,28 +62,31 @@ body{
 /* ── 파일 목록 ── */
 .file-list{
   background:rgba(0,0,0,0.28);border-radius:14px;
-  padding:10px 12px;max-height:260px;overflow-y:auto;
+  padding:10px 12px;max-height:320px;overflow-y:auto;
 }
 .file-list::-webkit-scrollbar{width:3px;}
 .file-list::-webkit-scrollbar-thumb{background:rgba(100,180,255,0.3);border-radius:3px;}
-.file-item{display:flex;align-items:center;gap:8px;padding:4px 2px;font-size:12px;}
+.file-item{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:12px;}
 .fi{font-size:13px;width:18px;text-align:center;flex-shrink:0;}
 .fn{flex:1;color:rgba(180,210,240,0.85);font-family:monospace;font-size:11.5px;}
-.fst{font-size:12px;width:20px;text-align:center;}
+.fst{font-size:13px;width:22px;text-align:center;}
 .file-section{font-size:10px;font-weight:700;color:rgba(126,200,227,0.6);
-  letter-spacing:0.8px;text-transform:uppercase;padding:8px 2px 4px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;}
+  letter-spacing:0.8px;text-transform:uppercase;padding:8px 2px 4px;
+  border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;}
 .file-section:first-child{border-top:none;margin-top:0;padding-top:2px;}
 
 /* ── 진행바 ── */
-.progress-wrap{margin-top:4px;}
-.progress-bar{width:100%;height:6px;background:rgba(255,255,255,0.08);border-radius:8px;overflow:hidden;margin-bottom:6px;}
-.progress-fill{height:100%;width:0%;border-radius:8px;transition:width 0.2s;background:linear-gradient(90deg,#1a6fa8,#4ab3e8,#7ec8e3);}
+.progress-wrap{margin-top:10px;}
+.progress-bar{width:100%;height:7px;background:rgba(255,255,255,0.08);border-radius:8px;overflow:hidden;margin-bottom:7px;}
+.progress-fill{height:100%;width:0%;border-radius:8px;transition:width 0.25s;
+  background:linear-gradient(90deg,#1a6fa8,#4ab3e8,#7ec8e3);}
 .progress-label{font-size:12px;color:rgba(255,255,255,0.45);}
+.progress-detail{font-size:11px;color:rgba(255,255,255,0.3);margin-top:3px;}
 
 /* ── 버튼 ── */
 .btn{
   display:flex;align-items:center;justify-content:center;gap:10px;
-  width:100%;padding:15px 20px;border-radius:14px;border:none;
+  width:100%;padding:16px 20px;border-radius:14px;border:none;
   font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
   background:linear-gradient(135deg,#1a6fa8,#2a9fd6);color:#fff;
   box-shadow:0 4px 20px rgba(26,111,168,0.4);transition:all 0.18s;
@@ -91,12 +95,17 @@ body{
 .btn:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px);}
 .btn:active:not(:disabled){transform:scale(0.97);}
 .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.btn-secondary{
+  background:rgba(255,255,255,0.06);border:1px solid rgba(100,180,255,0.25);
+  color:#7ec8e3;box-shadow:none;
+}
+.btn-secondary:hover:not(:disabled){background:rgba(100,180,255,0.12);}
 
 /* ── 가이드 ── */
 .guide-steps{display:flex;flex-direction:column;gap:10px;}
 .guide-step{display:flex;align-items:flex-start;gap:10px;}
 .step-num{
-  width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;
   background:linear-gradient(135deg,#1a6fa8,#4ab3e8);
   color:#fff;font-size:11px;font-weight:700;
   display:flex;align-items:center;justify-content:center;
@@ -107,13 +116,20 @@ body{
 .step-txt strong{color:#e8f4ff;}
 .divider{height:1px;background:rgba(255,255,255,0.06);margin:4px 0;}
 
+/* ── 통계 바 ── */
+.stat-row{display:flex;gap:10px;margin-top:4px;}
+.stat-box{flex:1;background:rgba(0,0,0,0.25);border:1px solid rgba(100,180,255,0.12);
+  border-radius:12px;padding:10px 14px;text-align:center;}
+.stat-num{font-size:20px;font-weight:800;color:#7ec8e3;}
+.stat-lbl{font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;}
+
 /* ── 토스트 ── */
 .toast{
   position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-  background:rgba(26,111,168,0.95);color:#fff;padding:10px 22px;
+  background:rgba(26,111,168,0.97);color:#fff;padding:11px 24px;
   border-radius:12px;font-size:13px;opacity:0;transition:opacity 0.3s;
   pointer-events:none;white-space:nowrap;z-index:9999;
-  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  box-shadow:0 4px 20px rgba(0,0,0,0.5);
 }
 .toast.show{opacity:1;}
 
@@ -121,104 +137,45 @@ body{
 @media(max-width:480px){
   .card{padding:20px 16px;}
   body{padding:16px 12px 36px;}
+  .stat-row{flex-wrap:wrap;}
 }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- 헤더 -->
+  <!-- ① 헤더 -->
   <div class="card">
     <div class="logo-row">
       <div class="logo">🌧️</div>
       <div class="logo-info">
         <h1>Rainy Note</h1>
-        <div class="version-badge">v2.6.3 · 2026-04-05</div>
+        <div class="version-badge">v2.6.5 · 2026-04-06</div>
       </div>
     </div>
-    <p class="sub">구글 플레이 등록 & VS Code 로컬 실행용 전체 프로젝트 ZIP 다운로드<br>
-      카메라·갤러리 연동, 저장/공유, Density, Droplets 이미지 등 모든 기능 점검 완료.</p>
+    <p class="sub">
+      유리창 감성 낙서 앱 — VS Code 로컬 실행 & Google Play(TWA) 등록용<br>
+      전체 소스 + 물방울 이미지(9종) 포함 ZIP 다운로드
+    </p>
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-num" id="statFiles">—</div><div class="stat-lbl">전체 파일</div></div>
+      <div class="stat-box"><div class="stat-num" id="statSize">—</div><div class="stat-lbl">예상 ZIP 크기</div></div>
+      <div class="stat-box"><div class="stat-num">v6</div><div class="stat-lbl">SW 캐시</div></div>
+    </div>
   </div>
 
-  <!-- ① 기능 점검 결과 -->
+  <!-- ② 최신 수정 이력 -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-shield-check"></i> 기능 점검 결과 (v2.6.3)</div>
+    <div class="card-title"><i class="fas fa-code-branch"></i> 최신 수정 이력</div>
     <div class="check-list">
 
       <div class="check-item">
-        <div class="check-icon">📸</div>
+        <div class="check-icon">💧</div>
         <div class="check-body">
-          <div class="check-title">카메라 연동<span class="badge ok">✅ 정상</span></div>
+          <div class="check-title">Natural 물방울 이미지 복구 — 핸드폰 프레임 제거<span class="badge fix">🔧 v2.6.5</span></div>
           <div class="check-desc">
-            <code>navigator.mediaDevices.getUserMedia()</code> 기반 전/후면 전환, 플래시 토글, 촬영 후 배경 적용.<br>
-            권한 거부 시 <strong>단계별 안내 모달</strong> 표시. Android WebView / iOS Safari 모두 지원.
-          </div>
-        </div>
-      </div>
-
-      <div class="check-item">
-        <div class="check-icon">🖼️</div>
-        <div class="check-body">
-          <div class="check-title">갤러리 연동<span class="badge ok">✅ 정상</span></div>
-          <div class="check-desc">
-            <code>&lt;input type="file" accept="image/*"&gt;</code> — JPEG·PNG·WebP·HEIC·GIF 지원.<br>
-            Android WebView: <code>label.click()</code> 우선 트리거로 갤러리 오픈 안정화. 같은 파일 재선택 가능.
-          </div>
-        </div>
-      </div>
-
-      <div class="check-item">
-        <div class="check-icon">💾</div>
-        <div class="check-body">
-          <div class="check-title">이미지 저장 / 공유<span class="badge ok">✅ 정상</span></div>
-          <div class="check-desc">
-            저장 공유 시트 — <strong>내 폰에 저장·취소 버튼만 표시</strong> (SNS 아이콘 전체 제거).<br>
-            이미지저장소(갤러리 뷰어) — <strong>공유 버튼 제거, 저장·삭제 버튼만</strong> 남김.<br>
-            <strong>OS 다운로드 안내창 표시 문제</strong> 완전 해결.
-          </div>
-        </div>
-      </div>
-
-      <div class="check-item">
-        <div class="check-icon">🎬</div>
-        <div class="check-body">
-          <div class="check-title">영상 저장 (WebM / GIF)<span class="badge ok">✅ 정상</span></div>
-          <div class="check-desc">
-            MediaRecorder WebM + gif.js animated GIF 저장 지원. 트리밍 크롭 영역 기준 녹화.<br>
-            drawFrame 6개 레이어(배경·성에·droplet·파티클·낙서·텍스트) 모두 합성 반영.
-          </div>
-        </div>
-      </div>
-
-      <div class="check-item">
-        <div class="check-icon">🎛️</div>
-        <div class="check-body">
-          <div class="check-title">Density 슬라이더 (Rainy·Frosty·Droplets)<span class="badge fix">🔧 수정됨</span></div>
-          <div class="check-desc">
-            renderParticles 루프에서 배열 크기 상한(maxP)을 실시간 체크하여 density 감소 시 즉시 반영.<br>
-            updateDensity에서 initParticles() 재호출로 파티클 수 완전 재초기화.
-          </div>
-        </div>
-      </div>
-
-      <div class="check-item">
-        <div class="check-icon">🌫️</div>
-        <div class="check-body">
-          <div class="check-title">Foggy Density / Background Blur<span class="badge fix">🔧 수정됨</span></div>
-          <div class="check-desc">
-            Density: buildWeather() 재빌드로 안개 레이어 불투명도 실시간 반영.<br>
-            Background Blur: 0~20px 범위 복원. buildWeather 호출 시 bgPhoto에 filter 즉시 적용.
-          </div>
-        </div>
-      </div>
-
-      <div class="check-item">
-        <div class="check-icon">📲</div>
-        <div class="check-body">
-          <div class="check-title">갤러리 저장소 공유 버튼 → 다운로드 안내창 문제<span class="badge fix">🔧 수정됨</span></div>
-          <div class="check-desc">
-            이미지저장소에서 <strong>공유</strong> 버튼 클릭 시 OS 파일다운로드 안내창이 뜨던 문제 해결.<br>
-            Web Share API 지원 기기는 시스템 공유, 미지원 시 직접 다운로드 + 안내 토스트로 처리.
+            <code>droplet-tex1.png</code> 를 핸드폰 테두리 없는 순수 유리창 물방울 사진으로 교체.<br>
+            315KB(프레임 포함) → <strong>175KB</strong>(순수 물방울). SW 캐시 v5 → v6 업데이트.
           </div>
         </div>
       </div>
@@ -226,45 +183,54 @@ body{
       <div class="check-item">
         <div class="check-icon">📷</div>
         <div class="check-body">
-          <div class="check-title">모바일 카메라 뷰파인더 좁게 표시 / 갤러리 버튼 → 앞뒤 전환<span class="badge fix">🔧 수정됨</span></div>
+          <div class="check-title">카메라 뷰파인더 싱크 불일치 해결<span class="badge fix">🔧 v2.6.4</span></div>
           <div class="check-desc">
-            해상도 제약 없이 <code>facingMode + aspectRatio 9/16</code>만 전달 → 기기 네이티브 비율 그대로 사용.<br>
-            하단 갤러리 버튼 → <strong>전면/후면 카메라 전환 버튼(🔄)</strong>으로 교체.<br>
-            플래시: <code>torch</code> capability 확인 후 미지원 기기엔 안내 토스트, 실패 시 상태 롤백.<br>
-            <code>canplay</code> 이벤트 대기 후 play() → 뷰파인더 싱크 완전 해결.
+            <code>#cameraScreen</code> 을 <code>left:50%;transform</code> → <code>top/left/right/bottom:0</code> 으로 변경.<br>
+            <code>#camVideo</code> 에 <code>will-change:transform; translateZ(0)</code> 추가 → GPU 레이어 분리로 Android 싱크 완전 해결.
           </div>
         </div>
       </div>
 
       <div class="check-item">
-        <div class="check-icon">💧</div>
+        <div class="check-icon">🖼️</div>
         <div class="check-body">
-          <div class="check-title">데스크탑·모바일 Droplets 이미지 9장 미노출<span class="badge fix">🔧 수정됨</span></div>
+          <div class="check-title">갤러리 사진 선택 연동 안됨 해결<span class="badge fix">🔧 v2.6.4</span></div>
           <div class="check-desc">
-            <code>loading="lazy"</code> → <code>loading="eager"</code>로 변경 (off-screen 피커 lazy 미로드 방지).<br>
-            Canvas 픽셀처리 → <strong>CSS background-image + mix-blend-mode:multiply</strong>로 완전 교체.<br>
-            <code>crossOrigin</code> 제거로 CORS 오류 원인 차단. SW 캐시 <strong>v4</strong> 업데이트.<br>
-            모든 텍스처 URL에 <code>?v=4</code> 캐시버스팅 적용. 피커 오픈 시 이미지 강제 재로드.
+            <code>triggerGallery()</code> 에서 <code>input.click()</code> 을 <code>closePhotoSheet()</code> <strong>전</strong>에 호출.<br>
+            시트 닫힘 CSS transition 이후 호출하면 Android에서 user-gesture context가 끊기는 문제 해결.
           </div>
         </div>
       </div>
 
       <div class="check-item">
-        <div class="check-icon">🔄</div>
+        <div class="check-icon">💦</div>
         <div class="check-body">
-          <div class="check-title">Droplets → 다른 텍스처 전환 시 배경 소실<span class="badge fix">🔧 수정됨</span></div>
+          <div class="check-title">Droplets 9개 이미지 완전 미표시 해결<span class="badge fix">🔧 v2.6.4</span></div>
           <div class="check-desc">
-            setTexture() + buildWeather()에서 bgPhoto를 동기로 즉시 복원 (RAF 타이밍 충돌 제거).
+            <code>mix-blend-mode:multiply</code> → <strong><code>img 태그 + mix-blend-mode:screen</code></strong> 으로 교체.<br>
+            어두운 배경에서 multiply가 이미지를 사라지게 하는 근본 원인 해결. onerror 캐시버스팅 재시도 추가.
           </div>
         </div>
       </div>
 
       <div class="check-item">
-        <div class="check-icon">🔘</div>
+        <div class="check-icon">🎛️</div>
         <div class="check-body">
-          <div class="check-title">NavBar Reset 버튼<span class="badge fix">🔧 수정됨</span></div>
+          <div class="check-title">모바일 컨트롤박스 화살표·슬라이더 터치 안됨 해결<span class="badge fix">🔧 v2.6.4</span></div>
           <div class="check-desc">
-            drawCanvas가 bottomNav 터치를 가로채는 문제 → onTouchStart/onMouseDown에서 bottomNav 영역 터치 통과 처리.
+            <code>drawCanvas onTouchStart</code> 에서 <code>#controlPanel</code> 열린 영역 터치 이벤트 통과 처리 추가.<br>
+            photoSheet, dropletPickerSheet, stylePopup 등 모달 영역도 이벤트 통과.
+          </div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <div class="check-icon">💾</div>
+        <div class="check-body">
+          <div class="check-title">Save·갤러리저장소 내 폰 저장 안됨 해결<span class="badge fix">🔧 v2.6.4</span></div>
+          <div class="check-desc">
+            Web Share API(files) → <code>&lt;a download&gt;</code> → <code>window.open</code> 3단계 fallback 적용.<br>
+            Android WebView에서 <code>&lt;a&gt;.click()</code> 미작동 시 네이티브 공유 다이얼로그로 저장 가능.
           </div>
         </div>
       </div>
@@ -272,21 +238,29 @@ body{
       <div class="check-item">
         <div class="check-icon">🔒</div>
         <div class="check-body">
-          <div class="check-title">모바일 개인정보 페이지 중복 상단바 문제<span class="badge fix">🔧 수정됨</span></div>
+          <div class="check-title">모바일 개인정보 페이지 중복 상단바 해결<span class="badge fix">🔧 v2.6.3</span></div>
           <div class="check-desc">
-            개인정보 페이지(<code>privacy.html</code>)를 iframe으로 열 때 자체 헤더가 중복 표시되던 문제 해결.<br>
-            <code>?iframe=1</code> 파라미터 감지 → privacy.html 내부 헤더/네비 자동 숨김 처리.
+            <code>?iframe=1</code> 파라미터 감지 → <code>privacy.html</code> 자체 헤더/네비 자동 숨김.
           </div>
         </div>
       </div>
 
       <div class="check-item">
-        <div class="check-icon">📱</div>
+        <div class="check-icon">📸</div>
         <div class="check-body">
-          <div class="check-title">모바일 갤러리 사진 선택 권한 연동<span class="badge fix">🔧 수정됨</span></div>
+          <div class="check-title">갤러리 버튼 → 전면/후면 전환 버튼 교체<span class="badge fix">🔧 v2.6.3</span></div>
           <div class="check-desc">
-            Android WebView에서 <code>label.click()</code> 우선 트리거로 갤러리 오픈 안정화.<br>
-            같은 파일 재선택 가능 (<code>value=''</code> 리셋 후 클릭). iOS Safari 호환 확인.
+            카메라 하단 갤러리 버튼 제거, 🔄 전환 버튼 추가. <code>switchCamera()</code> 로 facingMode 토글.
+          </div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <div class="check-icon">🛡️</div>
+        <div class="check-body">
+          <div class="check-title">저장 공유시트 SNS 아이콘 전체 제거<span class="badge fix">🔧 v2.6.3</span></div>
+          <div class="check-desc">
+            공유시트: <strong>내 폰에 저장 + 취소</strong> 버튼만 표시. 갤러리 뷰어: 저장 + 삭제 버튼만 유지.
           </div>
         </div>
       </div>
@@ -294,35 +268,9 @@ body{
       <div class="check-item">
         <div class="check-icon">⚙️</div>
         <div class="check-body">
-          <div class="check-title">Admin — 광고 포인트·횟수 설정<span class="badge new">✨ 신규</span></div>
+          <div class="check-title">개인정보처리방침 이메일 주소 설정<span class="badge ok">✅ 확인</span></div>
           <div class="check-desc">
-            admin.html 설정 탭에서 하루 최대 광고 횟수, 1단계(15초/+3P), 2단계(30초/+6P) 직접 설정 가능.<br>
-            localStorage(<code>rn_ad_config</code>) 저장 → 앱 새로고침 즉시 반영.
-          </div>
-        </div>
-      </div>
-
-      <div class="check-item">
-        <div class="check-icon">📱</div>
-        <div class="check-body">
-          <div class="check-title">PWA / 홈 화면 추가<span class="badge ok">✅ 정상</span></div>
-          <div class="check-desc">
-            manifest.json: name·short_name·icons(72~512px)·display:standalone·orientation:portrait.<br>
-            Service Worker v3: Cache-First + 구버전 캐시 자동 삭제.
-          </div>
-        </div>
-      </div>
-
-      <div class="check-item">
-        <div class="check-icon">⚠️</div>
-        <div class="check-body">
-          <div class="check-title">Google Play TWA 등록 주의사항<span class="badge warn">⚠️ 참고</span></div>
-          <div class="check-desc">
-            <strong>1)</strong> icons/icon-192.png, icon-512.png 생성 필수 (<code>icons/generate-icons.html</code> 실행).<br>
-            <strong>2)</strong> HTTPS 배포 필수 (카메라·미디어 API는 보안 컨텍스트 요구).<br>
-            <strong>3)</strong> assetlinks.json: <code>/.well-known/assetlinks.json</code> 배포 후 TWA 등록.<br>
-            <strong>4)</strong> 카메라 권한: AndroidManifest에 <code>CAMERA</code> 퍼미션 명시 필요.<br>
-            <strong>5)</strong> 갤러리 권한: Android 13+ <code>READ_MEDIA_IMAGES</code> 또는 미디어 피커 사용.
+            Section 10 문의처: <code><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e99b88808790d1d8d8daa98e84888085c78a8684">[email&#160;protected]</a></code> · 웹사이트: <code>www.pizon.net</code> 유지.
           </div>
         </div>
       </div>
@@ -330,34 +278,35 @@ body{
     </div>
   </div>
 
-  <!-- ② 파일 목록 + 다운로드 -->
+  <!-- ③ 파일 목록 + 다운로드 -->
   <div class="card">
     <div class="card-title"><i class="fas fa-folder-open"></i> 포함 파일 목록</div>
     <div class="file-list" id="fileList"></div>
-    <div class="progress-wrap" id="progressWrap" style="display:none;margin-top:12px;">
+    <div class="progress-wrap" id="progressWrap" style="display:none;">
       <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
       <div class="progress-label" id="progressLabel">준비 중...</div>
+      <div class="progress-detail" id="progressDetail"></div>
     </div>
     <button class="btn" id="dlBtn" onclick="startDownload()">
-      <i class="fas fa-download"></i> ZIP 다운로드
+      <i class="fas fa-download"></i> 전체 파일 ZIP 다운로드
     </button>
   </div>
 
-  <!-- ③ VS Code 실행 가이드 -->
+  <!-- ④ VS Code 실행 가이드 -->
   <div class="card">
     <div class="card-title"><i class="fas fa-code"></i> VS Code 로컬 실행 가이드</div>
     <div class="guide-steps">
       <div class="guide-step">
         <div class="step-num">1</div>
-        <div class="step-txt">ZIP 다운로드 후 원하는 폴더에 압축 해제</div>
+        <div class="step-txt">위 버튼으로 ZIP 다운로드 후 원하는 폴더에 <strong>압축 해제</strong></div>
       </div>
       <div class="guide-step">
         <div class="step-num">2</div>
-        <div class="step-txt">VS Code에서 <code>File → Open Folder</code>로 폴더 열기</div>
+        <div class="step-txt">VS Code에서 <code>File → Open Folder</code> 로 해제된 폴더 열기</div>
       </div>
       <div class="guide-step">
         <div class="step-num">3</div>
-        <div class="step-txt">Extensions에서 <code>Live Server</code> 설치 (Ritwick Dey)</div>
+        <div class="step-txt">Extensions에서 <strong>Live Server</strong> 설치 (Ritwick Dey 작성)</div>
       </div>
       <div class="guide-step">
         <div class="step-num">4</div>
@@ -365,65 +314,69 @@ body{
       </div>
       <div class="guide-step">
         <div class="step-num">5</div>
-        <div class="step-txt">브라우저 <code>http://127.0.0.1:5500</code> 자동 오픈 🎉<br>
-          <strong>모바일 테스트:</strong> 같은 Wi-Fi에서 <code>http://[PC-IP]:5500</code> 접속</div>
+        <div class="step-txt">
+          브라우저 <code>http://127.0.0.1:5500</code> 자동 오픈 🎉<br>
+          <strong>모바일 테스트:</strong> 같은 Wi-Fi에서 <code>http://[PC-IP]:5500</code> 접속<br>
+          ※ 카메라는 <strong>HTTPS 또는 localhost</strong> 에서만 작동합니다
+        </div>
       </div>
     </div>
-    <div class="divider" style="margin-top:16px;"></div>
+
+    <div class="divider" style="margin-top:18px;"></div>
     <div style="margin-top:14px;">
-      <div class="card-title" style="margin-bottom:10px;"><i class="fas fa-mobile-alt"></i> 모바일 카메라·갤러리 테스트 체크리스트</div>
+      <div class="card-title" style="margin-bottom:10px;"><i class="fas fa-mobile-alt"></i> 모바일 테스트 체크리스트</div>
       <div class="guide-steps">
         <div class="guide-step">
           <div class="step-num" style="background:linear-gradient(135deg,#1e5a2e,#2d8a44);">✓</div>
-          <div class="step-txt"><strong>HTTPS 환경</strong>에서 테스트 (카메라 API는 localhost 또는 HTTPS만 허용)</div>
+          <div class="step-txt"><strong>Photo → 카메라</strong>: 전/후면 전환 버튼(🔄) 작동 확인</div>
         </div>
         <div class="guide-step">
           <div class="step-num" style="background:linear-gradient(135deg,#1e5a2e,#2d8a44);">✓</div>
-          <div class="step-txt">Photo → <strong>갤러리</strong> 버튼: 이미지 선택 후 배경 적용 확인</div>
+          <div class="step-txt"><strong>Photo → 갤러리에서 선택</strong>: 사진 선택 후 배경 적용 확인</div>
         </div>
         <div class="guide-step">
           <div class="step-num" style="background:linear-gradient(135deg,#1e5a2e,#2d8a44);">✓</div>
-          <div class="step-txt">Photo → <strong>카메라</strong> 버튼: 권한 허용 → 전/후면 전환 → 촬영 → 배경 적용 확인</div>
+          <div class="step-txt"><strong>Droplets</strong>: 9개 텍스처 카드 이미지 모두 표시 확인</div>
         </div>
         <div class="guide-step">
           <div class="step-num" style="background:linear-gradient(135deg,#1e5a2e,#2d8a44);">✓</div>
-          <div class="step-txt">저장 → 공유 시트: 갤러리 저장 버튼으로 이미지 다운로드 확인 (시스템 공유창 미표시)</div>
+          <div class="step-txt"><strong>Save → 내 폰에 저장</strong>: 네이티브 공유 다이얼로그 또는 다운로드 확인</div>
         </div>
         <div class="guide-step">
           <div class="step-num" style="background:linear-gradient(135deg,#1e5a2e,#2d8a44);">✓</div>
-          <div class="step-txt">Droplets 텍스처 선택 후 Rainy 전환 시 <strong>배경 이미지 유지</strong> 확인</div>
+          <div class="step-txt"><strong>컨트롤 패널</strong>: 화살표(←/↓) 클릭으로 패널 열기/닫기, 슬라이더 조작 확인</div>
         </div>
         <div class="guide-step">
           <div class="step-num" style="background:linear-gradient(135deg,#1e5a2e,#2d8a44);">✓</div>
-          <div class="step-txt">Density 슬라이더: Rainy·Frosty·Droplets에서 파티클 수 즉시 변경 확인</div>
+          <div class="step-txt"><strong>이미지저장소(🔍)</strong>: 이미지 선택 → 저장 버튼으로 갤러리 저장 확인</div>
         </div>
         <div class="guide-step">
           <div class="step-num" style="background:linear-gradient(135deg,#ffb300,#e65100);">!</div>
-          <div class="step-txt"><strong>iOS Safari:</strong> 카메라 허용 후 촬영 버튼 → 사진첩에 자동 저장 안됨 (긴 누름으로 저장 안내)</div>
+          <div class="step-txt"><strong>iOS Safari</strong>: 저장 시 Web Share 다이얼로그 또는 꾹 눌러 "사진에 추가" 안내</div>
         </div>
         <div class="guide-step">
           <div class="step-num" style="background:linear-gradient(135deg,#ffb300,#e65100);">!</div>
-          <div class="step-txt"><strong>Android Chrome:</strong> 갤러리 권한이 없으면 파일 선택 화면이 열리지 않을 수 있음 → 설정에서 권한 허용</div>
+          <div class="step-txt"><strong>Android WebView</strong>: 카메라 뷰파인더가 전체화면으로 표시되는지 확인</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ④ Google Play 등록 가이드 -->
+  <!-- ⑤ Google Play 등록 가이드 -->
   <div class="card">
     <div class="card-title"><i class="fab fa-google-play"></i> Google Play 등록 가이드 (TWA)</div>
     <div class="guide-steps">
       <div class="guide-step">
         <div class="step-num">1</div>
-        <div class="step-txt"><strong>아이콘 생성:</strong> <code>icons/generate-icons.html</code> 열고 <strong>Generate All Icons</strong> 클릭 → 72·96·128·144·152·192·384·512px PNG 생성</div>
+        <div class="step-txt"><strong>아이콘 생성:</strong> <code>icons/generate-icons.html</code> 열기 → <strong>Generate All Icons</strong> 클릭 → 72·96·128·144·192·512px PNG 자동 생성</div>
       </div>
       <div class="guide-step">
         <div class="step-num">2</div>
-        <div class="step-txt"><strong>HTTPS 배포:</strong> Netlify / Vercel에 배포. <code>netlify.toml</code> / <code>vercel.json</code> 포함됨</div>
+        <div class="step-txt"><strong>HTTPS 배포:</strong> Netlify / Vercel 배포 (<code>netlify.toml</code>, <code>vercel.json</code> 포함)</div>
       </div>
       <div class="guide-step">
         <div class="step-num">3</div>
-        <div class="step-txt"><strong>assetlinks.json:</strong> <a href="https://developers.google.com/digital-asset-links" target="_blank" style="color:#7ec8e3;">Digital Asset Links</a>에서 생성 후 <code>/.well-known/assetlinks.json</code>에 배포</div>
+        <div class="step-txt"><strong>assetlinks.json:</strong> <a href="https://developers.google.com/digital-asset-links" target="_blank" style="color:#7ec8e3;">Digital Asset Links</a> 생성 후 <code>/.well-known/assetlinks.json</code> 배포</div>
       </div>
       <div class="guide-step">
         <div class="step-num">4</div>
@@ -433,10 +386,6 @@ body{
         <div class="step-num">5</div>
         <div class="step-txt"><strong>APK 빌드:</strong> <code>bubblewrap build</code> → <code>app-release-signed.apk</code> 생성 후 Google Play Console 업로드</div>
       </div>
-      <div class="guide-step">
-        <div class="step-num">6</div>
-        <div class="step-txt"><strong>Play Console:</strong> 앱 설명·스크린샷(최소 2장)·기능 그래픽(1024×500) 준비 후 내부 테스트 트랙 제출</div>
-      </div>
     </div>
   </div>
 
@@ -444,160 +393,203 @@ body{
 
 <div class="toast" id="toast"></div>
 
-<script>
-// ── 파일 목록 정의 ──
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ════════════════════════════════════════════════════════════
+//  파일 목록 정의 (이미지 포함 전체 파일)
+// ════════════════════════════════════════════════════════════
 const FILE_SECTIONS = [
   {
     label: '핵심 앱 파일',
     files: [
-      {path:'index.html',    icon:'📱', label:'index.html   (메인 앱 — v2.6.3 전체 기능)'},
-      {path:'admin.html',    icon:'📊', label:'admin.html   (관리자 대시보드)'},
-      {path:'privacy.html',  icon:'🔒', label:'privacy.html  (개인정보처리방침)'},
-      {path:'download.html', icon:'⬇️', label:'download.html (이 페이지 — 프로젝트 ZIP)'},
+      { path:'index.html',   icon:'📱', label:'index.html    (메인 앱 — v2.6.5 전체 기능)' },
+      { path:'admin.html',   icon:'📊', label:'admin.html    (관리자 대시보드)' },
+      { path:'privacy.html', icon:'🔒', label:'privacy.html  (개인정보처리방침 — rainy8113@gmail.com)' },
+      { path:'download.html',icon:'⬇️', label:'download.html (이 페이지)' },
     ]
   },
   {
     label: 'PWA / 배포 설정',
     files: [
-      {path:'manifest.json', icon:'📋', label:'manifest.json  (PWA 매니페스트)'},
-      {path:'sw.js',         icon:'⚙️', label:'sw.js          (Service Worker v4)'},
-      {path:'netlify.toml',  icon:'🚀', label:'netlify.toml   (Netlify 배포)'},
-      {path:'vercel.json',   icon:'▲',  label:'vercel.json    (Vercel 배포)'},
-      {path:'_redirects',    icon:'🔀', label:'_redirects     (SPA 리다이렉트)'},
-      {path:'robots.txt',    icon:'🤖', label:'robots.txt'},
-      {path:'sitemap.xml',   icon:'🗺️', label:'sitemap.xml'},
-      {path:'package.json',  icon:'📦', label:'package.json'},
+      { path:'manifest.json', icon:'📋', label:'manifest.json  (PWA 매니페스트)' },
+      { path:'sw.js',         icon:'⚙️', label:'sw.js          (Service Worker v6)' },
+      { path:'netlify.toml',  icon:'🚀', label:'netlify.toml   (Netlify 배포 설정)' },
+      { path:'vercel.json',   icon:'▲',  label:'vercel.json    (Vercel 배포 설정)' },
+      { path:'_redirects',    icon:'🔀', label:'_redirects     (SPA 리다이렉트)' },
+      { path:'robots.txt',    icon:'🤖', label:'robots.txt' },
+      { path:'sitemap.xml',   icon:'🗺️', label:'sitemap.xml' },
+      { path:'package.json',  icon:'📦', label:'package.json' },
     ]
   },
   {
     label: '아이콘 리소스',
     files: [
-      {path:'icons/icon.svg',              icon:'🎨', label:'icons/icon.svg'},
-      {path:'icons/icon-192.png',          icon:'📱', label:'icons/icon-192.png  (PWA 아이콘 192px)'},
-      {path:'icons/icon-512.png',          icon:'📱', label:'icons/icon-512.png  (PWA 아이콘 512px)'},
-      {path:'icons/icon-logo.png',         icon:'🖼️', label:'icons/icon-logo.png'},
-      {path:'icons/generate-icons.html',   icon:'🖼️', label:'icons/generate-icons.html  (아이콘 생성기)'},
-      {path:'icons/generate-icons.js',     icon:'🔧', label:'icons/generate-icons.js'},
+      { path:'icons/icon.svg',            icon:'🎨', label:'icons/icon.svg             (SVG 마스터 아이콘)' },
+      { path:'icons/icon-192.png',        icon:'📱', label:'icons/icon-192.png          (PWA 아이콘 192px)' },
+      { path:'icons/icon-512.png',        icon:'📱', label:'icons/icon-512.png          (PWA 아이콘 512px)' },
+      { path:'icons/icon-logo.png',       icon:'🖼️', label:'icons/icon-logo.png' },
+      { path:'icons/generate-icons.html', icon:'🔧', label:'icons/generate-icons.html   (아이콘 생성기)' },
+      { path:'icons/generate-icons.js',   icon:'🔧', label:'icons/generate-icons.js' },
     ]
   },
   {
-    label: '이미지 에셋 (droplet textures)',
+    label: '💧 물방울 유리창 텍스처 이미지 (9종)',
     files: [
-      {path:'images/droplet-tex1.png', icon:'🖼️', label:'droplet-tex1.png  (Natural — 핸드폰 테두리 없음 v4)'},
-      {path:'images/droplet-tex2.png', icon:'🖼️', label:'droplet-tex2.png  (Rain Trails)'},
-      {path:'images/droplet-tex3.png', icon:'🖼️', label:'droplet-tex3.png  (Micro Mist)'},
-      {path:'images/droplet-tex4.png', icon:'🖼️', label:'droplet-tex4.png  (Crystal Drops)'},
-      {path:'images/droplet-tex5.png', icon:'🖼️', label:'droplet-tex5.png  (Frosted Glass)'},
-      {path:'images/droplet-tex6.png', icon:'🖼️', label:'droplet-tex6.png  (Scatter Drops)'},
-      {path:'images/droplet-tex7.png', icon:'🖼️', label:'droplet-tex7.png  (Morning Dew)'},
-      {path:'images/droplet-tex8.png', icon:'🖼️', label:'droplet-tex8.png  (Heavy Rain)'},
-      {path:'images/droplet-tex9.png', icon:'🖼️', label:'droplet-tex9.png  (Winter Frost)'},
+      { path:'images/droplet-tex1.png', icon:'🖼️', label:'droplet-tex1.png  ★ Natural      — 자연 물방울 (핸드폰 프레임 없음 v2.6.5)' },
+      { path:'images/droplet-tex2.png', icon:'🖼️', label:'droplet-tex2.png    Rain Trails   — 빗물 흘러내림' },
+      { path:'images/droplet-tex3.png', icon:'🖼️', label:'droplet-tex3.png    Micro Mist    — 미세 응결' },
+      { path:'images/droplet-tex4.png', icon:'🖼️', label:'droplet-tex4.png    Crystal       — 대형 크리스탈' },
+      { path:'images/droplet-tex5.png', icon:'🖼️', label:'droplet-tex5.png    Frosted       — 서리+물방울' },
+      { path:'images/droplet-tex6.png', icon:'🖼️', label:'droplet-tex6.png    Scatter       — 흩뿌려진 방울' },
+      { path:'images/droplet-tex7.png', icon:'🖼️', label:'droplet-tex7.png    Morning Dew   — 아침 이슬' },
+      { path:'images/droplet-tex8.png', icon:'🖼️', label:'droplet-tex8.png    Heavy Rain    — 폭우 줄기' },
+      { path:'images/droplet-tex9.png', icon:'🖼️', label:'droplet-tex9.png    Winter Frost  — 겨울 성에+방울' },
     ]
   },
   {
     label: '스크립트 / 설정',
     files: [
-      {path:'scripts/build.js',                    icon:'🔨', label:'scripts/build.js'},
-      {path:'scripts/create-placeholder-icons.js', icon:'🔧', label:'scripts/create-placeholder-icons.js'},
-      {path:'.vscode/settings.json',               icon:'⚙️', label:'.vscode/settings.json'},
-      {path:'.vscode/extensions.json',             icon:'🔌', label:'.vscode/extensions.json'},
-      {path:'.vscode/launch.json',                 icon:'🚀', label:'.vscode/launch.json'},
-      {path:'.vscode/tasks.json',                  icon:'📝', label:'.vscode/tasks.json'},
-      {path:'.github/workflows/deploy.yml',        icon:'🤖', label:'.github/workflows/deploy.yml'},
-      {path:'.gitignore',                          icon:'🚫', label:'.gitignore'},
+      { path:'scripts/build.js',                    icon:'🔨', label:'scripts/build.js' },
+      { path:'scripts/create-placeholder-icons.js', icon:'🔧', label:'scripts/create-placeholder-icons.js' },
+      { path:'.vscode/settings.json',               icon:'⚙️', label:'.vscode/settings.json' },
+      { path:'.vscode/extensions.json',             icon:'🔌', label:'.vscode/extensions.json' },
+      { path:'.vscode/launch.json',                 icon:'🚀', label:'.vscode/launch.json' },
+      { path:'.vscode/tasks.json',                  icon:'📝', label:'.vscode/tasks.json' },
+      { path:'.github/workflows/deploy.yml',        icon:'🤖', label:'.github/workflows/deploy.yml' },
+      { path:'.gitignore',                          icon:'🚫', label:'.gitignore' },
     ]
   }
 ];
 
-// 전체 파일 플랫 배열 (다운로드용)
+// 전체 파일 플랫 배열
 const ALL_FILES = FILE_SECTIONS.flatMap(s => s.files);
 
+// ── 초기화 ──
+function init() {
+  renderFileList();
+  // 파일 수 / 예상 크기 표시
+  document.getElementById('statFiles').textContent = ALL_FILES.length + '개';
+  document.getElementById('statSize').textContent  = '~3.5MB';
+}
+
 // ── 파일 목록 렌더링 ──
-function renderFileList(){
+function renderFileList() {
   let html = '';
-  let globalIdx = 0;
+  let idx  = 0;
   FILE_SECTIONS.forEach(section => {
     html += `<div class="file-section">${section.label}</div>`;
     section.files.forEach(f => {
       html += `<div class="file-item">
         <span class="fi">${f.icon}</span>
         <span class="fn">${f.label}</span>
-        <span class="fst" id="fst-${globalIdx}">⬜</span>
+        <span class="fst" id="fst-${idx}">⬜</span>
       </div>`;
-      globalIdx++;
+      idx++;
     });
   });
   document.getElementById('fileList').innerHTML = html;
 }
 
-function setSt(i, e){ const el = document.getElementById('fst-'+i); if(el) el.textContent = e; }
-function setProg(pct, txt){
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressLabel').textContent = txt;
+function setSt(i, e) {
+  const el = document.getElementById('fst-' + i);
+  if (el) el.textContent = e;
 }
-function showToast(msg){
+
+function setProg(pct, msg, detail) {
+  document.getElementById('progressFill').style.width  = pct + '%';
+  document.getElementById('progressLabel').textContent = msg;
+  if (detail !== undefined) document.getElementById('progressDetail').textContent = detail;
+}
+
+function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 3500);
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3800);
 }
 
 // ── 다운로드 실행 ──
-async function startDownload(){
+async function startDownload() {
   const btn = document.getElementById('dlBtn');
   const pw  = document.getElementById('progressWrap');
+
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 패키징 중...';
   pw.style.display = 'block';
 
-  const zip = new JSZip();
+  const zip    = new JSZip();
   const folder = zip.folder('rainy-note');
   let done = 0, skipped = 0;
 
-  for(let i = 0; i < ALL_FILES.length; i++){
+  for (let i = 0; i < ALL_FILES.length; i++) {
     const f = ALL_FILES[i];
-    setProg(Math.round((i / ALL_FILES.length) * 78), `수집 중 (${i+1}/${ALL_FILES.length}): ${f.path}`);
+    const pct = Math.round((i / ALL_FILES.length) * 78);
+    setProg(pct,
+      `수집 중 (${i + 1}/${ALL_FILES.length})`,
+      f.path
+    );
+
     try {
-      const res = await fetch(f.path, {cache:'no-store'});
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      const ct = res.headers.get('content-type') || '';
-      // 이미지·폰트·바이너리 → ArrayBuffer, 텍스트 → text
+      const res = await fetch(f.path, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+
+      const ct    = res.headers.get('content-type') || '';
+      // 이미지·폰트·바이너리 → ArrayBuffer / 텍스트 → text
       const isBin = /image\/(?!svg)|font\/|application\/octet/.test(ct);
-      folder.file(f.path, isBin ? await res.arrayBuffer() : await res.text());
-      setSt(i, '✅'); done++;
-    } catch(e) {
-      console.warn('skip', f.path, e);
-      setSt(i, '⚠️'); skipped++;
+      const data  = isBin ? await res.arrayBuffer() : await res.text();
+
+      folder.file(f.path, data);
+      setSt(i, '✅');
+      done++;
+    } catch (e) {
+      console.warn('skip:', f.path, e.message);
+      setSt(i, '⚠️');
+      skipped++;
     }
   }
 
-  setProg(82, 'ZIP 압축 중...');
-  await new Promise(r => setTimeout(r, 60));
+  // ── ZIP 압축 ──
+  setProg(80, 'ZIP 압축 중...', '');
+  await new Promise(r => setTimeout(r, 50));
 
-  let lp = 82;
+  let lastPct = 80;
   const blob = await zip.generateAsync(
-    {type:'blob', compression:'DEFLATE', compressionOptions:{level:6}},
-    m => {
-      const p = 82 + Math.round(m.percent * 0.18);
-      if(p !== lp){ lp = p; setProg(p, '압축 중 ' + Math.round(m.percent) + '%'); }
+    { type:'blob', compression:'DEFLATE', compressionOptions:{ level:6 } },
+    meta => {
+      const p = 80 + Math.round(meta.percent * 0.20);
+      if (p !== lastPct) {
+        lastPct = p;
+        setProg(p, `압축 중 ${Math.round(meta.percent)}%`, '');
+      }
     }
   );
 
-  setProg(100, `완료! ${done}개 수집 (${skipped > 0 ? skipped+'개 누락' : '전체 성공'})`);
+  const today = new Date().toISOString().slice(0, 10);
+  const fname = `rainy-note-v2.6.5-${today}.zip`;
 
-  const today = new Date().toISOString().slice(0,10);
-  const fname = `rainy-note-${today}.zip`;
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  setProg(100,
+    `완료! ${done}개 수집${skipped > 0 ? ' (' + skipped + '개 누락)' : ' (전체 성공)'}`,
+    fname + ' · ' + (blob.size / 1024 / 1024).toFixed(1) + ' MB'
+  );
+
+  // ── 파일 저장 ──
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href     = url;
   a.download = fname;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 5000);
 
   btn.disabled = false;
   btn.innerHTML = '<i class="fas fa-check"></i> 다시 다운로드';
-  showToast('🎉 ' + fname + ' 다운로드 완료! (' + done + '/' + ALL_FILES.length + '개)');
+  showToast(`🎉 ${fname} 다운로드 완료! (${done}/${ALL_FILES.length}개)`);
 }
 
-renderFileList();
+init();
 </script>
 <script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>
 </html>

@@ -364,30 +364,37 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
 #cameraBg { display:none; position:fixed; inset:0; z-index:699; background:#000; }
 #cameraBg.open { display:block; }
 #cameraScreen {
-  display:none; position:fixed; inset:0; z-index:700;
+  display:none; position:fixed; z-index:700;
+  /* ★ inset:0 으로 화면 전체 점유 — Android WebView에서 left:50%+transform이 오동작하는 문제 수정 */
+  top:0; left:0; right:0; bottom:0;
   background:#000;
-  max-width:430px; left:50%; transform:translateX(-50%);
   overflow:hidden;
-  /* flex 레이아웃 유지: open 상태에서도 column으로 채움 */
 }
-#cameraScreen.open { display:flex; flex-direction:column; }
+/* open 상태: flex 불필요 (camVideo가 position:absolute로 전체를 덮음) */
+#cameraScreen.open { display:block; }
 
 /* ── 비디오: 화면 전체를 커버, 비율 유지 (앵글 싱크 핵심) ── */
 #camVideo {
-  position:absolute; inset:0;
-  width:100%; height:100%;
+  position:absolute;
+  top:0; left:0; width:100%; height:100%;
   object-fit:cover;          /* 비율 유지하며 꽉 채움 */
   object-position:center center;
   background:#000;
   display:block;
   z-index:0;                 /* 비디오는 최하층 */
+  /* ★ Android WebView: will-change로 GPU 레이어 분리 → 렌더링 싱크 향상 */
+  will-change:transform;
+  -webkit-transform:translateZ(0);
+  transform:translateZ(0);
 }
 /* 전면 카메라: 좌우 반전 (셀피 미러) */
-#cameraScreen.front #camVideo { transform:scaleX(-1); }
+#cameraScreen.front #camVideo { transform:scaleX(-1) translateZ(0); }
 
 /* ── 오버레이: 비디오 위에 완전히 올라가며 flex 레이아웃 ── */
 #camOverlay {
-  position:absolute; inset:0; z-index:10;
+  position:absolute;
+  top:0; left:0; right:0; bottom:0;
+  z-index:10;
   display:flex; flex-direction:column; justify-content:space-between;
   pointer-events:none;       /* 오버레이 자체는 투과 */
 }
@@ -976,9 +983,19 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
   background-size:cover;
   background-position:center top;
   background-repeat:no-repeat;
-  /* mix-blend-mode는 JS에서 동적으로 설정 */
+  /* ★ mix-blend-mode 제거: 어두운 배경에서 multiply가 이미지를 사라지게 함
+     대신 JS에서 img 태그로 직접 표시하여 확실히 렌더링 */
 }
 #dropletOverlay.visible { opacity:1; }
+/* 내부 img 태그: 전체 채우기 */
+#dropletOverlay img.dtex-img {
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:cover; object-position:center top;
+  display:block; pointer-events:none;
+  /* 흰 배경 제거: screen blend mode로 물방울만 보이게 */
+  mix-blend-mode:screen;
+}
 /* 내부 캔버스가 꽉 채우도록 */
 #dropletOverlay canvas {
   position:absolute; inset:0;
@@ -1350,7 +1367,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
     <!-- 9종 텍스처 그리드 (3열) -->
     <div class="dtex-grid dtex-grid-3col" style="margin-top:10px;">
       <div class="dtex-card" id="dtex1" onclick="selectDropletTex(1)">
-        <img src="images/droplet-tex1.png?v=4" alt="Natural Drops" loading="eager">
+        <img src="images/droplet-tex1.png?v=6" alt="Natural Drops" loading="eager" onerror="this.src='images/droplet-tex1.png?t='+Date.now()">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Natural</strong>
@@ -1358,7 +1375,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex2" onclick="selectDropletTex(2)">
-        <img src="images/droplet-tex2.png?v=4" alt="Rain Trails" loading="eager">
+        <img src="images/droplet-tex2.png" alt="Rain Trails" loading="eager" onerror="this.src='images/droplet-tex2.png?t='+Date.now()">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Rain Trail</strong>
@@ -1366,7 +1383,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex3" onclick="selectDropletTex(3)">
-        <img src="images/droplet-tex3.png?v=4" alt="Micro Mist" loading="eager">
+        <img src="images/droplet-tex3.png" alt="Micro Mist" loading="eager" onerror="this.src='images/droplet-tex3.png?t='+Date.now()">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Micro Mist</strong>
@@ -1374,7 +1391,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex4" onclick="selectDropletTex(4)">
-        <img src="images/droplet-tex4.png?v=4" alt="Crystal Drops" loading="eager">
+        <img src="images/droplet-tex4.png" alt="Crystal Drops" loading="eager" onerror="this.src='images/droplet-tex4.png?t='+Date.now()">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Crystal</strong>
@@ -1382,7 +1399,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex5" onclick="selectDropletTex(5)">
-        <img src="images/droplet-tex5.png?v=4" alt="Frosted Glass" loading="eager">
+        <img src="images/droplet-tex5.png" alt="Frosted Glass" loading="eager" onerror="this.src='images/droplet-tex5.png?t='+Date.now()">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Frosted</strong>
@@ -1390,7 +1407,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex6" onclick="selectDropletTex(6)">
-        <img src="images/droplet-tex6.png?v=4" alt="Scatter Drops" loading="eager">
+        <img src="images/droplet-tex6.png" alt="Scatter Drops" loading="eager" onerror="this.src='images/droplet-tex6.png?t='+Date.now()">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Scatter</strong>
@@ -1398,7 +1415,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex7" onclick="selectDropletTex(7)">
-        <img src="images/droplet-tex7.png?v=4" alt="Morning Dew" loading="eager">
+        <img src="images/droplet-tex7.png" alt="Morning Dew" loading="eager" onerror="this.src='images/droplet-tex7.png?t='+Date.now()">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Morning Dew</strong>
@@ -1406,7 +1423,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex8" onclick="selectDropletTex(8)">
-        <img src="images/droplet-tex8.png?v=4" alt="Heavy Rain" loading="eager">
+        <img src="images/droplet-tex8.png" alt="Heavy Rain" loading="eager" onerror="this.src='images/droplet-tex8.png?t='+Date.now()">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Heavy Rain</strong>
@@ -1414,7 +1431,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
         </div>
       </div>
       <div class="dtex-card" id="dtex9" onclick="selectDropletTex(9)">
-        <img src="images/droplet-tex9.png?v=4" alt="Winter Frost" loading="eager">
+        <img src="images/droplet-tex9.png" alt="Winter Frost" loading="eager" onerror="this.src='images/droplet-tex9.png?t='+Date.now()">
         <div class="dtex-check">✓</div>
         <div class="dtex-card-label">
           <strong>Winter Frost</strong>
@@ -1477,13 +1494,13 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
   </div>
 
   <!-- Hidden inputs -->
-  <!-- ★ label 기반 트리거: Android WebView에서 input.click()보다 label.click()이 더 안정적 -->
-  <!-- ★ capture 속성 없음: 갤러리만 열림 (capture 있으면 카메라 직접 실행됨) -->
-  <label id="fileGalleryLabel" style="display:none;">
-    <input type="file" id="fileGallery"
-           accept="image/*"
-           onchange="handlePhotoUpload(event)">
-  </label>
+  <!-- ★ Android WebView 갤러리 트리거: label을 실제 DOM에 배치하여 user-gesture context 유지 -->
+  <!-- ★ capture 속성 없음: 갤러리만 열림 -->
+  <label id="fileGalleryLabel" for="fileGallery" style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden;">&nbsp;</label>
+  <input type="file" id="fileGallery"
+         accept="image/*"
+         style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;"
+         onchange="handlePhotoUpload(event)">
   <canvas id="snapCanvas" style="display:none;"></canvas>
 
   <!-- BG ADJUST MODAL -->
@@ -2430,26 +2447,26 @@ function closePhotoSheet() {
   document.getElementById('photoBackdrop').classList.remove('open');
 }
 function triggerGallery() {
+  // ★ Android WebView 핵심: closePhotoSheet() 전에 input.click()을 먼저 호출
+  // sheet 닫힘(CSS transition) 후 호출하면 user-gesture context가 끊어짐
+  const inp = document.getElementById('fileGallery');
+  if(inp) {
+    inp.value = '';
+    // Android WebView 전용: user gesture 컨텍스트 내에서 즉시 트리거
+    try { inp.click(); } catch(e) {
+      try { document.getElementById('fileGalleryLabel')?.click(); } catch(e2){}
+    }
+  }
+  // 시트는 input 트리거 후 닫기 (순서 중요)
   closePhotoSheet();
-  // ★ 갤러리 연동 강화: 바텀시트 닫힘 후 충분한 딜레이 후 트리거
-  setTimeout(() => {
-    _openGalleryInput();
-  }, 200);
 }
 
 function _openGalleryInput() {
   const inp = document.getElementById('fileGallery');
   if(!inp) return;
-  inp.value = ''; // 같은 파일 재선택 허용
-
-  // ★ iOS 14+: input.click()이 가장 안정적 (label 경유 시 차단될 수 있음)
-  // ★ Android: input에 직접 click() — user gesture 컨텍스트 내에서 호출되어야 함
-  try {
-    inp.click();
-  } catch(e) {
-    // fallback: label 클릭
-    const lbl = document.getElementById('fileGalleryLabel');
-    if(lbl) lbl.click();
+  inp.value = '';
+  try { inp.click(); } catch(e) {
+    document.getElementById('fileGalleryLabel')?.click();
   }
 }
 function handlePhotoUpload(e) {
@@ -3087,7 +3104,7 @@ function setTexture(name,el) {
 // ═══════════════════════════════════════════════════════════
 const DROPLET_TEXTURES = [
   null,
-  'images/droplet-tex1.png?v=3',
+  'images/droplet-tex1.png?v=6',
   'images/droplet-tex2.png',
   'images/droplet-tex3.png',
   'images/droplet-tex4.png',
@@ -3113,13 +3130,18 @@ function openDropletPicker(el) {
   document.getElementById('dropletPickerBackdrop').classList.add('open');
   document.getElementById('dropletPickerSheet').classList.add('open');
   _refreshDropletPickerUI();
-  // ★ 데스크탑: 피커가 열릴 때 이미지 강제 로드 (off-screen lazy 문제 해결)
+  // ★ 피커가 열릴 때 이미지 강제 로드 (off-screen/캐시 문제 해결)
+  // Android WebView에서도 즉시 렌더링되도록 두 프레임 대기
   requestAnimationFrame(() => {
-    document.querySelectorAll('.dtex-card img').forEach(img => {
-      if(!img.complete || img.naturalWidth === 0) {
-        const s = img.getAttribute('src');
-        if(s) { img.src = ''; img.src = s; }
-      }
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.dtex-card img').forEach(img => {
+        if(!img.complete || img.naturalWidth === 0) {
+          const s = img.getAttribute('src') || '';
+          // 캐시버스팅으로 재시도
+          const base = s.split('?')[0];
+          img.src = base + '?t=' + Date.now();
+        }
+      });
     });
   });
 }
@@ -3148,8 +3170,9 @@ function onDropletOpacityChange(val) {
 }
 
 /* ════════════════════════════════════════════
-   1차 레이어: CSS mix-blend-mode 방식으로 물방울 표시
-   ★ Canvas 픽셀 조작 제거 → 이미지 그대로 표시 (가장 안정적)
+   1차 레이어: img 태그 + screen blend mode로 물방울 표시
+   ★ CSS background-image 제거 → img 태그 직접 삽입 (Android 확실 렌더링)
+   ★ screen blend mode: 어두운 배경에서도 밝은 물방울 테두리가 살아남
    ════════════════════════════════════════════ */
 function _applyDropletOverlay() {
   const overlay = document.getElementById('dropletOverlay');
@@ -3159,18 +3182,47 @@ function _applyDropletOverlay() {
     overlay.style.backgroundImage = 'none';
     return;
   }
-  const src = DROPLET_TEXTURES[_currentDropletTex];
 
-  // ★ CSS background-image 방식으로 직접 표시 (Canvas 픽셀처리 완전 제거)
-  // mix-blend-mode: multiply → 흰 배경은 투명처럼 보이고 물방울 테두리만 남음
+  // 기존 src가 같으면 재생성 불필요
+  const src = DROPLET_TEXTURES[_currentDropletTex];
+  const existImg = overlay.querySelector('img.dtex-img');
+  if(existImg && existImg.getAttribute('data-src') === src) {
+    overlay.style.opacity = _dropletOpacity;
+    overlay.classList.add('visible');
+    return;
+  }
+
+  // ★ img 태그로 직접 표시 (Android WebView에서 가장 안정적)
   overlay.innerHTML = '';
-  overlay.style.backgroundImage   = `url('${src}')`;
-  overlay.style.backgroundSize    = 'cover';
-  overlay.style.backgroundPosition = 'center top';
-  overlay.style.backgroundRepeat  = 'no-repeat';
-  overlay.style.mixBlendMode      = 'multiply';
-  overlay.style.opacity           = _dropletOpacity;
-  overlay.classList.add('visible');
+  overlay.style.backgroundImage = 'none';
+  overlay.style.mixBlendMode = '';
+
+  const img = document.createElement('img');
+  img.className = 'dtex-img';
+  img.setAttribute('data-src', src);
+  img.alt = '';
+  img.draggable = false;
+
+  // 로딩 실패 시 fallback
+  img.onerror = () => {
+    // URL 캐시버스팅 재시도
+    const ts = Date.now();
+    if(!img.src.includes('?t=')) img.src = src + '?t=' + ts;
+  };
+  img.onload = () => {
+    overlay.style.opacity = _dropletOpacity;
+    overlay.classList.add('visible');
+  };
+
+  // ★ src 설정 전 overlay에 추가 (Android WebView 로딩 안정화)
+  overlay.appendChild(img);
+  img.src = src;
+
+  // 이미 캐시된 경우를 위한 즉시 표시
+  if(img.complete && img.naturalWidth > 0) {
+    overlay.style.opacity = _dropletOpacity;
+    overlay.classList.add('visible');
+  }
 }
 
 function _renderDropletCanvas(overlay, offC) {
@@ -4049,7 +4101,7 @@ function vibeEnd(){
 }
 
 function onTouchStart(e){
-  // ── UI 레이어(bottomNav, topbar) 터치는 drawCanvas가 가로채지 않음 ──
+  // ── UI 레이어(bottomNav, topbar, controlPanel) 터치는 drawCanvas가 가로채지 않음 ──
   const touch = e.touches[0];
   if(touch) {
     const nav = document.getElementById('bottomNav');
@@ -4061,6 +4113,22 @@ function onTouchStart(e){
     if(topbar) {
       const tbRect = topbar.getBoundingClientRect();
       if(touch.clientY <= tbRect.bottom) return; // topbar 영역 → 이벤트 통과
+    }
+    // ★ controlPanel 열린 경우: 패널 영역 터치는 drawCanvas가 가로채지 않음
+    const panel = document.getElementById('controlPanel');
+    if(panel && !panel.classList.contains('collapsed')) {
+      const pr = panel.getBoundingClientRect();
+      if(touch.clientY >= pr.top) return; // 패널 영역 → 이벤트 통과
+    }
+    // ★ 각종 모달/시트가 열려있으면 이벤트 통과
+    const openEls = ['photoSheet','dropletPickerSheet','stylePopup','bgAdjustModal','saveModal'];
+    for(const id of openEls) {
+      const el = document.getElementById(id);
+      if(el && (el.classList.contains('open') || el.style.display === 'flex' || (el.style.display !== 'none' && el.offsetParent !== null))) {
+        const er = el.getBoundingClientRect();
+        if(touch.clientX >= er.left && touch.clientX <= er.right &&
+           touch.clientY >= er.top  && touch.clientY <= er.bottom) return;
+      }
     }
   }
   e.preventDefault();
@@ -4102,11 +4170,17 @@ function onTouchEnd(){
 }
 
 function onMouseDown(e){
-  // UI 레이어(bottomNav, topbar) 클릭은 drawCanvas가 가로채지 않음
+  // UI 레이어(bottomNav, topbar, controlPanel) 클릭은 drawCanvas가 가로채지 않음
   const nav = document.getElementById('bottomNav');
   if(nav && e.clientY >= nav.getBoundingClientRect().top) return;
   const topbar = document.getElementById('topbar');
   if(topbar && e.clientY <= topbar.getBoundingClientRect().bottom) return;
+  // ★ controlPanel 영역 클릭은 통과
+  const panel = document.getElementById('controlPanel');
+  if(panel && !panel.classList.contains('collapsed')) {
+    const pr = panel.getBoundingClientRect();
+    if(e.clientY >= pr.top) return;
+  }
   const pos=getPos(e);
   const hitId=hitTextNode(pos.x,pos.y);
   if(hitId){
@@ -5035,10 +5109,46 @@ async function ssAction(type){
 function _ssDownload(){
   if(!_ssBlob) return;
   const url = _ssBlobUrl || URL.createObjectURL(_ssBlob);
-  const a = document.createElement('a');
-  a.href = url; a.download = _ssFilename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  if(!_ssBlobUrl) setTimeout(()=>URL.revokeObjectURL(url), 8000);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  // ① Web Share API: 모바일에서 네이티브 저장/공유 다이얼로그 (가장 안정적)
+  if(navigator.canShare && navigator.share) {
+    try {
+      const ext = _ssFilename.split('.').pop() || 'png';
+      const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const file = new File([_ssBlob], _ssFilename, {type: mime});
+      if(navigator.canShare({files:[file]})) {
+        navigator.share({files:[file], title:'Rainy Note'}).catch(err => {
+          if(err.name !== 'AbortError') _ssDownloadFallback(url);
+        });
+        if(!_ssBlobUrl) setTimeout(()=>URL.revokeObjectURL(url), 10000);
+        return;
+      }
+    } catch(e) { /* fallback */ }
+  }
+
+  _ssDownloadFallback(url);
+  if(!_ssBlobUrl) setTimeout(()=>URL.revokeObjectURL(url), 10000);
+}
+
+function _ssDownloadFallback(url) {
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  // ② <a download> 방식 (데스크탑, Android Chrome)
+  try {
+    const a = document.createElement('a');
+    a.href = url; a.download = _ssFilename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ try{document.body.removeChild(a);}catch(e){} }, 300);
+    return;
+  } catch(e) { /* fallback */ }
+
+  // ③ window.open fallback (WebView 등)
+  try { window.open(url, '_blank'); } catch(e2) {}
 }
 
 // ══ 영상 저장 (WebM: MediaRecorder / GIF: canvas frame capture) ════
@@ -5477,28 +5587,63 @@ function gvDelete(){
   showToast('이미지가 삭제되었습니다.');
 }
 
-// dataUrl → 파일 저장 (직접 다운로드, Web Share API 미사용)
+// dataUrl → 파일 저장 (Web Share API 우선, fallback: <a> 다운로드)
 async function _saveOrShareDataUrl(dataUrl, filename, preferShare){
-  // Blob 변환
-  const res  = await fetch(dataUrl);
-  const blob = await res.blob();
-
-  // 직접 다운로드 (시스템 공유창 표시하지 않음)
-  const url = URL.createObjectURL(blob);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  const a = document.createElement('a');
-  a.href = url;
-  if(isIOS){
-    // iOS: 새 탭 열기 + 안내
-    a.target = '_blank'; a.rel = 'noopener';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    showToast('📥 이미지를 꾹 눌러 "사진에 추가"를 선택하세요.');
-  } else {
-    a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    showToast('💾 이미지 다운로드 완료!');
+  const isAndroid = /Android/.test(navigator.userAgent);
+
+  // Blob 변환
+  let blob;
+  try {
+    const res = await fetch(dataUrl);
+    blob = await res.blob();
+  } catch(e) {
+    showToast('❌ 이미지 변환 실패. 다시 시도해주세요.');
+    return;
   }
-  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+
+  const url = URL.createObjectURL(blob);
+
+  // ① Web Share API (Android/iOS 네이티브 저장 다이얼로그 — 가장 안정적)
+  if((isIOS || isAndroid) && navigator.canShare && navigator.share) {
+    try {
+      const ext = filename.split('.').pop() || 'png';
+      const mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+      const file = new File([blob], filename, {type: mime});
+      if(navigator.canShare({files:[file]})) {
+        await navigator.share({files:[file], title:'Rainy Note'});
+        setTimeout(()=>URL.revokeObjectURL(url), 5000);
+        return;
+      }
+    } catch(e) {
+      if(e.name === 'AbortError') { URL.revokeObjectURL(url); return; }
+      // 공유 실패 시 다운로드 fallback
+    }
+  }
+
+  // ② <a download> 방식
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    if(isIOS) {
+      // iOS Safari: 새 탭에서 열고 꾹 눌러 저장 안내
+      a.target = '_blank'; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      showToast('📥 이미지를 꾹 눌러 "사진에 추가"를 선택하세요.');
+    } else {
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a); a.click();
+      setTimeout(()=>{ try{document.body.removeChild(a);}catch(e){} }, 300);
+      showToast('💾 이미지 다운로드 완료!');
+    }
+  } catch(e) {
+    // ③ window.open fallback
+    try { window.open(url, '_blank'); } catch(e2){}
+    showToast('💾 이미지를 새 탭에서 확인하세요.');
+  }
+
+  setTimeout(()=>URL.revokeObjectURL(url), 10000);
 }
 
 // ═══════════════════════════════════════════════════════════

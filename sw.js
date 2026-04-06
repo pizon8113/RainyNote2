@@ -5,8 +5,8 @@
  * - CDN 리소스 네트워크 우선 캐싱
  */
 
-const CACHE_NAME = 'rainy-note-v4';
-const CDN_CACHE  = 'rainy-note-cdn-v4';
+const CACHE_NAME = 'rainy-note-v6';
+const CDN_CACHE  = 'rainy-note-cdn-v6';
 
 // 앱 셸: 반드시 캐싱할 파일
 const APP_SHELL = [
